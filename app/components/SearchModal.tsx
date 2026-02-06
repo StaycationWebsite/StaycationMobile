@@ -1,8 +1,9 @@
 import { Text, View, StyleSheet, TouchableOpacity, Modal, Pressable, ActivityIndicator, ScrollView } from 'react-native';
 import { Colors, Fonts } from '../../constants/Styles';
+import { API_CONFIG } from '../../constants/config';
 import { Feather } from '@expo/vector-icons';
 import { useState, useEffect } from 'react';
-import { HAVEN_API } from '@env';
+import DateRangePicker from './DateRangePicker';
 
 interface SearchModalProps {
   visible: boolean;
@@ -17,7 +18,8 @@ interface Haven {
 
 export default function SearchModal({ visible, onClose, onSearch }: SearchModalProps) {
   const [location, setLocation] = useState('');
-  const [dates, setDates] = useState('');
+  const [startDate, setStartDate] = useState<string | null>(null);
+  const [endDate, setEndDate] = useState<string | null>(null);
   const [guests, setGuests] = useState('1 Guest');
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [havens, setHavens] = useState<Haven[]>([]);
@@ -32,8 +34,7 @@ export default function SearchModal({ visible, onClose, onSearch }: SearchModalP
   const fetchHavens = async () => {
     try {
       setLoadingHavens(true);
-      const apiUrl = HAVEN_API;
-      const response = await fetch(apiUrl);
+      const response = await fetch(API_CONFIG.HAVEN_API);
       const data = await response.json();
       if (data.data && Array.isArray(data.data)) {
         setHavens(data.data);
@@ -105,14 +106,37 @@ export default function SearchModal({ visible, onClose, onSearch }: SearchModalP
               <Feather name="calendar" size={20} color={Colors.brand.primary} />
               <Text style={styles.sectionTitle}>DATES</Text>
             </View>
-            <TouchableOpacity style={styles.inputField}>
+            <TouchableOpacity
+              style={styles.inputField}
+              onPress={() => setActiveDropdown(activeDropdown === 'dates' ? null : 'dates')}
+            >
               <Feather name="calendar" size={18} color={Colors.gray[500]} />
               <View style={styles.inputContent}>
                 <Text style={styles.inputLabel}>When</Text>
-                <Text style={styles.placeholder}>Add dates</Text>
+                <Text style={styles.placeholder}>
+                  {startDate && endDate
+                    ? `${new Date(startDate).toLocaleDateString()} - ${new Date(endDate).toLocaleDateString()}`
+                    : 'Add dates'}
+                </Text>
               </View>
-              <Feather name="chevron-down" size={18} color={Colors.gray[500]} />
+              <Feather
+                name={activeDropdown === 'dates' ? 'chevron-up' : 'chevron-down'}
+                size={18}
+                color={Colors.gray[500]}
+              />
             </TouchableOpacity>
+            {activeDropdown === 'dates' && (
+              <View style={styles.datePickerContainer}>
+                <DateRangePicker
+                  startDate={startDate}
+                  endDate={endDate}
+                  onDateRangeChange={(start, end) => {
+                    setStartDate(start);
+                    setEndDate(end);
+                  }}
+                />
+              </View>
+            )}
           </View>
 
           <View style={styles.section}>
@@ -307,5 +331,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderTopWidth: 1,
     borderTopColor: Colors.gray[100],
+  },
+  datePickerContainer: {
+    marginTop: 6,
+    marginHorizontal: 0,
+    maxHeight: 280,
+    overflow: 'hidden',
   },
 });
