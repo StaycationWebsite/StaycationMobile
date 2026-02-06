@@ -1,24 +1,147 @@
-import { Text, View, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { Text, View, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
 import { Colors, Fonts } from '../../constants/Styles';
 import { Feather } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import SearchModal from '../components/SearchModal';
+import { API_CONFIG } from '../../constants/config';
+import { useRoomDiscounts } from '../hooks/useRoomDiscounts';
+
+interface HavenImage {
+  id: number;
+  image_url: string;
+  display_order: number;
+}
+
+interface Haven {
+  uuid_id: string;
+  haven_name: string;
+  tower?: string;
+  floor?: string;
+  weekday_rate?: string;
+  weekend_rate?: string;
+  images?: HavenImage[];
+  rating?: number;
+  discount?: number;
+}
 
 export default function HavenScreen() {
   const [modalVisible, setModalVisible] = useState(false);
+  const [havens, setHavens] = useState<Haven[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchHavens();
+  }, []);
+
+  const fetchHavens = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(API_CONFIG.HAVEN_API);
+      const data = await response.json();
+      if (data.data && Array.isArray(data.data)) {
+        console.log('Havens fetched:', data.data.length, 'rooms');
+        console.log('First room data:', data.data[0]);
+        setHavens(data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching havens:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSearch = () => {
-    // Handle search action
     setModalVisible(false);
   };
 
+  const RoomCard = ({ item }: { item: Haven }) => {
+    const { calculateBestDiscount } = useRoomDiscounts(item.uuid_id);
+    const basePrice = parseFloat(item.weekday_rate || '0');
+    const firstImage = item.images && item.images.length > 0 ? item.images[0].image_url : null;
+
+    const bestDiscount = useMemo(() => {
+      return calculateBestDiscount(basePrice);
+    }, [basePrice, calculateBestDiscount]);
+
+    const displayPrice = bestDiscount ? Math.floor(bestDiscount.discountedPrice) : Math.floor(basePrice);
+    const savings = bestDiscount ? Math.floor(bestDiscount.savings) : 0;
+
+    return (
+      <View style={styles.roomCard}>
+        <View style={styles.imageContainer}>
+          {firstImage ? (
+            <Image
+              source={{ uri: firstImage }}
+              style={styles.roomImage}
+            />
+          ) : (
+            <View style={styles.roomImagePlaceholder} />
+          )}
+          <TouchableOpacity style={styles.favoriteButton}>
+            <Feather name="heart" size={20} color={Colors.white} />
+          </TouchableOpacity>
+          {bestDiscount && (
+            <View style={styles.discountNameContainer}>
+              <View style={styles.discountBadge}>
+                <Text style={styles.discountBadgeText}>
+                  {bestDiscount.discount_type === 'percentage'
+                    ? `${bestDiscount.discount_value}%`
+                    : `₱${Math.floor(bestDiscount.discount_value)}`}
+                </Text>
+              </View>
+              <View style={styles.discountNameWithIcon}>
+                <Feather name="tag" size={11} color={Colors.brand.primary} />
+                <Text style={styles.discountName}>{bestDiscount.name}</Text>
+              </View>
+            </View>
+          )}
+        </View>
+
+        <View style={styles.cardContent}>
+          <View style={styles.priceSection}>
+            <View style={styles.priceInfo}>
+              <View style={styles.priceRow}>
+                <Text style={styles.pricePerNight}>₱{displayPrice.toLocaleString('en-US')}</Text>
+                {bestDiscount && (
+                  <Text style={styles.originalPrice}>₱{Math.floor(basePrice).toLocaleString('en-US')}</Text>
+                )}
+              </View>
+              <Text style={styles.priceLabel}>per night</Text>
+            </View>
+            {bestDiscount && (
+              <View style={styles.savingSection}>
+                <Text style={styles.savingLabel}>Save</Text>
+                <Text style={styles.savingAmount}>₱{savings.toLocaleString('en-US')}</Text>
+              </View>
+            )}
+          </View>
+
+          <Text style={styles.havenName}>{item.haven_name}</Text>
+
+          <View style={styles.locationRating}>
+            <View style={styles.locationSection}>
+              <Feather name="map-pin" size={14} color={Colors.gray[600]} />
+              <Text style={styles.locationText}>{item.tower}, {item.floor}</Text>
+            </View>
+            <View style={styles.ratingSection}>
+              <Feather name="star" size={14} color={Colors.brand.primary} />
+              <Text style={styles.ratingText}>{item.rating || '4.5'}</Text>
+            </View>
+          </View>
+        </View>
+      </View>
+    );
+  };
+
   return (
-    <View style={styles.container}>
+    <View style={styles.mainContainer}>
       <SearchModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
         onSearch={handleSearch}
       />
+
+      {/* Sticky Header */}
       <View style={styles.topSection}>
         <View style={styles.logoSection}>
           <Image
@@ -40,49 +163,114 @@ export default function HavenScreen() {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.header}>
-        <Text style={styles.mainTitle}>Find Your Perfect</Text>
-        <Text style={styles.highlightedText}>Staycation</Text>
-        <View style={styles.dot} />
-        <Text style={styles.description}>
-          Discover our premium havens with world-class amenities. Short stays, extended stays, or your perfect getaway - all at your fingertips.
-        </Text>
+      {/* Scrollable Content */}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollViewContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.header}>
+          <Text style={styles.mainTitle}>Find Your Perfect</Text>
+          <Text style={styles.highlightedText}>Staycation</Text>
+          <View style={styles.dot} />
+          <Text style={styles.description}>
+            Discover our premium havens with world-class amenities. Short stays, extended stays, or your perfect getaway - all at your fingertips.
+          </Text>
 
-        <View style={styles.statsContainer}>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>8</Text>
-            <Text style={styles.statLabel}>Premium Havens</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>4.8</Text>
-            <Text style={styles.statLabel}>Average Rating</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>24/7</Text>
-            <Text style={styles.statLabel}>Support</Text>
+          <View style={styles.statsContainer}>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>8</Text>
+              <Text style={styles.statLabel}>Premium Havens</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>4.8</Text>
+              <Text style={styles.statLabel}>Average Rating</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>24/7</Text>
+              <Text style={styles.statLabel}>Support</Text>
+            </View>
           </View>
         </View>
+
+        {/* Room Cards Section - First 5 */}
+        <View style={styles.roomsSection}>
+          <View style={styles.roomsSectionHeader}>
+            <Text style={styles.roomsSectionTitle}>Staycation Haven PH</Text>
+            <Feather name="chevron-right" size={20} color={Colors.gray[600]} />
+          </View>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.roomsScroll}
+          contentContainerStyle={styles.scrollContentContainer}
+        >
+          {loading ? (
+            <Text style={styles.loadingText}>Loading havens...</Text>
+          ) : havens.length > 0 ? (
+            havens.slice(0, 5).map((haven, index) => (
+              <View key={haven.uuid_id || index}>
+                <RoomCard item={haven} />
+              </View>
+            ))
+          ) : (
+            <Text style={styles.emptyText}>No havens available</Text>
+          )}
+        </ScrollView>
       </View>
+
+      {/* Remaining Rooms Section */}
+      {havens.length > 5 && (
+        <View style={styles.remainingSection}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.roomsScroll}
+            contentContainerStyle={styles.scrollContentContainer}
+          >
+            {havens.slice(5).map((haven, index) => (
+              <View key={haven.uuid_id || index}>
+                <RoomCard item={haven} />
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+      )}
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  mainContainer: {
+    flex: 1,
+    backgroundColor: Colors.white,
+  },
+  scrollView: {
+    flex: 1,
+    backgroundColor: Colors.white,
+  },
+  scrollViewContent: {
+    alignItems: 'center',
+  },
   container: {
     flex: 1,
     backgroundColor: Colors.white,
     paddingHorizontal: 20,
     paddingTop: 60,
+    width: '100%',
+    maxWidth: '100%',
   },
   topSection: {
     backgroundColor: Colors.gray[50],
     paddingHorizontal: 20,
     paddingVertical: 16,
-    marginHorizontal: -20,
-    marginTop: -60,
-    paddingTop: 60,
+    marginHorizontal: 0,
+    marginTop: 0,
+    paddingTop: 70,
     borderBottomWidth: 1,
     borderBottomColor: Colors.gray[200],
+    width: '100%',
   },
   logoSection: {
     flexDirection: 'row',
@@ -115,8 +303,10 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    marginBottom: 60,
+    marginBottom: 40,
     marginTop: 30,
+    paddingHorizontal: 20,
+    width: '100%',
   },
   findRoomsButton: {
     width: '100%',
@@ -193,5 +383,223 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.gray[700],
     fontFamily: Fonts.inter,
+  },
+  roomsSection: {
+    paddingVertical: 24,
+    marginTop: 20,
+    paddingHorizontal: 20,
+    width: '100%',
+  },
+  roomsSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  roomsSectionTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: Colors.gray[900],
+    fontFamily: Fonts.poppins,
+  },
+  roomsScroll: {
+    paddingHorizontal: 0,
+  },
+  scrollContentContainer: {
+    paddingRight: 20,
+  },
+  roomCard: {
+    width: 170,
+    backgroundColor: Colors.white,
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: Colors.gray[200],
+  },
+  imageContainer: {
+    position: 'relative',
+    width: 170,
+    height: 130,
+    backgroundColor: Colors.gray[200],
+  },
+  roomImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  roomImagePlaceholder: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: Colors.gray[200],
+  },
+  favoriteButton: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  discountBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.brand.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  discountBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: Colors.white,
+    fontFamily: Fonts.poppins,
+  },
+  discountText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: Colors.gray[900],
+    fontFamily: Fonts.poppins,
+  },
+  cardContent: {
+    padding: 12,
+    paddingBottom: 16,
+    marginTop: 12,
+  },
+  priceSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  priceInfo: {
+    flex: 1,
+  },
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  pricePerNight: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: Colors.brand.primary,
+    fontFamily: Fonts.poppins,
+  },
+  originalPrice: {
+    fontSize: 9,
+    color: Colors.gray[500],
+    fontFamily: Fonts.inter,
+    textDecorationLine: 'line-through',
+  },
+  priceLabel: {
+    fontSize: 10,
+    color: Colors.gray[600],
+    fontFamily: Fonts.inter,
+    marginTop: 2,
+  },
+  savingSection: {
+    alignItems: 'flex-end',
+  },
+  savingLabel: {
+    fontSize: 9,
+    color: Colors.gray[600],
+    fontFamily: Fonts.inter,
+  },
+  savingAmount: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#22C55E',
+    fontFamily: Fonts.poppins,
+    marginTop: 2,
+  },
+  discountNameContainer: {
+    position: 'absolute',
+    bottom: -16,
+    left: '50%',
+    transform: [{ translateX: -50 }],
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    zIndex: 10,
+  },
+  discountNameWithIcon: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: Colors.brand.primarySoft,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+  },
+  discountName: {
+    fontSize: 10,
+    color: Colors.gray[900],
+    fontFamily: Fonts.poppins,
+    fontWeight: '600',
+  },
+  havenName: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.gray[900],
+    fontFamily: Fonts.poppins,
+    marginBottom: 8,
+  },
+  locationRating: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  locationSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    flex: 1,
+  },
+  locationText: {
+    fontSize: 9,
+    color: Colors.gray[600],
+    fontFamily: Fonts.inter,
+  },
+  ratingSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  ratingText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: Colors.gray[900],
+    fontFamily: Fonts.poppins,
+  },
+  loadingText: {
+    fontSize: 14,
+    color: Colors.gray[600],
+    fontFamily: Fonts.inter,
+    textAlign: 'center',
+    padding: 20,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: Colors.gray[600],
+    fontFamily: Fonts.inter,
+    textAlign: 'center',
+    padding: 20,
+  },
+  remainingSection: {
+    paddingVertical: 24,
+    paddingHorizontal: 20,
+    width: '100%',
+  },
+  sectionHeading: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.gray[900],
+    fontFamily: Fonts.poppins,
+    marginBottom: 16,
   },
 });
