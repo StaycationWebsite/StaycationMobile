@@ -13,6 +13,7 @@ import { Colors, Fonts } from '../../constants/Styles';
 import { Feather, MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../hooks/useAuth';
+import TopBar from '../components/TopBar';
 
 const { width } = Dimensions.get('window');
 
@@ -66,75 +67,62 @@ export default function AdminDashboardScreen() {
           <Text style={styles.activityTitle}>{title}</Text>
           <Text style={styles.activityTime}>{time}</Text>
         </View>
-        <Feather name="chevron-right" size={16} color={Colors.gray[300]} />
+        <Feather name="chevron-right" size={16} color={Colors.gray[500]} />
       </View>
     );
   };
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>Good Morning,</Text>
-          <Text style={styles.adminName}>Admin Chief</Text>
-        </View>
-        <View style={styles.headerActions}>
-          <TouchableOpacity style={styles.notificationBtn}>
-            <Ionicons name="notifications-outline" size={24} color={Colors.gray[900]} />
-            <View style={styles.notifDot} />
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.notificationBtn, { marginLeft: 12 }]} onPress={handleLogout}>
-            <Feather name="log-out" size={22} color={Colors.red[500]} />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Main Analytics Scroll */}
-      <ScrollView 
-        horizontal 
-        showsHorizontalScrollIndicator={false} 
-        contentContainerStyle={styles.statsScroll}
-      >
-        <StatCard 
-          title="Monthly Revenue" 
-          value="₱142,500" 
-          trend="+12%" 
-          icon="cash-multiple" 
-          color={Colors.brand.primary} 
-        />
-        <StatCard 
-          title="Total Bookings" 
-          value="84" 
-          trend="+5%" 
-          icon="calendar-clock" 
-          color="#3B82F6" 
-        />
-        <StatCard 
-          title="Occupancy Rate" 
-          value="92%" 
-          trend="+8%" 
-          icon="home-percent" 
-          color="#10B981" 
-        />
-      </ScrollView>
+    <View style={{ flex: 1 }}>
+      <TopBar />
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        <View style={styles.contentPadding} />
+        
+        {/* Main Analytics Scroll */}
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false} 
+          contentContainerStyle={styles.statsScroll}
+        >
+          <StatCard 
+            title="Monthly Revenue" 
+            value="₱142,500" 
+            trend="+12%" 
+            icon="cash-multiple" 
+            color={Colors.brand.primary} 
+          />
+          <StatCard 
+            title="Total Bookings" 
+            value="84" 
+            trend="+5%" 
+            icon="calendar-clock" 
+            color="#3B82F6" 
+          />
+          <StatCard 
+            title="Occupancy Rate" 
+            value="92%" 
+            trend="+8%" 
+            icon="home-percent" 
+            color="#10B981" 
+          />
+        </ScrollView>
 
       {/* Quick Actions */}
       <View style={styles.sectionContainer}>
         <Text style={styles.sectionTitle}>Quick Actions</Text>
         <View style={styles.actionGrid}>
-          <TouchableOpacity style={styles.actionItem} onPress={() => navigation.navigate('AdminTabs', { screen: 'AdminHaven' })}>
+          <TouchableOpacity style={styles.actionItem} onPress={() => navigation.navigate('ManageHavens')}>
             <View style={[styles.actionIcon, { backgroundColor: Colors.brand.primary + '10' }]}>
               <MaterialCommunityIcons name="home-city-outline" size={24} color={Colors.brand.primary} />
             </View>
             <Text style={styles.actionLabel}>Manage Havens</Text>
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.actionItem}>
+          <TouchableOpacity style={styles.actionItem} onPress={() => navigation.navigate('Bookings')}>
             <View style={[styles.actionIcon, { backgroundColor: '#6366F110' }]}>
-              <MaterialCommunityIcons name="chart-bar" size={24} color="#6366F1" />
+              <MaterialCommunityIcons name="calendar-check" size={24} color="#6366F1" />
             </View>
-            <Text style={styles.actionLabel}>Reports</Text>
+            <Text style={styles.actionLabel}>Bookings</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.actionItem}>
@@ -144,7 +132,7 @@ export default function AdminDashboardScreen() {
             <Text style={styles.actionLabel}>Discounts</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionItem} onPress={() => navigation.navigate('AdminTabs', { screen: 'Me' })}>
+          <TouchableOpacity style={styles.actionItem} onPress={() => navigation.navigate('AdminProfile')}>
             <View style={[styles.actionIcon, { backgroundColor: '#EC489910' }]}>
               <Feather name="user" size={24} color="#EC4899" />
             </View>
@@ -186,7 +174,8 @@ export default function AdminDashboardScreen() {
       </View>
 
       <View style={styles.bottomPadding} />
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -195,49 +184,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.gray[50],
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: 70,
-    paddingHorizontal: 24,
-    marginBottom: 30,
-  },
-  greeting: {
-    fontSize: 14,
-    color: Colors.gray[500],
-    fontFamily: Fonts.inter,
-  },
-  adminName: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: Colors.gray[900],
-    fontFamily: Fonts.poppins,
-  },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  notificationBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: Colors.white,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.gray[100],
-  },
-  notifDot: {
-    position: 'absolute',
-    top: 14,
-    right: 14,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.red[500],
-    borderWidth: 1.5,
-    borderColor: Colors.white,
+  contentPadding: {
+    height: 20,
   },
   statsScroll: {
     paddingLeft: 24,
@@ -382,13 +330,13 @@ const styles = StyleSheet.create({
   activityTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: Colors.gray[800],
+    color: Colors.gray[500],
     fontFamily: Fonts.inter,
     marginBottom: 2,
   },
   activityTime: {
     fontSize: 12,
-    color: Colors.gray[400],
+    color: Colors.gray[500],
     fontFamily: Fonts.inter,
   },
   bottomPadding: {
