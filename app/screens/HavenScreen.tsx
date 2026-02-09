@@ -6,7 +6,7 @@ import { useNavigation } from '@react-navigation/native';
 import SearchModal from '../components/SearchModal';
 import ImageCarouselModal from '../components/ImageCarouselModal';
 import { API_CONFIG } from '../../constants/config';
-import { useRoomDiscounts } from '../hooks/useRoomDiscounts';
+import { useRoomDiscounts } from '../../hooks/useRoomDiscounts';
 
 interface HavenImage {
   id: number;
@@ -20,8 +20,23 @@ interface Haven {
   floor: string;
   rating?: string;
   weekday_rate: string;
-  capacity?: string;
-  room_type?: string;
+  capacity?: number;
+  beds?: string;
+  room_size?: string;
+  amenities?: {
+    airConditioning?: boolean;
+    balcony?: boolean;
+    glowBed?: boolean;
+    kitchen?: boolean;
+    netflix?: boolean;
+    parking?: boolean;
+    poolAccess?: boolean;
+    ps4?: boolean;
+    towels?: boolean;
+    tv?: boolean;
+    washerDryer?: boolean;
+    wifi?: boolean;
+  };
   images?: HavenImage[];
 }
 

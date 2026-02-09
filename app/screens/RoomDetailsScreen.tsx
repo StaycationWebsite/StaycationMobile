@@ -80,9 +80,9 @@ export default function RoomDetailsScreen() {
             contentContainerStyle={styles.featureGrid}
           >
             <FeatureItem icon="account-group-outline" label={`${haven.capacity || '4'} guests`} />
-            <FeatureItem icon="bed-outline" label="1 Long and Pullout" sublabel="bed size" />
+            <FeatureItem icon="bed-outline" label={`${haven.beds || '1'} Bed`} sublabel="size" />
             <FeatureItem icon="shower" label="1 bathroom" />
-            <FeatureItem icon="vector-square" label="45.00 Space" />
+            <FeatureItem icon="vector-square" label={`${haven.room_size || '45.00'} Space`} />
           </ScrollView>
 
           {/* Navigation Tabs */}
@@ -98,15 +98,55 @@ export default function RoomDetailsScreen() {
             ))}
           </View>
 
-          {/* Overview Content */}
+          {/* Tab Content */}
           <View style={styles.tabContent}>
-            <Text style={styles.sectionTitle}>About this space</Text>
-            <Text style={styles.description}>
-              Experience luxury and comfort in our {haven.room_type || 'Studio'} room. 
-              Perfect for a relaxing staycation with all the modern amenities you need. 
-              This premium haven offers a unique blend of style and functionality, 
-              ensuring a memorable stay in the heart of Quezon City.
-            </Text>
+            {activeTab === 'Overview' && (
+              <>
+                <Text style={styles.sectionTitle}>About this space</Text>
+                <Text style={styles.description}>
+                  {haven.description || `Experience luxury and comfort in our premium room. Perfect for a relaxing staycation with all the modern amenities you need.`}
+                </Text>
+              </>
+            )}
+
+            {activeTab === 'Amenities' && (
+              <View style={styles.amenitiesGrid}>
+                {Object.entries(haven.amenities || {}).map(([key, value]) => {
+                  if (!value) return null;
+                  const labels: Record<string, string> = {
+                    airConditioning: 'Air Conditioning',
+                    wifi: 'High-speed WiFi',
+                    tv: 'Flat-screen TV',
+                    netflix: 'Netflix Access',
+                    kitchen: 'Kitchen Access',
+                    parking: 'Free Parking',
+                    poolAccess: 'Pool Access',
+                    balcony: 'Private Balcony',
+                    washerDryer: 'Washer & Dryer',
+                    towels: 'Fresh Towels',
+                    glowBed: 'Glow Bed',
+                    ps4: 'PS4 Console'
+                  };
+                  return (
+                    <View key={key} style={styles.amenityItem}>
+                      <Ionicons name="checkmark-circle" size={18} color={Colors.brand.primary} />
+                      <Text style={styles.amenityText}>{labels[key] || key}</Text>
+                    </View>
+                  );
+                })}
+              </View>
+            )}
+
+            {activeTab === 'Location' && (
+              <View style={styles.locationContainer}>
+                <Text style={styles.locationTitle}>{haven.tower}, {haven.floor}</Text>
+                <Text style={styles.locationSubtitle}>Quezon City, Metro Manila, Philippines</Text>
+                <View style={styles.mapPlaceholder}>
+                  <Feather name="map" size={40} color={Colors.gray[300]} />
+                  <Text style={styles.mapText}>Interactive map coming soon</Text>
+                </View>
+              </View>
+            )}
           </View>
 
           {/* Information Cards Section */}
@@ -308,6 +348,58 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: Colors.gray[600],
     lineHeight: 24,
+    fontFamily: Fonts.inter,
+  },
+  amenitiesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  amenityItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '48%',
+    backgroundColor: Colors.gray[50],
+    padding: 12,
+    borderRadius: 12,
+    gap: 8,
+  },
+  amenityText: {
+    fontSize: 13,
+    color: Colors.gray[700],
+    fontFamily: Fonts.inter,
+  },
+  locationContainer: {
+    padding: 4,
+  },
+  locationTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: Colors.gray[900],
+    fontFamily: Fonts.poppins,
+    marginBottom: 4,
+  },
+  locationSubtitle: {
+    fontSize: 14,
+    color: Colors.gray[500],
+    fontFamily: Fonts.inter,
+    marginBottom: 16,
+  },
+  mapPlaceholder: {
+    width: '100%',
+    height: 180,
+    backgroundColor: Colors.gray[100],
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: Colors.gray[300],
+  },
+  mapText: {
+    marginTop: 8,
+    fontSize: 12,
+    color: Colors.gray[400],
     fontFamily: Fonts.inter,
   },
   infoCardsRow: {

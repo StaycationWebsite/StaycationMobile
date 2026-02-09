@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Colors, Fonts } from '../../constants/Styles';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../../hooks/useAuth';
 
 export default function MeScreen() {
   const { user, logout } = useAuth();

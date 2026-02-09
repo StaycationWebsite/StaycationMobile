@@ -44,15 +44,29 @@ export class AuthService {
     }
   }
 
-  // Login with email and password
+  // Login with email and password (Mocked for now)
   static async loginWithCredentials(credentials: LoginCredentials): Promise<AuthResponse> {
-    const response = await ApiService.loginWithCredentials(credentials);
+    // Simulate a short delay
+    await new Promise(resolve => setTimeout(resolve, 800));
+
+    const mockSession: Session = {
+      user: {
+        id: 'admin-123',
+        name: 'Staycation Admin',
+        email: credentials.email || 'admin@staycationhavenph.com',
+        role: 'admin',
+        image: null
+      },
+      expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from now
+      token: 'mock-jwt-token-for-admin'
+    };
     
-    if (response.success && response.data) {
-      await this.saveSession(response.data);
-    }
+    await this.saveSession(mockSession);
     
-    return response;
+    return {
+      success: true,
+      data: mockSession
+    };
   }
 
   // Check if session is valid
@@ -76,8 +90,7 @@ export class AuthService {
   static async signOut(): Promise<boolean> {
     try {
       await this.removeSession();
-      const response = await ApiService.signOut();
-      return response.success;
+      return true;
     } catch (error) {
       console.error('Sign out error:', error);
       return false;

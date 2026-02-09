@@ -1,13 +1,13 @@
 import React from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { useAuth } from './hooks/useAuth';
-import TabNavigator from './navigation/TabNavigator';
-import AuthNavigator from './navigation/AuthNavigator';
+import { useAuth } from '../hooks/useAuth';
+import TabNavigator from '../navigation/TabNavigator';
+import AuthNavigator from '../navigation/AuthNavigator';
 import { Colors } from '../constants/Styles';
 
 export default function App() {
-  const { isLoading } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -20,7 +20,11 @@ export default function App() {
   return (
     <>
       <StatusBar style="dark" />
-      <TabNavigator />
+      {isAuthenticated ? (
+        <TabNavigator />
+      ) : (
+        <AuthNavigator />
+      )}
     </>
   );
 }
