@@ -28,6 +28,11 @@ export default function HavenScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [havens, setHavens] = useState<Haven[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Filter & Sort State
+  const [sortOpen, setSortOpen] = useState(false);
+  const [selectedSort, setSelectedSort] = useState('Recommended');
+  const sortOptions = ['Recommended', 'Price: Low to High', 'Price: High to Low', 'Rating', 'Capacity'];
 
   useEffect(() => {
     fetchHavens();
@@ -163,6 +168,60 @@ export default function HavenScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* Filter & Sort Section */}
+      <View style={[styles.filterContainer, { zIndex: 100 }]}>
+        <View style={styles.filterScrollWrapper}>
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false} 
+            contentContainerStyle={styles.filterContent}
+          >
+            {['Price', 'Capacity', 'Rating', 'Tower'].map((filter) => (
+              <TouchableOpacity key={filter} style={styles.filterChip}>
+                <Text style={styles.filterLabel}>{filter}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
+        <View style={styles.sortWrapper}>
+          <Text style={styles.sortLabelText}>Sort:</Text>
+          <TouchableOpacity
+            style={styles.sortBox}
+            onPress={() => setSortOpen(!sortOpen)}
+          >
+            <Text style={styles.sortBoxText}>{selectedSort}</Text>
+            <Feather name="chevron-down" size={14} color={Colors.gray[900]} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Dropdown Menu */}
+        {sortOpen && (
+          <View style={styles.dropdownOverlay}>
+            {sortOptions.map((option) => (
+              <TouchableOpacity
+                key={option}
+                style={[
+                  styles.dropdownOption,
+                  option === selectedSort && styles.dropdownOptionActive
+                ]}
+                onPress={() => {
+                  setSelectedSort(option);
+                  setSortOpen(false);
+                }}
+              >
+                <Text style={[
+                  styles.dropdownOptionText,
+                  option === selectedSort && styles.dropdownOptionTextActive
+                ]}>
+                  {option}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+      </View>
+
       {/* Scrollable Content */}
       <ScrollView
         style={styles.scrollView}
@@ -264,10 +323,10 @@ const styles = StyleSheet.create({
   topSection: {
     backgroundColor: Colors.gray[50],
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingVertical: 12,
     marginHorizontal: 0,
     marginTop: 0,
-    paddingTop: 70,
+    paddingTop: 50,
     borderBottomWidth: 1,
     borderBottomColor: Colors.gray[200],
     width: '100%',
@@ -276,7 +335,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
+    marginBottom: 10,
   },
   logo: {
     width: 28,
@@ -304,7 +363,7 @@ const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
     marginBottom: 40,
-    marginTop: 30,
+    marginTop: 20,
     paddingHorizontal: 20,
     width: '100%',
   },
@@ -601,5 +660,101 @@ const styles = StyleSheet.create({
     color: Colors.gray[900],
     fontFamily: Fonts.poppins,
     marginBottom: 16,
+  },
+  // Filter & Sort Styles
+  filterContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    backgroundColor: Colors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.gray[200],
+  },
+  filterScrollWrapper: {
+    flex: 1,
+    marginRight: 10,
+  },
+  filterContent: {
+    paddingRight: 10,
+  },
+  filterChip: {
+    borderRadius: 50,
+    borderWidth: 1,
+    borderColor: Colors.gray[200],
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    marginRight: 8,
+    backgroundColor: Colors.white,
+  },
+  filterLabel: {
+    color: '#2563EB', // Blue as requested
+    fontSize: 12,
+    fontWeight: '600',
+    fontFamily: Fonts.poppins,
+  },
+  sortWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  sortLabelText: {
+    marginRight: 8,
+    color: Colors.gray[600],
+    fontSize: 12,
+    fontFamily: Fonts.inter,
+  },
+  sortBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#DAA520', // Golden-yellow border
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: Colors.white,
+    minWidth: 100,
+    justifyContent: 'space-between',
+  },
+  sortBoxText: {
+    fontSize: 12,
+    fontFamily: Fonts.inter,
+    color: Colors.gray[900],
+    fontWeight: '500',
+    marginRight: 4,
+  },
+  dropdownOverlay: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    backgroundColor: Colors.white,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 5,
+    width: 180,
+    borderWidth: 1,
+    borderColor: Colors.gray[100],
+    zIndex: 1000,
+    overflow: 'hidden',
+  },
+  dropdownOption: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.gray[50],
+  },
+  dropdownOptionActive: {
+    backgroundColor: '#EFF6FF', // Light blue background for active
+  },
+  dropdownOptionText: {
+    fontSize: 13,
+    color: Colors.gray[900],
+    fontFamily: Fonts.inter,
+  },
+  dropdownOptionTextActive: {
+    color: '#2563EB', // Blue text for active
+    fontWeight: '600',
   },
 });
