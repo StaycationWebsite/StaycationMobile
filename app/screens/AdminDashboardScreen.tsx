@@ -19,161 +19,154 @@ const { width } = Dimensions.get('window');
 
 export default function AdminDashboardScreen() {
   const navigation = useNavigation<any>();
-  const { logout } = useAuth();
 
-  const handleLogout = () => {
-    Alert.alert(
-      "Logout",
-      "Are you sure you want to logout?",
-      [
-        { text: "Cancel", style: "cancel" },
-        { text: "Logout", onPress: logout, style: 'destructive' }
-      ]
-    );
-  };
-
-  const StatCard = ({ title, value, trend, icon, color }: { title: string, value: string, trend: string, icon: any, color: string }) => (
-    <View style={styles.statCard}>
-      <View style={styles.statHeader}>
-        <View style={[styles.iconCircle, { backgroundColor: color + '15' }]}>
+  const MetricCard = ({ title, value, icon, color, trend, type }: any) => (
+    <View style={styles.metricCard}>
+      <View style={styles.metricHeader}>
+        <View style={[styles.metricIconBox, { backgroundColor: color + '15' }]}>
           <MaterialCommunityIcons name={icon} size={22} color={color} />
         </View>
-        <View style={styles.trendBadge}>
-          <Feather name="arrow-up-right" size={12} color="#10B981" />
-          <Text style={styles.trendText}>{trend}</Text>
-        </View>
+        {trend && (
+          <View style={styles.trendContainer}>
+            <Feather name="trending-up" size={12} color="#10B981" />
+          </View>
+        )}
+        {type === 'progress' && (
+          <MaterialCommunityIcons name="chart-donut" size={24} color="#0D9488" />
+        )}
       </View>
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statTitle}>{title}</Text>
+      <View style={styles.metricBody}>
+        <Text style={styles.metricValue}>{value}</Text>
+        <Text style={styles.metricTitle}>{title}</Text>
+      </View>
     </View>
   );
 
-  const ActivityItem = ({ title, time, type }: { title: string, time: string, type: 'booking' | 'payment' | 'review' }) => {
-    const getIcon = () => {
-      switch(type) {
-        case 'booking': return { name: 'calendar-check', color: '#3B82F6' };
-        case 'payment': return { name: 'currency-php', color: '#10B981' };
-        case 'review': return { name: 'star', color: Colors.brand.primary };
-      }
-    };
-    const icon = getIcon();
-
-    return (
-      <View style={styles.activityItem}>
-        <View style={[styles.activityIcon, { backgroundColor: icon.color + '15' }]}>
-          <MaterialCommunityIcons name={icon.name as any} size={20} color={icon.color} />
-        </View>
-        <View style={styles.activityContent}>
-          <Text style={styles.activityTitle}>{title}</Text>
-          <Text style={styles.activityTime}>{time}</Text>
-        </View>
-        <Feather name="chevron-right" size={16} color={Colors.gray[500]} />
+  const StatusCounter = ({ label, count, color, icon }: any) => (
+    <View style={styles.counterItem}>
+      <View style={[styles.counterCircle, { borderColor: color }]}>
+        <MaterialCommunityIcons name={icon} size={20} color={color} />
+        <Text style={[styles.counterNumber, { color: Colors.gray[900] }]}>{count}</Text>
       </View>
-    );
-  };
+      <Text style={styles.counterLabel}>{label}</Text>
+    </View>
+  );
+
+  const BookingRow = ({ name, property, date, status, avatar }: any) => (
+    <View style={styles.tableRow}>
+      <View style={styles.guestCell}>
+        <View style={styles.miniAvatar}>
+          <Text style={styles.avatarInitial}>{name[0]}</Text>
+        </View>
+        <View>
+          <Text style={styles.guestName}>{name}</Text>
+          <Text style={styles.propertySub}>{property}</Text>
+        </View>
+      </View>
+      <View style={styles.dateCell}>
+        <Text style={styles.dateText}>{date}</Text>
+      </View>
+      <View style={[styles.statusBadge, { backgroundColor: status === 'Confirmed' ? '#DCFCE7' : '#FEF9C3' }]}>
+        <Text style={[styles.statusBadgeText, { color: status === 'Confirmed' ? '#166534' : '#854D0E' }]}>{status}</Text>
+      </View>
+    </View>
+  );
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: Colors.gray[50] }}>
       <TopBar />
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.contentPadding} />
         
-        {/* Main Analytics Scroll */}
+        {/* Top Row: Key Metrics */}
         <ScrollView 
           horizontal 
           showsHorizontalScrollIndicator={false} 
-          contentContainerStyle={styles.statsScroll}
+          contentContainerStyle={styles.metricsScroll}
         >
-          <StatCard 
-            title="Monthly Revenue" 
-            value="₱142,500" 
-            trend="+12%" 
-            icon="cash-multiple" 
+          <MetricCard 
+            title="Total Revenue" 
+            value="₱124,500" 
+            icon="currency-php" 
             color={Colors.brand.primary} 
+            trend={true}
           />
-          <StatCard 
-            title="Total Bookings" 
-            value="84" 
-            trend="+5%" 
-            icon="calendar-clock" 
-            color="#3B82F6" 
+          <MetricCard 
+            title="Active Bookings" 
+            value="12" 
+            icon="calendar-check" 
+            color="#8B5CF6" 
           />
-          <StatCard 
+          <MetricCard 
+            title="Average Rating" 
+            value="4.8" 
+            icon="star" 
+            color="#EAB308" 
+          />
+          <MetricCard 
             title="Occupancy Rate" 
-            value="92%" 
-            trend="+8%" 
-            icon="home-percent" 
-            color="#10B981" 
+            value="85%" 
+            icon="home-city" 
+            color="#0D9488" 
+            type="progress"
           />
         </ScrollView>
 
-      {/* Quick Actions */}
-      <View style={styles.sectionContainer}>
-        <Text style={styles.sectionTitle}>Quick Actions</Text>
-        <View style={styles.actionGrid}>
-          <TouchableOpacity style={styles.actionItem} onPress={() => navigation.navigate('ManageHavens')}>
-            <View style={[styles.actionIcon, { backgroundColor: Colors.brand.primary + '10' }]}>
-              <MaterialCommunityIcons name="home-city-outline" size={24} color={Colors.brand.primary} />
+        {/* Middle Section: Operational Overview */}
+        <View style={styles.sectionRow}>
+          <View style={styles.todayCard}>
+            <Text style={styles.cardTitle}>Today's Overview</Text>
+            <View style={styles.countersRow}>
+              <StatusCounter label="Check-ins" count="5" color="#10B981" icon="login-variant" />
+              <StatusCounter label="Check-outs" count="3" color="#EF4444" icon="logout-variant" />
+              <StatusCounter label="Pending" count="2" color="#F59E0B" icon="clock-outline" />
             </View>
-            <Text style={styles.actionLabel}>Manage Havens</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.actionItem} onPress={() => navigation.navigate('Bookings')}>
-            <View style={[styles.actionIcon, { backgroundColor: '#6366F110' }]}>
-              <MaterialCommunityIcons name="calendar-check" size={24} color="#6366F1" />
-            </View>
-            <Text style={styles.actionLabel}>Bookings</Text>
-          </TouchableOpacity>
+          </View>
 
-          <TouchableOpacity style={styles.actionItem}>
-            <View style={[styles.actionIcon, { backgroundColor: '#F59E0B10' }]}>
-              <MaterialCommunityIcons name="tag-outline" size={24} color="#F59E0B" />
+          <View style={styles.satisfactionCard}>
+            <Text style={styles.cardTitle}>Guest Satisfaction</Text>
+            <View style={styles.satisfactionContent}>
+              <Text style={styles.bigScore}>4.8<Text style={styles.scoreScale}>/5</Text></Text>
+              <View style={styles.starsRow}>
+                {[1,2,3,4,5].map(i => (
+                  <Ionicons key={i} name="star" size={16} color={i <= 4 ? "#EAB308" : Colors.gray[200]} />
+                ))}
+              </View>
+              <Text style={styles.totalReviews}>Total Reviews: 128</Text>
             </View>
-            <Text style={styles.actionLabel}>Discounts</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.actionItem} onPress={() => navigation.navigate('AdminProfile')}>
-            <View style={[styles.actionIcon, { backgroundColor: '#EC489910' }]}>
-              <Feather name="user" size={24} color="#EC4899" />
-            </View>
-            <Text style={styles.actionLabel}>Admin Profile</Text>
-          </TouchableOpacity>
+          </View>
         </View>
-      </View>
 
-      {/* Recent Activity */}
-      <View style={styles.sectionContainer}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Recent Activity</Text>
-          <TouchableOpacity>
-            <Text style={styles.viewAll}>View All</Text>
-          </TouchableOpacity>
-        </View>
-        <View style={styles.activityCard}>
-          <ActivityItem 
-            title="New Booking: Haven 2 (Unit 1405)" 
-            time="2 mins ago" 
-            type="booking" 
-          />
-          <ActivityItem 
-            title="Payment Received: ₱4,500" 
-            time="1 hour ago" 
-            type="payment" 
-          />
-          <ActivityItem 
-            title="5-Star Review received for Haven 1" 
-            time="3 hours ago" 
-            type="review" 
-          />
-          <ActivityItem 
-            title="Check-out completed: Room 12B" 
-            time="5 hours ago" 
-            type="booking" 
-          />
-        </View>
-      </View>
+        {/* Bottom Section */}
+        <View style={styles.sectionContainer}>
+          <View style={styles.bookingsCard}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.cardTitle}>Recent Bookings</Text>
+              <TouchableOpacity><Text style={styles.viewAllText}>View All</Text></TouchableOpacity>
+            </View>
+            <BookingRow name="John Doe" property="Haven 1" date="Feb 9-11" status="Confirmed" />
+            <BookingRow name="Sarah Smith" property="Haven 2" date="Feb 10-14" status="Pending" />
+            <BookingRow name="Mike Ross" property="Haven 1" date="Feb 12-15" status="Confirmed" />
+          </View>
 
-      <View style={styles.bottomPadding} />
+          <View style={styles.propertyStatsCard}>
+            <Text style={styles.cardTitle}>Property Stats</Text>
+            <View style={styles.statsInner}>
+              <View style={styles.statBadge}>
+                <MaterialCommunityIcons name="office-building" size={18} color={Colors.brand.primary} />
+                <Text style={styles.statBadgeText}>4 Listed</Text>
+              </View>
+              <Text style={styles.chartTitle}>Weekly Occupancy</Text>
+              <View style={styles.barChartPlaceholder}>
+                {[40, 70, 55, 90, 85, 60, 75].map((h, i) => (
+                  <View key={i} style={[styles.chartBar, { height: h * 0.6, backgroundColor: i === 3 ? Colors.brand.primary : Colors.brand.primary + '40' }]} />
+                ))}
+              </View>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.bottomPadding} />
       </ScrollView>
     </View>
   );
@@ -182,164 +175,260 @@ export default function AdminDashboardScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.gray[50],
   },
   contentPadding: {
-    height: 20,
+    height: 24,
   },
-  statsScroll: {
+  metricsScroll: {
     paddingLeft: 24,
     paddingRight: 12,
-    marginBottom: 32,
+    marginBottom: 24,
   },
-  statCard: {
-    width: 160,
+  metricCard: {
+    width: 150,
     backgroundColor: Colors.white,
-    borderRadius: 24,
-    padding: 20,
+    borderRadius: 20,
+    padding: 16,
     marginRight: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.04,
-    shadowRadius: 12,
+    shadowOpacity: 0.03,
+    shadowRadius: 10,
     elevation: 2,
   },
-  statHeader: {
+  metricHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 16,
   },
-  iconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+  metricIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  trendBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#DCFCE7',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
+  trendContainer: {
+    padding: 4,
   },
-  trendText: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    color: '#166534',
-    marginLeft: 2,
+  metricBody: {
+    marginTop: 4,
   },
-  statValue: {
-    fontSize: 20,
+  metricValue: {
+    fontSize: 18,
     fontWeight: 'bold',
     color: Colors.gray[900],
     fontFamily: Fonts.poppins,
-    marginBottom: 4,
   },
-  statTitle: {
-    fontSize: 12,
+  metricTitle: {
+    fontSize: 11,
     color: Colors.gray[500],
+    fontFamily: Fonts.inter,
+    marginTop: 2,
+  },
+  sectionRow: {
+    flexDirection: 'column',
+    paddingHorizontal: 24,
+    gap: 16,
+    marginBottom: 24,
+  },
+  todayCard: {
+    backgroundColor: Colors.white,
+    borderRadius: 24,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.03,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: Colors.gray[900],
+    fontFamily: Fonts.poppins,
+    marginBottom: 20,
+  },
+  countersRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  counterItem: {
+    alignItems: 'center',
+    gap: 8,
+  },
+  counterCircle: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    borderWidth: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 2,
+  },
+  counterNumber: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  counterLabel: {
+    fontSize: 11,
+    color: Colors.gray[500],
+    fontWeight: '600',
+  },
+  satisfactionCard: {
+    backgroundColor: Colors.white,
+    borderRadius: 24,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.03,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  satisfactionContent: {
+    alignItems: 'center',
+  },
+  bigScore: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: Colors.gray[900],
+    fontFamily: Fonts.poppins,
+  },
+  scoreScale: {
+    fontSize: 16,
+    color: Colors.gray[400],
+  },
+  starsRow: {
+    flexDirection: 'row',
+    gap: 4,
+    marginVertical: 8,
+  },
+  totalReviews: {
+    fontSize: 12,
+    color: Colors.gray[400],
     fontFamily: Fonts.inter,
   },
   sectionContainer: {
     paddingHorizontal: 24,
-    marginBottom: 32,
+    gap: 16,
+  },
+  bookingsCard: {
+    backgroundColor: Colors.white,
+    borderRadius: 24,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.03,
+    shadowRadius: 10,
+    elevation: 2,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
+    alignItems: 'flex-start',
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: Colors.gray[900],
-    fontFamily: Fonts.poppins,
-    marginBottom: 16,
-  },
-  viewAll: {
-    fontSize: 14,
+  viewAllText: {
+    fontSize: 13,
     color: Colors.brand.primary,
     fontWeight: '600',
-    fontFamily: Fonts.inter,
   },
-  actionGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  actionItem: {
-    width: '48%',
-    backgroundColor: Colors.white,
-    borderRadius: 20,
-    padding: 16,
-    marginBottom: 12,
+  tableRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 8,
-    elevation: 1,
-  },
-  actionIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  actionLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: Colors.gray[700],
-    fontFamily: Fonts.inter,
-  },
-  activityCard: {
-    backgroundColor: Colors.white,
-    borderRadius: 24,
-    padding: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.04,
-    shadowRadius: 12,
-    elevation: 2,
-  },
-  activityItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: Colors.gray[50],
   },
-  activityIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
+  guestCell: {
+    flex: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  miniAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.gray[100],
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
   },
-  activityContent: {
+  avatarInitial: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: Colors.gray[600],
+  },
+  guestName: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.gray[900],
+  },
+  propertySub: {
+    fontSize: 11,
+    color: Colors.gray[400],
+  },
+  dateCell: {
     flex: 1,
   },
-  activityTitle: {
-    fontSize: 14,
+  dateText: {
+    fontSize: 12,
+    color: Colors.gray[600],
+  },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  statusBadgeText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  propertyStatsCard: {
+    backgroundColor: Colors.white,
+    borderRadius: 24,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.03,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  statBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#FEF9C3',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
+    alignSelf: 'flex-start',
+    marginBottom: 16,
+  },
+  statBadgeText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#854D0E',
+  },
+  chartTitle: {
+    fontSize: 12,
     fontWeight: '600',
     color: Colors.gray[500],
-    fontFamily: Fonts.inter,
-    marginBottom: 2,
+    marginBottom: 12,
   },
-  activityTime: {
-    fontSize: 12,
-    color: Colors.gray[500],
-    fontFamily: Fonts.inter,
+  barChartPlaceholder: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    height: 60,
+    paddingBottom: 4,
+  },
+  chartBar: {
+    width: 20,
+    borderRadius: 4,
   },
   bottomPadding: {
-    height: 100,
+    height: 40,
   }
 });

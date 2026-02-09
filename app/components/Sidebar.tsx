@@ -110,7 +110,7 @@ export default function Sidebar({ visible, onClose, activeRoute = 'Dashboard' }:
                   iconType="material" 
                 />
                 <MenuItem 
-                  icon="book-check" 
+                  icon="note-text-outline" 
                   label="Reservations" 
                   iconColor="#8B5CF6" 
                   iconType="material" 
@@ -136,6 +136,84 @@ export default function Sidebar({ visible, onClose, activeRoute = 'Dashboard' }:
                   label="Maintenance" 
                   iconColor="#F59E0B" 
                   iconType="feather" 
+                />
+                <MenuItem 
+                  icon="sparkles" 
+                  label="Cleaning Management" 
+                  iconColor="#F59E0B" 
+                  iconType="ion" 
+                />
+
+                {/* Finance Section */}
+                <SectionHeader title="FINANCE" />
+                <MenuItem 
+                  icon="currency-php" 
+                  label="Revenue Management" 
+                  iconColor="#10B981" 
+                  iconType="material" 
+                />
+                <MenuItem 
+                  icon="credit-card-outline" 
+                  label="Payment Methods" 
+                  iconColor="#8B5CF6" 
+                  iconType="material" 
+                />
+
+                {/* Communication Section */}
+                <SectionHeader title="COMMUNICATION" />
+                <MenuItem 
+                  icon="headphones" 
+                  label="Guest Assistance" 
+                  iconColor="#EC4899" 
+                  iconType="feather" 
+                />
+                <MenuItem 
+                  icon="message-text-outline" 
+                  label="Messages" 
+                  iconColor="#10B981" 
+                  iconType="material" 
+                />
+                <MenuItem 
+                  icon="star-outline" 
+                  label="Reviews & Feedback" 
+                  iconColor="#EAB308" 
+                  iconType="material" 
+                />
+
+                {/* Team Section */}
+                <SectionHeader title="TEAM" />
+                <MenuItem 
+                  icon="account-group-outline" 
+                  label="Staff Management" 
+                  iconColor="#EAB308" 
+                  iconType="material" 
+                />
+                <MenuItem 
+                  icon="account-group" 
+                  label="User Management" 
+                  iconColor="#0D9488" 
+                  iconType="material" 
+                />
+                <MenuItem 
+                  icon="handshake" 
+                  label="Partner Management" 
+                  iconColor="#3B82F6" 
+                  iconType="fa5" 
+                />
+
+                {/* System Section */}
+                <SectionHeader title="SYSTEM" />
+                <MenuItem 
+                  icon="settings" 
+                  label="Settings" 
+                  iconColor="#6B7280" 
+                  iconType="feather" 
+                />
+                <MenuItem 
+                  icon="shield-alert-outline" 
+                  label="Audit Logs" 
+                  iconColor="#EF4444" 
+                  iconType="material" 
                 />
               </View>
             </ScrollView>
