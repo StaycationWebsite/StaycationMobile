@@ -545,7 +545,7 @@ const styles = StyleSheet.create({
   },
   savingLabel: {
     fontSize: 9,
-    color: Colors.gray[600],
+    color: '#22C55E', // Green
     fontFamily: Fonts.inter,
   },
   savingAmount: {
