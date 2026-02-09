@@ -105,7 +105,7 @@ export default function Sidebar({ visible, onClose, activeRoute = 'Dashboard' }:
                 <MenuItem 
                   icon="calendar-month" 
                   label="Booking Calendar" 
-                  route="Bookings"
+                  route="AdminBookingCalender"
                   iconColor="#8B5CF6" 
                   iconType="material" 
                 />
