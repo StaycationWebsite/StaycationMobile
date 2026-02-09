@@ -118,6 +118,15 @@ export default function LoginScreen() {
               <Text style={styles.loginButtonText}>Sign In</Text>
             )}
           </TouchableOpacity>
+
+          <View style={styles.formDivider} />
+
+          <Text style={styles.termsText}>
+            By continuing, you agree to our{' '}
+            <Text style={styles.termsLink}>Terms</Text>
+            {' '}and{' '}
+            <Text style={styles.termsLink}>Privacy Policy</Text>
+          </Text>
         </View>
 
         <Text style={styles.footerNote}>
@@ -141,6 +150,7 @@ const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
     marginBottom: 40,
+    marginTop: 20,
   },
   logoRow: {
     flexDirection: 'row',
@@ -247,6 +257,23 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     fontFamily: Fonts.poppins,
+  },
+  formDivider: {
+    height: 1,
+    backgroundColor: Colors.gray[100],
+    marginVertical: 24,
+  },
+  termsText: {
+    fontSize: 12,
+    color: Colors.gray[500],
+    textAlign: 'center',
+    fontFamily: Fonts.inter,
+    lineHeight: 18,
+  },
+  termsLink: {
+    color: Colors.brand.primary,
+    textDecorationLine: 'underline',
+    fontWeight: '600',
   },
   footerNote: {
     textAlign: 'center',
