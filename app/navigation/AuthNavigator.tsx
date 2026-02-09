@@ -1,18 +1,32 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-
-// Define navigation types
-export type RootStackParamList = {};
 
 // Import screens
 import MeScreen from '../screens/MeScreen';
 import HavenScreen from '../screens/HavenScreen';
 import WishlistScreen from '../screens/WishlistScreen';
 import BookingScreen from '../screens/BookingScreen';
+import RoomDetailsScreen from '../screens/RoomDetailsScreen';
 
-// Tab Navigator (for authenticated users)
+// Define navigation types
+export type RootStackParamList = {
+  HavenMain: undefined;
+  RoomDetails: { haven: any };
+};
+
 const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator();
+
+function HavenStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="HavenMain" component={HavenScreen} />
+      <Stack.Screen name="RoomDetails" component={RoomDetailsScreen} />
+    </Stack.Navigator>
+  );
+}
 
 function TabNavigator() {
   return (
@@ -51,7 +65,7 @@ function TabNavigator() {
     >
       <Tab.Screen 
         name="Haven" 
-        component={HavenScreen}
+        component={HavenStack}
         options={{ title: 'Haven' }}
       />
       <Tab.Screen 

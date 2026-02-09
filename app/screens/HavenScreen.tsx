@@ -1,7 +1,8 @@
 import { Text, View, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
 import { Colors, Fonts } from '../../constants/Styles';
-import { Feather } from '@expo/vector-icons';
+import { Feather, Ionicons } from '@expo/vector-icons';
 import { useState, useEffect, useMemo } from 'react';
+import { useNavigation } from '@react-navigation/native';
 import SearchModal from '../components/SearchModal';
 import ImageCarouselModal from '../components/ImageCarouselModal';
 import { API_CONFIG } from '../../constants/config';
@@ -12,7 +13,117 @@ interface HavenImage {
   image_url: string;
   display_order: number;
 }
-// ... interface Haven ...
+interface Haven {
+  uuid_id: string;
+  haven_name: string;
+  tower: string;
+  floor: string;
+  rating?: string;
+  weekday_rate: string;
+  capacity?: string;
+  room_type?: string;
+  images?: HavenImage[];
+}
+
+const RoomCard = ({ item, onImagePress }: { item: Haven, onImagePress: (images: HavenImage[] | undefined) => void }) => {
+  const navigation = useNavigation<any>();
+  const { calculateBestDiscount } = useRoomDiscounts(item.uuid_id);
+  const basePrice = parseFloat(item.weekday_rate || '0');
+  const firstImage = item.images && item.images.length > 0 ? item.images[0].image_url : null;
+
+  const bestDiscount = useMemo(() => {
+    return calculateBestDiscount(basePrice);
+  }, [basePrice, calculateBestDiscount]);
+
+  const displayPrice = bestDiscount ? Math.floor(bestDiscount.discountedPrice) : Math.floor(basePrice);
+  const savings = bestDiscount ? Math.floor(bestDiscount.savings) : 0;
+
+  const handleCardPress = () => {
+    navigation.navigate('RoomDetails', { haven: item });
+  };
+
+  return (
+    <TouchableOpacity 
+      style={styles.roomCard} 
+      activeOpacity={0.9}
+      onPress={handleCardPress}
+    >
+      <View style={styles.imageContainer}>
+        <TouchableOpacity 
+          activeOpacity={0.9} 
+          onPress={() => onImagePress(item.images)}
+          style={{ flex: 1 }}
+        >
+          {firstImage ? (
+            <Image
+              source={{ uri: firstImage }}
+              style={styles.roomImage}
+            />
+          ) : (
+            <View style={styles.roomImagePlaceholder} />
+          )}
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.favoriteButton}
+          onPress={(e) => {
+            e.stopPropagation();
+            // Toggle favorite logic
+          }}
+        >
+          <Ionicons name="heart" size={20} color={Colors.white} />
+        </TouchableOpacity>
+        
+        {/* Overlapping Pill Badge */}
+        <View style={styles.overlappingBadge}>
+          <View style={styles.discountBadgeButton}>
+            <Text style={styles.discountBadgeButtonText}>
+              {bestDiscount 
+                ? (bestDiscount.discount_type === 'percentage' 
+                    ? `-${bestDiscount.discount_value}% OFF` 
+                    : `-₱${Math.floor(bestDiscount.discount_value)} OFF`)
+                : '-₱0 OFF'}
+            </Text>
+          </View>
+          <View style={styles.sampleTag}>
+            <Feather name="tag" size={12} color={Colors.brand.primary} />
+            <Text style={styles.sampleTagText}>SAMPLE</Text>
+          </View>
+        </View>
+      </View>
+
+      <View style={styles.cardContent}>
+        <View style={styles.priceSection}>
+          <View style={styles.priceInfo}>
+            <View style={styles.priceRow}>
+              <Text style={styles.pricePerNight}>₱{displayPrice.toLocaleString('en-US')}</Text>
+              {bestDiscount && (
+                <Text style={styles.originalPrice}>₱{Math.floor(basePrice).toLocaleString('en-US')}</Text>
+              )}
+              {bestDiscount && (
+                <View style={styles.saveBadge}>
+                  <Text style={styles.saveBadgeText}>Save</Text>
+                </View>
+              )}
+            </View>
+          </View>
+        </View>
+
+        <Text style={styles.havenName} numberOfLines={1}>{item.haven_name}</Text>
+
+        <View style={styles.locationRating}>
+          <View style={styles.locationSection}>
+            <Feather name="map-pin" size={12} color={Colors.gray[500]} />
+            <Text style={styles.locationText} numberOfLines={1}>{item.tower}, {item.floor}, QC</Text>
+          </View>
+          <View style={styles.ratingSection}>
+            <Ionicons name="star" size={14} color={Colors.brand.primary} />
+            <Text style={styles.ratingText}>{item.rating || '4.5'}</Text>
+          </View>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+};
 
 export default function HavenScreen() {
   const [modalVisible, setModalVisible] = useState(false);
@@ -61,91 +172,6 @@ export default function HavenScreen() {
       setSelectedImageIndex(0);
       setCarouselVisible(true);
     }
-  };
-
-  const RoomCard = ({ item }: { item: Haven }) => {
-    const { calculateBestDiscount } = useRoomDiscounts(item.uuid_id);
-    const basePrice = parseFloat(item.weekday_rate || '0');
-    const firstImage = item.images && item.images.length > 0 ? item.images[0].image_url : null;
-
-    const bestDiscount = useMemo(() => {
-      return calculateBestDiscount(basePrice);
-    }, [basePrice, calculateBestDiscount]);
-
-    const displayPrice = bestDiscount ? Math.floor(bestDiscount.discountedPrice) : Math.floor(basePrice);
-    const savings = bestDiscount ? Math.floor(bestDiscount.savings) : 0;
-
-    return (
-      <View style={styles.roomCard}>
-        <View style={styles.imageContainer}>
-          <TouchableOpacity 
-            activeOpacity={0.9} 
-            onPress={() => handleImagePress(item.images)}
-            style={{ flex: 1 }}
-          >
-            {firstImage ? (
-              <Image
-                source={{ uri: firstImage }}
-                style={styles.roomImage}
-              />
-            ) : (
-              <View style={styles.roomImagePlaceholder} />
-            )}
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.favoriteButton}>
-            <Feather name="heart" size={20} color={Colors.white} />
-          </TouchableOpacity>
-          {bestDiscount && (
-            <View style={styles.discountNameContainer}>
-              <View style={styles.discountBadge}>
-                <Text style={styles.discountBadgeText}>
-                  {bestDiscount.discount_type === 'percentage'
-                    ? `-${bestDiscount.discount_value}% OFF`
-                    : `-₱${Math.floor(bestDiscount.discount_value)} OFF`}
-                </Text>
-              </View>
-              <View style={styles.discountNameWithIcon}>
-                <Feather name="tag" size={12} color={Colors.brand.primary} />
-                <Text style={styles.discountName}>{bestDiscount.name}</Text>
-              </View>
-            </View>
-          )}
-        </View>
-
-        <View style={styles.cardContent}>
-          <View style={styles.priceSection}>
-            <View style={styles.priceInfo}>
-              <View style={styles.priceRow}>
-                <Text style={styles.pricePerNight}>₱{displayPrice.toLocaleString('en-US')}</Text>
-                {bestDiscount && (
-                  <Text style={styles.originalPrice}>₱{Math.floor(basePrice).toLocaleString('en-US')}</Text>
-                )}
-              </View>
-              <Text style={styles.priceLabel}>per night</Text>
-            </View>
-            {bestDiscount && (
-              <View style={styles.savingSection}>
-                <Text style={styles.savingLabel}>Save</Text>
-                <Text style={styles.savingAmount}>₱{savings.toLocaleString('en-US')}</Text>
-              </View>
-            )}
-          </View>
-
-          <Text style={styles.havenName}>{item.haven_name}</Text>
-
-          <View style={styles.locationRating}>
-            <View style={styles.locationSection}>
-              <Feather name="map-pin" size={14} color={Colors.gray[600]} />
-              <Text style={styles.locationText}>{item.tower}, {item.floor}</Text>
-            </View>
-            <View style={styles.ratingSection}>
-              <Feather name="star" size={14} color={Colors.brand.primary} />
-              <Text style={styles.ratingText}>{item.rating || '4.5'}</Text>
-            </View>
-          </View>
-        </View>
-      </View>
-    );
   };
 
   return (
@@ -286,7 +312,7 @@ export default function HavenScreen() {
           ) : havens.length > 0 ? (
             havens.slice(0, 5).map((haven, index) => (
               <View key={haven.uuid_id || index}>
-                <RoomCard item={haven} />
+                <RoomCard item={haven} onImagePress={handleImagePress} />
               </View>
             ))
           ) : (
@@ -306,7 +332,7 @@ export default function HavenScreen() {
           >
             {havens.slice(5).map((haven, index) => (
               <View key={haven.uuid_id || index}>
-                <RoomCard item={haven} />
+                <RoomCard item={haven} onImagePress={handleImagePress} />
               </View>
             ))}
           </ScrollView>
@@ -485,18 +511,23 @@ const styles = StyleSheet.create({
     paddingRight: 20,
   },
   roomCard: {
-    width: 170,
+    width: 280,
     backgroundColor: Colors.white,
-    borderRadius: 12,
+    borderRadius: 16,
     overflow: 'hidden',
-    marginRight: 12,
+    marginRight: 16,
     borderWidth: 1,
-    borderColor: Colors.gray[200],
+    borderColor: Colors.gray[100],
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 3,
   },
   imageContainer: {
     position: 'relative',
-    width: 170,
-    height: 130,
+    width: '100%',
+    height: 180,
     backgroundColor: Colors.gray[200],
   },
   roomImage: {
@@ -511,116 +542,106 @@ const styles = StyleSheet.create({
   },
   favoriteButton: {
     position: 'absolute',
-    top: 8,
-    left: 8,
-    width: 32,
-    height: 32,
+    top: 12,
+    right: 12,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backdropFilter: 'blur(10px)',
+  },
+  overlappingBadge: {
+    position: 'absolute',
+    bottom: -15,
+    left: 20,
+    right: 20,
+    height: 40,
+    backgroundColor: Colors.white,
+    borderRadius: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+    zIndex: 10,
+  },
+  discountBadgeButton: {
+    backgroundColor: Colors.brand.primary,
     borderRadius: 16,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    paddingHorizontal: 12,
+    height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  cardContent: {
-    padding: 12,
-    paddingBottom: 16,
-    marginTop: 12,
+  discountBadgeButtonText: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: Colors.white,
+    fontFamily: Fonts.poppins,
   },
-  priceSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 8,
-  },
-  priceInfo: {
+  sampleTag: {
     flex: 1,
-  },
-  priceRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    justifyContent: 'center',
+    gap: 4,
   },
-  pricePerNight: {
-    fontSize: 14,
+  sampleTagText: {
+    fontSize: 11,
     fontWeight: '700',
     color: Colors.brand.primary,
     fontFamily: Fonts.poppins,
   },
+  cardContent: {
+    padding: 16,
+    paddingTop: 24,
+  },
+  priceSection: {
+    marginBottom: 4,
+  },
+  priceInfo: {
+    width: '100%',
+  },
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  pricePerNight: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: Colors.brand.primary,
+    fontFamily: Fonts.poppins,
+  },
   originalPrice: {
-    fontSize: 9,
+    fontSize: 13,
     color: Colors.gray[500],
     fontFamily: Fonts.inter,
     textDecorationLine: 'line-through',
   },
-  priceLabel: {
-    fontSize: 10,
-    color: Colors.gray[600],
-    fontFamily: Fonts.inter,
-    marginTop: 2,
-  },
-  savingSection: {
-    alignItems: 'flex-end',
-  },
-  savingLabel: {
-    fontSize: 9,
-    color: '#22C55E', // Green
-    fontFamily: Fonts.inter,
-  },
-  savingAmount: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#22C55E',
-    fontFamily: Fonts.poppins,
-    marginTop: 2,
-  },
-  discountNameContainer: {
-    position: 'absolute',
-    bottom: 12, // Moved inside the card (image area)
-    left: '50%',
-    transform: [{ translateX: -50 }],
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.white,
-    borderRadius: 20,
-    padding: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    zIndex: 10,
-    gap: 0,
-  },
-  discountBadge: {
-    backgroundColor: Colors.brand.primary,
-    borderRadius: 14,
+  saveBadge: {
+    backgroundColor: '#DCFCE7', // Light green
     paddingHorizontal: 8,
-    paddingVertical: 4,
-    marginRight: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
   },
-  discountBadgeText: {
-    fontSize: 9,
-    fontWeight: '700',
-    color: Colors.white,
-    fontFamily: Fonts.poppins,
-  },
-  discountNameWithIcon: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingRight: 8, // Add padding on the right for the pill shape
-  },
-  discountName: {
+  saveBadgeText: {
     fontSize: 10,
-    color: Colors.brand.primaryDark, // Gold/Brown color
-    fontFamily: Fonts.poppins,
-    fontWeight: '700',
+    fontWeight: '600',
+    color: '#166534', // Dark green
+    fontFamily: Fonts.inter,
   },
   havenName: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '700',
     color: Colors.gray[900],
     fontFamily: Fonts.poppins,
-    marginBottom: 8,
+    marginBottom: 10,
   },
   locationRating: {
     flexDirection: 'row',
@@ -634,8 +655,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   locationText: {
-    fontSize: 9,
-    color: Colors.gray[600],
+    fontSize: 12,
+    color: Colors.gray[500],
     fontFamily: Fonts.inter,
   },
   ratingSection: {
@@ -644,9 +665,22 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   ratingText: {
-    fontSize: 11,
-    fontWeight: '600',
+    fontSize: 13,
+    fontWeight: '700',
     color: Colors.gray[900],
+    fontFamily: Fonts.poppins,
+  },
+  bookButton: {
+    backgroundColor: Colors.brand.primary,
+    borderRadius: 8,
+    paddingVertical: 8,
+    alignItems: 'center',
+    marginTop: 12,
+  },
+  bookButtonText: {
+    color: Colors.white,
+    fontSize: 12,
+    fontWeight: '700',
     fontFamily: Fonts.poppins,
   },
   loadingText: {

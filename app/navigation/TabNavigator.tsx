@@ -1,12 +1,24 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import HavenScreen from '../screens/HavenScreen';
 import WishlistScreen from '../screens/WishlistScreen';
 import BookingScreen from '../screens/BookingScreen';
 import MeScreen from '../screens/MeScreen';
+import RoomDetailsScreen from '../screens/RoomDetailsScreen';
 import { Colors } from '../../constants/Styles';
 
 const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator();
+
+function HavenStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="HavenMain" component={HavenScreen} />
+      <Stack.Screen name="RoomDetails" component={RoomDetailsScreen} />
+    </Stack.Navigator>
+  );
+}
 
 export default function TabNavigator() {
   return (
@@ -28,7 +40,7 @@ export default function TabNavigator() {
     >
       <Tab.Screen
         name="Haven"
-        component={HavenScreen}
+        component={HavenStack}
         options={{
           title: 'Haven',
           tabBarIcon: ({ color, size }) => (
