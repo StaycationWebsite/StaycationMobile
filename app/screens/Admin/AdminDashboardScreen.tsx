@@ -13,7 +13,7 @@ import { Colors, Fonts } from '../../../constants/Styles';
 import { Feather, MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../../hooks/useAuth';
-import TopBar from '../../components/TopBar';
+import AdminTopBar from '../../components/AdminTopBar';
 
 const { width } = Dimensions.get('window');
 
@@ -74,7 +74,7 @@ export default function AdminDashboardScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: Colors.gray[50] }}>
-      <TopBar />
+      <AdminTopBar title="Dashboard" />
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.contentPadding} />
         

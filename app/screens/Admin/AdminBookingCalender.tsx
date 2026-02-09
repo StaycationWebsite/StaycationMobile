@@ -1,47 +1,150 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
-import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, Animated, LayoutAnimation, Platform, UIManager } from 'react-native';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Colors, Fonts } from '../../../constants/Styles';
+import AdminTopBar from '../../components/AdminTopBar';
 
 const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const weeks: Array<Array<number | null>> = [
-  [1, 2, 3, 4, 5, 6, 7],
-  [8, 9, 10, 11, 12, 13, 14],
-  [15, 16, 17, 18, 19, 20, 21],
-  [22, 23, 24, 25, 26, 27, 28],
+const monthNames = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
 ];
 
+const bookings = [
+  { title: 'Archie Break', start: 1, end: 7 },
+  { title: '', start: 26, end: 28 },
+];
+
+function getWeeksForMonth(year: number, monthIndex: number) {
+  const firstDay = new Date(year, monthIndex, 1).getDay();
+  const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+  const weeks: Array<Array<number | null>> = [];
+  let currentDay = 1 - firstDay;
+  while (currentDay <= daysInMonth) {
+    const week: Array<number | null> = [];
+    for (let i = 0; i < 7; i += 1) {
+      if (currentDay < 1 || currentDay > daysInMonth) {
+        week.push(null);
+      } else {
+        week.push(currentDay);
+      }
+      currentDay += 1;
+    }
+    weeks.push(week);
+  }
+  return weeks;
+}
+
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
+
 export default function AdminBookingCalender() {
+  const [currentDate, setCurrentDate] = React.useState(new Date(2026, 1, 1));
+  const [legendOpen, setLegendOpen] = React.useState(true);
+  const [propertyOpen, setPropertyOpen] = React.useState(false);
+  const [selectedProperty, setSelectedProperty] = React.useState('Haven 8 - tower-d - Floor 25th');
+  const fadeAnim = React.useRef(new Animated.Value(1)).current;
+  const legendAnim = React.useRef(new Animated.Value(1)).current;
+  const propertyAnim = React.useRef(new Animated.Value(0)).current;
+
+  const monthKey = `${currentDate.getFullYear()}-${currentDate.getMonth()}`;
+  const weeks = React.useMemo(
+    () => getWeeksForMonth(currentDate.getFullYear(), currentDate.getMonth()),
+    [monthKey]
+  );
+
+  React.useEffect(() => {
+    fadeAnim.setValue(0);
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 220,
+      useNativeDriver: true,
+    }).start();
+  }, [monthKey, fadeAnim]);
+
+  const handlePrevMonth = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+  };
+
+  const handleNextMonth = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+  };
+
+  const toggleLegend = () => {
+    const next = !legendOpen;
+    setLegendOpen(next);
+    Animated.timing(legendAnim, {
+      toValue: next ? 1 : 0,
+      duration: 220,
+      useNativeDriver: false,
+    }).start();
+  };
+
+  const legendHeight = legendAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [36, 150],
+  });
+  const legendOpacity = legendAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 1],
+  });
+
+  const toggleProperty = () => {
+    const next = !propertyOpen;
+    setPropertyOpen(next);
+    Animated.timing(propertyAnim, {
+      toValue: next ? 1 : 0,
+      duration: 200,
+      useNativeDriver: false,
+    }).start();
+  };
+
+  const propertyHeight = propertyAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 140],
+  });
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.screen}>
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.iconButton}>
-            <Feather name="menu" size={22} color={Colors.gray[900]} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Booking Calendar</Text>
-          <TouchableOpacity style={styles.iconButton}>
-            <Feather name="bell" size={20} color={Colors.gray[900]} />
-          </TouchableOpacity>
-        </View>
+        <AdminTopBar title="Booking Calendar" />
 
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <View style={styles.propertyCard}>
             <Text style={styles.propertyLabel}>Selected Property</Text>
-            <View style={styles.propertyRow}>
+            <TouchableOpacity style={styles.propertyRow} onPress={toggleProperty}>
               <MaterialCommunityIcons name="office-building" size={18} color={Colors.brand.primary} />
-              <Text style={styles.propertyValue}>Haven 8 - tower-d - Floor 25th</Text>
-            </View>
-            <Feather name="chevron-down" size={18} color={Colors.gray[600]} />
+              <Text style={styles.propertyValue}>{selectedProperty}</Text>
+              <Feather name={propertyOpen ? 'chevron-up' : 'chevron-down'} size={18} color={Colors.gray[600]} />
+            </TouchableOpacity>
+            <Animated.View style={[styles.propertyDropdown, { height: propertyHeight, opacity: propertyAnim }]}>
+              {['Haven 8 - tower-d - Floor 25th', 'Haven 3 - tower-a - Floor 9th', 'Haven 1 - tower-c - Floor 18th'].map((item) => (
+                <TouchableOpacity
+                  key={item}
+                  style={styles.propertyOption}
+                  onPress={() => {
+                    setSelectedProperty(item);
+                    toggleProperty();
+                  }}
+                >
+                  <Text style={styles.propertyOptionText}>{item}</Text>
+                </TouchableOpacity>
+              ))}
+            </Animated.View>
           </View>
 
           <View style={styles.controlsRow}>
             <View style={styles.monthNav}>
-              <TouchableOpacity style={styles.monthButton}>
+              <TouchableOpacity style={styles.monthButton} onPress={handlePrevMonth}>
                 <Feather name="chevron-left" size={18} color={Colors.gray[700]} />
               </TouchableOpacity>
-              <Text style={styles.monthText}>February 2026</Text>
-              <TouchableOpacity style={styles.monthButton}>
+              <Text style={styles.monthText}>
+                {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
+              </Text>
+              <TouchableOpacity style={styles.monthButton} onPress={handleNextMonth}>
                 <Feather name="chevron-right" size={18} color={Colors.gray[700]} />
               </TouchableOpacity>
             </View>
@@ -58,7 +161,7 @@ export default function AdminBookingCalender() {
             </View>
           </View>
 
-          <View style={styles.calendarCard}>
+          <Animated.View style={[styles.calendarCard, { opacity: fadeAnim, transform: [{ translateY: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) }] }]}>
             <View style={styles.weekHeader}>
               {weekDays.map((d) => (
                 <Text key={d} style={styles.weekHeaderText}>{d}</Text>
@@ -67,14 +170,26 @@ export default function AdminBookingCalender() {
 
             {weeks.map((week, rowIndex) => (
               <View key={`week-${rowIndex}`} style={styles.weekRow}>
-                {rowIndex === 0 && (
-                  <View style={styles.bookingBarWeek1}>
-                    <Text style={styles.bookingLabel}>Archie Break</Text>
-                  </View>
-                )}
-                {rowIndex === 3 && (
-                  <View style={styles.bookingBarWeek4} />
-                )}
+                {bookings.map((booking, bookingIndex) => {
+                  const weekStart = week.find((d) => d !== null) ?? 1;
+                  const weekEnd = week.slice().reverse().find((d) => d !== null) ?? weekStart;
+                  if (booking.end < weekStart || booking.start > weekEnd) return null;
+                  const start = Math.max(booking.start, weekStart);
+                  const end = Math.min(booking.end, weekEnd);
+                  const startIndex = week.indexOf(start);
+                  const endIndex = week.indexOf(end);
+                  if (startIndex < 0 || endIndex < 0) return null;
+                  const leftPct = (startIndex / 7) * 100;
+                  const widthPct = ((endIndex - startIndex + 1) / 7) * 100;
+                  return (
+                    <View
+                      key={`booking-${rowIndex}-${bookingIndex}`}
+                      style={[styles.bookingBar, { left: `${leftPct}%`, width: `${widthPct}%` }]}
+                    >
+                      {booking.title ? <Text style={styles.bookingLabel}>{booking.title}</Text> : null}
+                    </View>
+                  );
+                })}
                 {week.map((day, colIndex) => (
                   <View key={`day-${rowIndex}-${colIndex}`} style={styles.dayCell}>
                     {day && (
@@ -86,27 +201,32 @@ export default function AdminBookingCalender() {
                 ))}
               </View>
             ))}
-          </View>
+          </Animated.View>
         </ScrollView>
 
-        <View style={styles.legendSheet}>
-          <View style={styles.legendHandle} />
-          <Text style={styles.legendTitle}>Status Legend</Text>
-          <View style={styles.legendRow}>
-            <View style={[styles.legendDot, { backgroundColor: '#FBBF24' }]} />
-            <Text style={styles.legendText}>Pending</Text>
-            <View style={[styles.legendDot, { backgroundColor: '#22C55E' }]} />
-            <Text style={styles.legendText}>Approved</Text>
-            <View style={[styles.legendDot, { backgroundColor: '#3B82F6' }]} />
-            <Text style={styles.legendText}>Checked-in</Text>
-          </View>
-          <View style={styles.legendRow}>
-            <View style={[styles.legendDot, { backgroundColor: '#8B5CF6' }]} />
-            <Text style={styles.legendText}>Checked-out</Text>
-            <View style={[styles.legendDot, { backgroundColor: '#EF4444' }]} />
-            <Text style={styles.legendText}>Declined</Text>
-          </View>
-        </View>
+        <Animated.View style={[styles.legendSheet, { height: legendHeight }]}>
+          <TouchableOpacity style={styles.legendHandleButton} onPress={toggleLegend}>
+            <View style={styles.legendHandle} />
+            <Text style={styles.legendChevron}>{legendOpen ? 'Collapse' : 'Expand'}</Text>
+          </TouchableOpacity>
+          <Animated.View style={{ opacity: legendOpacity }}>
+            <Text style={styles.legendTitle}>Status Legend</Text>
+            <View style={styles.legendRow}>
+              <View style={[styles.legendDot, { backgroundColor: '#FBBF24' }]} />
+              <Text style={styles.legendText}>Pending</Text>
+              <View style={[styles.legendDot, { backgroundColor: '#22C55E' }]} />
+              <Text style={styles.legendText}>Approved</Text>
+              <View style={[styles.legendDot, { backgroundColor: '#3B82F6' }]} />
+              <Text style={styles.legendText}>Checked-in</Text>
+            </View>
+            <View style={styles.legendRow}>
+              <View style={[styles.legendDot, { backgroundColor: '#8B5CF6' }]} />
+              <Text style={styles.legendText}>Checked-out</Text>
+              <View style={[styles.legendDot, { backgroundColor: '#EF4444' }]} />
+              <Text style={styles.legendText}>Declined</Text>
+            </View>
+          </Animated.View>
+        </Animated.View>
       </View>
     </SafeAreaView>
   );
@@ -120,30 +240,6 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: Colors.white,
-  },
-  header: {
-    height: 56,
-    paddingHorizontal: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.gray[100],
-    backgroundColor: Colors.white,
-  },
-  iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.gray[50],
-  },
-  headerTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1F2937',
-    fontFamily: Fonts.poppins,
   },
   content: {
     padding: 16,
@@ -178,6 +274,26 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: Colors.gray[900],
     fontFamily: Fonts.poppins,
+  },
+  propertyDropdown: {
+    overflow: 'hidden',
+    marginTop: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.gray[100],
+    backgroundColor: Colors.white,
+  },
+  propertyOption: {
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.gray[50],
+  },
+  propertyOptionText: {
+    fontSize: 13,
+    color: Colors.gray[700],
+    fontFamily: Fonts.inter,
+    fontWeight: '600',
   },
   controlsRow: {
     marginTop: 16,
@@ -259,12 +375,12 @@ const styles = StyleSheet.create({
   weekRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 6,
     position: 'relative',
   },
   dayCell: {
-    width: 36,
+    flex: 1,
     height: 36,
     alignItems: 'center',
     justifyContent: 'center',
@@ -289,25 +405,15 @@ const styles = StyleSheet.create({
     color: Colors.gray[900],
     fontWeight: '700',
   },
-  bookingBarWeek1: {
+  bookingBar: {
     position: 'absolute',
     left: 6,
-    right: 6,
     top: 6,
     height: 20,
     borderRadius: 10,
     backgroundColor: '#22C55E',
     justifyContent: 'center',
     paddingLeft: 8,
-  },
-  bookingBarWeek4: {
-    position: 'absolute',
-    left: 6 + 5 * 42,
-    width: 36 * 3 + 12,
-    top: 6,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#22C55E',
   },
   bookingLabel: {
     fontSize: 10,
@@ -327,6 +433,10 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: Colors.gray[100],
   },
+  legendHandleButton: {
+    alignItems: 'center',
+    gap: 6,
+  },
   legendHandle: {
     alignSelf: 'center',
     width: 36,
@@ -334,6 +444,12 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     backgroundColor: Colors.gray[200],
     marginBottom: 8,
+  },
+  legendChevron: {
+    fontSize: 11,
+    color: Colors.gray[500],
+    fontFamily: Fonts.inter,
+    fontWeight: '600',
   },
   legendTitle: {
     fontSize: 13,
