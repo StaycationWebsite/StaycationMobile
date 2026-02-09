@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Alert, ActivityIndicator, Text } from 'react-native';
-import { ApiService } from '../services/api';
+import { ApiService } from '../../services/api';
 import { AuthProvider } from '../types/auth';
 import { Colors, Fonts } from '../../constants/Styles';
 import GoogleOAuthButton from './GoogleOAuthButton';

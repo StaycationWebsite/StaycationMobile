@@ -9,11 +9,11 @@ import {
   Image,
   Alert
 } from 'react-native';
-import { Colors, Fonts } from '../../constants/Styles';
+import { Colors, Fonts } from '../../../constants/Styles';
 import { Feather, MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { useAuth } from '../../hooks/useAuth';
-import TopBar from '../components/TopBar';
+import { useAuth } from '../../../hooks/useAuth';
+import TopBar from '../../components/TopBar';
 
 const { width } = Dimensions.get('window');
 
@@ -298,7 +298,7 @@ const styles = StyleSheet.create({
   },
   scoreScale: {
     fontSize: 16,
-    color: Colors.gray[400],
+    color: Colors.gray[500],
   },
   starsRow: {
     flexDirection: 'row',
@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
   },
   totalReviews: {
     fontSize: 12,
-    color: Colors.gray[400],
+    color: Colors.gray[500],
     fontFamily: Fonts.inter,
   },
   sectionContainer: {
@@ -367,7 +367,7 @@ const styles = StyleSheet.create({
   },
   propertySub: {
     fontSize: 11,
-    color: Colors.gray[400],
+    color: Colors.gray[500],
   },
   dateCell: {
     flex: 1,
@@ -394,6 +394,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.03,
     shadowRadius: 10,
     elevation: 2,
+  },
+  statsInner: {
+    gap: 10,
   },
   statBadge: {
     flexDirection: 'row',
