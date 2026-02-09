@@ -1,28 +1,34 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { AuthState, User, Session } from '../types/auth';
 import { AuthService } from '../services/auth';
 
-export const useAuth = () => {
+interface AuthContextType extends AuthState {
+  login: (credentials: { email: string; password: string }) => Promise<{ success: boolean; error?: string }>;
+  logout: () => Promise<void>;
+  clearError: () => void;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [authState, setAuthState] = useState<AuthState>(AuthService.getInitialState());
 
-  // Initialize auth state on component mount
   useEffect(() => {
     initializeAuth();
   }, []);
 
   const initializeAuth = useCallback(async () => {
     setAuthState(prev => ({ ...prev, isLoading: true }));
-    
     try {
       const isAuthenticated = await AuthService.isAuthenticated();
       const currentUser = await AuthService.getCurrentUser();
+      const session = currentUser ? await AuthService.getSession() : null;
       
       setAuthState({
         user: currentUser,
-        session: currentUser ? await AuthService.getSession() : null,
+        session,
         isLoading: false,
         isAuthenticated,
-        error: undefined,
       });
     } catch (error) {
       setAuthState(prev => ({
@@ -35,10 +41,8 @@ export const useAuth = () => {
 
   const login = useCallback(async (credentials: { email: string; password: string }) => {
     setAuthState(prev => ({ ...prev, isLoading: true, error: undefined }));
-    
     try {
       const response = await AuthService.loginWithCredentials(credentials);
-      
       if (response.success) {
         setAuthState({
           user: response.data?.user || null,
@@ -48,46 +52,30 @@ export const useAuth = () => {
         });
         return { success: true };
       } else {
-        setAuthState(prev => ({
-          ...prev,
-          isLoading: false,
-          error: response.error
-        }));
+        setAuthState(prev => ({ ...prev, isLoading: false, error: response.error }));
         return { success: false, error: response.error };
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Login failed';
-      setAuthState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: errorMessage
-      }));
+      setAuthState(prev => ({ ...prev, isLoading: false, error: errorMessage }));
       return { success: false, error: errorMessage };
     }
   }, []);
 
-
   const logout = useCallback(async () => {
     setAuthState(prev => ({ ...prev, isLoading: true }));
-    
     try {
       const success = await AuthService.signOut();
-      
       if (success) {
         setAuthState(AuthService.getInitialState());
       } else {
-        setAuthState(prev => ({
-          ...prev,
-          isLoading: false,
-          error: 'Sign out failed'
-        }));
+        setAuthState(prev => ({ ...prev, isLoading: false, error: 'Sign out failed' }));
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Sign out failed';
       setAuthState(prev => ({
         ...prev,
         isLoading: false,
-        error: errorMessage
+        error: error instanceof Error ? error.message : 'Sign out failed'
       }));
     }
   }, []);
@@ -96,12 +84,17 @@ export const useAuth = () => {
     setAuthState(prev => ({ ...prev, error: undefined }));
   }, []);
 
-  return {
-    ...authState,
-    login,
-    logout,
-    clearError,
-  };
+  return (
+    <AuthContext.Provider value={{ ...authState, login, logout, clearError }}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
-export default useAuth;
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
