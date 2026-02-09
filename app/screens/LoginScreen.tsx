@@ -60,7 +60,7 @@ export default function LoginScreen() {
           <View style={styles.inputContainer}>
             <Text style={styles.inputLabel}>Email Address</Text>
             <View style={styles.inputWrapper}>
-              <Feather name="mail" size={20} color={Colors.gray[400]} style={styles.inputIcon} />
+              <Feather name="mail" size={20} color={Colors.gray[500]} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="admin@staycationhavenph.com"
@@ -79,7 +79,7 @@ export default function LoginScreen() {
           <View style={styles.inputContainer}>
             <Text style={styles.inputLabel}>Password</Text>
             <View style={styles.inputWrapper}>
-              <Feather name="lock" size={20} color={Colors.gray[400]} style={styles.inputIcon} />
+              <Feather name="lock" size={20} color={Colors.gray[500]} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="••••••••"
@@ -97,7 +97,7 @@ export default function LoginScreen() {
                 <Feather 
                   name={showPassword ? "eye-off" : "eye"} 
                   size={20} 
-                  color={Colors.gray[400]} 
+                  color={Colors.gray[500]} 
                 />
               </TouchableOpacity>
             </View>
@@ -279,7 +279,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 40,
     fontSize: 12,
-    color: Colors.gray[400],
+    color: Colors.gray[500],
     fontFamily: Fonts.inter,
   },
 });

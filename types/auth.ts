@@ -36,6 +36,7 @@ export interface AuthState {
   session: Session | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  error?: string;
 }
 
 export interface ApiResponse<T> {

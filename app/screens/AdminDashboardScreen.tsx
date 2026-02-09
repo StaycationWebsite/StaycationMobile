@@ -6,10 +6,13 @@ import {
   TouchableOpacity, 
   ScrollView, 
   Dimensions,
-  Image
+  Image,
+  Alert
 } from 'react-native';
+import { Colors, Fonts } from '../../constants/Styles';
+import { Feather, MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../../hooks/useAuth';
 
 const { width } = Dimensions.get('window');
 

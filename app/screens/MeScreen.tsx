@@ -51,7 +51,7 @@ export default function MeScreen() {
         <Feather name={icon} size={20} color={color} />
       </View>
       <Text style={[styles.menuLabel, { color }]}>{label}</Text>
-      <Feather name="chevron-right" size={18} color={Colors.gray[300]} />
+      <Feather name="chevron-right" size={18} color={Colors.gray[500]} />
     </TouchableOpacity>
   );
 
@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
   menuSectionTitle: {
     fontSize: 12,
     fontWeight: 'bold',
-    color: Colors.gray[400],
+    color: Colors.gray[500],
     textTransform: 'uppercase',
     letterSpacing: 1,
     paddingHorizontal: 20,
@@ -271,7 +271,7 @@ const styles = StyleSheet.create({
   },
   versionText: {
     textAlign: 'center',
-    color: Colors.gray[400],
+    color: Colors.gray[500],
     fontSize: 12,
     fontFamily: Fonts.inter,
     marginBottom: 16,
