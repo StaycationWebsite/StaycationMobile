@@ -1,120 +1,116 @@
-import React, { useState } from 'react';
-import { Text, View, StyleSheet, TouchableOpacity, Alert, Image, Linking } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import React from 'react';
+import { 
+  Text, 
+  View, 
+  StyleSheet, 
+  TouchableOpacity, 
+  Image, 
+  ScrollView,
+  Alert
+} from 'react-native';
+import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Colors, Fonts } from '../../constants/Styles';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../navigation/AuthNavigator';
-import GoogleOAuthButton from '../components/GoogleOAuthButton';
+import { useAuth } from '../hooks/useAuth';
 
 export default function MeScreen() {
-  const [isLoading, setIsLoading] = useState(false);
-  const navigation = useNavigation();
-  
+  const { user, logout } = useAuth();
 
-  const handleHavenLogin = () => {
-    Alert.alert('Haven Login', 'Continue with Haven...');
+  const handleLogout = () => {
+    Alert.alert(
+      "Logout",
+      "Are you sure you want to logout?",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Logout", onPress: logout, style: 'destructive' }
+      ]
+    );
   };
 
-  const handleGuestLogin = () => {
-    Alert.alert('Guest Login', 'Continuing as guest...');
-  };
+  const AdminStat = ({ icon, label, value }: { icon: any, label: string, value: string }) => (
+    <View style={styles.statCard}>
+      <View style={styles.statIconContainer}>
+        <MaterialCommunityIcons name={icon} size={24} color={Colors.brand.primary} />
+      </View>
+      <Text style={styles.statValue}>{value}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
+    </View>
+  );
 
-  const handleTermsPress = () => {
-    Linking.openURL('/terms');
-  };
-
-  const handlePrivacyPress = () => {
-    Linking.openURL('/privacy');
-  };
+  const MenuItem = ({ icon, label, onPress, isLast = false, color = Colors.gray[700] }: { 
+    icon: any, 
+    label: string, 
+    onPress: () => void, 
+    isLast?: boolean,
+    color?: string
+  }) => (
+    <TouchableOpacity 
+      style={[styles.menuItem, isLast && styles.menuItemLast]} 
+      onPress={onPress}
+    >
+      <View style={styles.menuIconContainer}>
+        <Feather name={icon} size={20} color={color} />
+      </View>
+      <Text style={[styles.menuLabel, { color }]}>{label}</Text>
+      <Feather name="chevron-right" size={18} color={Colors.gray[300]} />
+    </TouchableOpacity>
+  );
 
   return (
-    <View style={styles.container}>
-      {/* Login Card */}
-      <View style={styles.card}>
-        {/* Logo Section */}
-        <View style={styles.cardLogoContainer}>
-          <Image 
-            source={require('../../assets/haven_logo.png')} 
-            style={styles.cardLogo}
-            resizeMode="contain"
-          />
-          <Text style={styles.cardLogoText}>taycation Haven</Text>
-        </View>
-
-        <Text style={styles.title}>Welcome Back</Text>
-        <Text style={styles.subtitle}>Sign in to continue your booking</Text>
-
-        {/* Divider */}
-        <View style={styles.dividerContainer}>
-          <View style={styles.divider} />
-          <Text style={styles.dividerText}>Or continue with</Text>
-          <View style={styles.divider} />
-        </View>
-
-        {/* Social Login Options */}
-        <View style={styles.socialButtonsContainer}>
-          {/* Google Login - Real OAuth Implementation */}
-          <GoogleOAuthButton
-            onSuccess={(email) => {
-              console.log('Google login successful:', email);
-              // User will be authenticated automatically
-            }}
-            onError={(error) => {
-              console.error('Google login error:', error);
-            }}
-          />
-
-          {/* Facebook Login */}
-          <TouchableOpacity style={styles.socialButton} onPress={() => Alert.alert('Facebook Login', 'Continue with Facebook...')}>
-            <Ionicons name="logo-facebook" size={20} color="#1877F2" />
-            <Text style={styles.socialButtonText}>Continue with Facebook</Text>
-          </TouchableOpacity>
-
-          {/* Haven Login */}
-          <TouchableOpacity style={styles.havenButton} onPress={handleHavenLogin}>
-            <Image
-              source={require('../../assets/haven_logo.png')}
-              style={styles.havenLogoIcon}
-              resizeMode="contain"
-            />
-            <Text style={styles.havenButtonText}>Continue with Haven</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Guest Login Divider */}
-        <View style={styles.dividerContainer}>
-          <View style={styles.divider} />
-          <Text style={styles.dividerText}>Or continue as guest</Text>
-          <View style={styles.divider} />
-        </View>
-
-        {/* Guest Login */}
-        <View style={styles.guestContainer}>
-          <TouchableOpacity 
-            style={styles.guestButton} 
-            onPress={handleGuestLogin}
-          >
-            <Text style={styles.guestButtonText}>Continue as Guest</Text>
-          </TouchableOpacity>
-          <Text style={styles.guestNote}>Guest users can book rooms with smart defaults</Text>
-        </View>
-
-        {/* Terms */}
-        <View style={styles.termsContainer}>
-          <Text style={styles.termsText}>
-            By continuing, you agree to our{' '}
-            <Text style={styles.termsLink} onPress={handleTermsPress}>
-              Terms
-            </Text>
-            {' '}and{' '}
-            <Text style={styles.termsLink} onPress={handlePrivacyPress}>
-              Privacy Policy
-            </Text>
-          </Text>
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      {/* Header / Profile Section */}
+      <View style={styles.header}>
+        <View style={styles.profileInfo}>
+          <View style={styles.avatarContainer}>
+            {user?.image ? (
+              <Image source={{ uri: user.image }} style={styles.avatar} />
+            ) : (
+              <View style={styles.avatarPlaceholder}>
+                <Text style={styles.avatarInitial}>
+                  {user?.name?.[0] || user?.email?.[0] || 'A'}
+                </Text>
+              </View>
+            )}
+            <View style={styles.adminBadge}>
+              <Text style={styles.adminBadgeText}>Admin</Text>
+            </View>
+          </View>
+          <Text style={styles.userName}>{user?.name || 'Staycation Admin'}</Text>
+          <Text style={styles.userEmail}>{user?.email || 'admin@staycationhavenph.com'}</Text>
         </View>
       </View>
-    </View>
+
+      {/* Dashboard Stats */}
+      <View style={styles.statsRow}>
+        <AdminStat icon="home-city-outline" label="Total Havens" value="8" />
+        <AdminStat icon="calendar-check-outline" label="Bookings" value="24" />
+        <AdminStat icon="star-outline" label="Avg Rating" value="4.8" />
+      </View>
+
+      {/* Admin Menu */}
+      <View style={styles.menuContainer}>
+        <Text style={styles.menuSectionTitle}>Management</Text>
+        <MenuItem icon="home" label="Manage Havens" onPress={() => {}} />
+        <MenuItem icon="calendar" label="Booking Overview" onPress={() => {}} />
+        <MenuItem icon="users" label="User Accounts" onPress={() => {}} />
+        <MenuItem icon="settings" label="System Settings" onPress={() => {}} isLast />
+      </View>
+
+      <View style={styles.menuContainer}>
+        <Text style={styles.menuSectionTitle}>Account</Text>
+        <MenuItem icon="user" label="Edit Profile" onPress={() => {}} />
+        <MenuItem icon="bell" label="Notifications" onPress={() => {}} />
+        <MenuItem 
+          icon="log-out" 
+          label="Sign Out" 
+          onPress={handleLogout} 
+          color={Colors.red[500]}
+          isLast 
+        />
+      </View>
+
+      <Text style={styles.versionText}>Version 1.0.0 (Admin Build)</Text>
+      <View style={styles.bottomSpace} />
+    </ScrollView>
   );
 }
 
@@ -122,163 +118,165 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.gray[50],
-    justifyContent: 'center',
-    paddingHorizontal: 24,
   },
-  logoContainer: {
-    alignItems: 'center',
-    marginBottom: 40,
-  },
-  cardLogoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 24,
-  },
-  cardLogo: {
-    width: 24,
-    height: 24,
-    marginRight: 8,
-  },
-  cardLogoText: {
-    fontSize: 16,
-    fontWeight: 'normal',
-    color: Colors.brand.primary,
-    fontFamily: Fonts.poppins,
-  },
-  card: {
+  header: {
     backgroundColor: Colors.white,
-    borderRadius: 16,
-    padding: 32,
-    width: '100%',
-    maxWidth: 400,
-    alignSelf: 'center',
+    paddingTop: 80,
+    paddingBottom: 32,
+    paddingHorizontal: 24,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
   },
-  title: {
-    fontSize: 24,
+  profileInfo: {
+    alignItems: 'center',
+  },
+  avatarContainer: {
+    position: 'relative',
+    marginBottom: 16,
+  },
+  avatar: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+  },
+  avatarPlaceholder: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: Colors.brand.primarySoft,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: Colors.brand.primary,
+  },
+  avatarInitial: {
+    fontSize: 40,
+    fontWeight: 'bold',
+    color: Colors.brand.primary,
+  },
+  adminBadge: {
+    position: 'absolute',
+    bottom: 0,
+    backgroundColor: Colors.brand.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: Colors.white,
+  },
+  adminBadgeText: {
+    color: Colors.white,
+    fontSize: 10,
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
+  },
+  userName: {
+    fontSize: 22,
     fontWeight: 'bold',
     color: Colors.gray[900],
-    textAlign: 'center',
+    fontFamily: Fonts.poppins,
+    marginBottom: 4,
+  },
+  userEmail: {
+    fontSize: 14,
+    color: Colors.gray[500],
+    fontFamily: Fonts.inter,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    marginTop: -24,
+    marginBottom: 24,
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: Colors.white,
+    borderRadius: 20,
+    padding: 16,
+    marginHorizontal: 4,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  statIconContainer: {
     marginBottom: 8,
+  },
+  statValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: Colors.gray[900],
     fontFamily: Fonts.poppins,
   },
-  subtitle: {
-    fontSize: 14,
-    color: Colors.gray[600],
-    textAlign: 'center',
-    marginBottom: 24,
+  statLabel: {
+    fontSize: 10,
+    color: Colors.gray[500],
     fontFamily: Fonts.inter,
+    textAlign: 'center',
   },
-  dividerContainer: {
+  menuContainer: {
+    backgroundColor: Colors.white,
+    borderRadius: 24,
+    marginHorizontal: 20,
+    paddingVertical: 12,
+    marginBottom: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  menuSectionTitle: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: Colors.gray[400],
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+  },
+  menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 24,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.gray[50],
   },
-  divider: {
+  menuItemLast: {
+    borderBottomWidth: 0,
+  },
+  menuIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: Colors.gray[50],
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  menuLabel: {
     flex: 1,
-    height: 1,
-    backgroundColor: Colors.gray[200],
-  },
-  dividerText: {
-    fontSize: 12,
-    color: Colors.gray[500],
-    marginHorizontal: 16,
-    fontFamily: Fonts.inter,
-  },
-  socialButtonsContainer: {
-    marginBottom: 24,
-  },
-  socialButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.white,
-    borderWidth: 1,
-    borderColor: Colors.gray[200],
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginBottom: 12,
-    width: '100%',
-    height: 48,
-  },
-  socialButtonText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: Colors.gray[700],
-    marginLeft: 4,
+    fontWeight: '500',
     fontFamily: Fonts.inter,
   },
-  havenButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.white,
-    borderWidth: 1,
-    borderColor: Colors.gray[200],
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginBottom: 12,
-    width: '100%',
-    height: 48,
-  },
-  havenLogoIcon: {
-    width: 20,
-    height: 20,
-    marginRight: 8,
-  },
-  havenButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.gray[700],
-    marginLeft: 4,
-    fontFamily: Fonts.inter,
-  },
-  guestContainer: {
-    alignItems: 'center',
-  },
-  guestButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.brand.primary,
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginBottom: 12,
-    width: '100%',
-    height: 48,
-  },
-  guestButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.white,
-    marginLeft: 8,
-    fontFamily: Fonts.inter,
-    textAlignVertical: 'center',
-  },
-  guestNote: {
-    fontSize: 12,
-    color: Colors.gray[500],
+  versionText: {
     textAlign: 'center',
-    marginTop: 8,
-    fontFamily: Fonts.inter,
-  },
-  termsContainer: {
-    marginTop: 24,
-    paddingTop: 24,
-    borderTopWidth: 1,
-    borderTopColor: Colors.gray[200],
-  },
-  termsText: {
+    color: Colors.gray[400],
     fontSize: 12,
-    color: Colors.gray[500],
-    textAlign: 'center',
     fontFamily: Fonts.inter,
+    marginBottom: 16,
   },
-  termsLink: {
-    color: Colors.brand.primary,
-    textDecorationLine: 'underline',
+  bottomSpace: {
+    height: 40,
   },
 });

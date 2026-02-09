@@ -5,8 +5,10 @@ import HavenScreen from '../screens/HavenScreen';
 import WishlistScreen from '../screens/WishlistScreen';
 import BookingScreen from '../screens/BookingScreen';
 import MeScreen from '../screens/MeScreen';
+import LoginScreen from '../screens/LoginScreen';
 import RoomDetailsScreen from '../screens/RoomDetailsScreen';
 import { Colors } from '../../constants/Styles';
+import { useAuth } from '../hooks/useAuth';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -16,6 +18,20 @@ function HavenStack() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="HavenMain" component={HavenScreen} />
       <Stack.Screen name="RoomDetails" component={RoomDetailsScreen} />
+    </Stack.Navigator>
+  );
+}
+
+function MeStack() {
+  const { isAuthenticated } = useAuth();
+  
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      {isAuthenticated ? (
+        <Stack.Screen name="AdminProfile" component={MeScreen} />
+      ) : (
+        <Stack.Screen name="Login" component={LoginScreen} />
+      )}
     </Stack.Navigator>
   );
 }
@@ -39,7 +55,7 @@ export default function TabNavigator() {
       }}
     >
       <Tab.Screen
-        name="Haven"
+        name="HavenTab"
         component={HavenStack}
         options={{
           title: 'Haven',
@@ -70,7 +86,7 @@ export default function TabNavigator() {
       />
       <Tab.Screen
         name="Me"
-        component={MeScreen}
+        component={MeStack}
         options={{
           title: 'Me',
           tabBarIcon: ({ color, size }) => (

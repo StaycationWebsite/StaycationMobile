@@ -196,10 +196,7 @@ export default function HavenScreen() {
             source={require('../../assets/haven_logo.png')}
             style={styles.logo}
           />
-          <View style={styles.appNameContainer}>
-            <Text style={styles.appName}>taycation Haven</Text>
-            <Text style={styles.appNameExponent}>PH</Text>
-          </View>
+          <Text style={styles.appName}>taycation Haven</Text>
         </View>
 
         <TouchableOpacity
@@ -383,25 +380,13 @@ const styles = StyleSheet.create({
   logo: {
     width: 28,
     height: 28,
-    marginRight: 6,
-  },
-  appNameContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+    marginRight: 10,
   },
   appName: {
-    fontSize: 24,
-    fontWeight: '600',
+    fontSize: 20,
+    fontWeight: '700',
     color: Colors.brand.primary,
     fontFamily: Fonts.poppins,
-  },
-  appNameExponent: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: Colors.brand.primary,
-    fontFamily: Fonts.poppins,
-    marginLeft: 2,
-    marginTop: 4,
   },
   header: {
     alignItems: 'center',
