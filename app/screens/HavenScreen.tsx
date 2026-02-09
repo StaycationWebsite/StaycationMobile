@@ -90,12 +90,12 @@ export default function HavenScreen() {
               <View style={styles.discountBadge}>
                 <Text style={styles.discountBadgeText}>
                   {bestDiscount.discount_type === 'percentage'
-                    ? `${bestDiscount.discount_value}%`
-                    : `₱${Math.floor(bestDiscount.discount_value)}`}
+                    ? `-${bestDiscount.discount_value}% OFF`
+                    : `-₱${Math.floor(bestDiscount.discount_value)} OFF`}
                 </Text>
               </View>
               <View style={styles.discountNameWithIcon}>
-                <Feather name="tag" size={11} color={Colors.brand.primary} />
+                <Feather name="tag" size={12} color={Colors.brand.primary} />
                 <Text style={styles.discountName}>{bestDiscount.name}</Text>
               </View>
             </View>
@@ -503,26 +503,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  discountBadge: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: Colors.brand.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  discountBadgeText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: Colors.white,
-    fontFamily: Fonts.poppins,
-  },
-  discountText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: Colors.gray[900],
-    fontFamily: Fonts.poppins,
-  },
   cardContent: {
     padding: 12,
     paddingBottom: 16,
@@ -577,29 +557,46 @@ const styles = StyleSheet.create({
   },
   discountNameContainer: {
     position: 'absolute',
-    bottom: -16,
+    bottom: 12, // Moved inside the card (image area)
     left: '50%',
     transform: [{ translateX: -50 }],
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
+    backgroundColor: Colors.white,
+    borderRadius: 20,
+    padding: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
     zIndex: 10,
+    gap: 0,
+  },
+  discountBadge: {
+    backgroundColor: Colors.brand.primary,
+    borderRadius: 14,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginRight: 6,
+  },
+  discountBadgeText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: Colors.white,
+    fontFamily: Fonts.poppins,
   },
   discountNameWithIcon: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: Colors.brand.primarySoft,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
+    paddingRight: 8, // Add padding on the right for the pill shape
   },
   discountName: {
     fontSize: 10,
-    color: Colors.gray[900],
+    color: Colors.brand.primaryDark, // Gold/Brown color
     fontFamily: Fonts.poppins,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   havenName: {
     fontSize: 13,
