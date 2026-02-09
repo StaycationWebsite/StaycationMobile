@@ -3,6 +3,7 @@ import { Colors, Fonts } from '../../constants/Styles';
 import { Feather } from '@expo/vector-icons';
 import { useState, useEffect, useMemo } from 'react';
 import SearchModal from '../components/SearchModal';
+import ImageCarouselModal from '../components/ImageCarouselModal';
 import { API_CONFIG } from '../../constants/config';
 import { useRoomDiscounts } from '../hooks/useRoomDiscounts';
 
@@ -11,24 +12,18 @@ interface HavenImage {
   image_url: string;
   display_order: number;
 }
-
-interface Haven {
-  uuid_id: string;
-  haven_name: string;
-  tower?: string;
-  floor?: string;
-  weekday_rate?: string;
-  weekend_rate?: string;
-  images?: HavenImage[];
-  rating?: number;
-  discount?: number;
-}
+// ... interface Haven ...
 
 export default function HavenScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [havens, setHavens] = useState<Haven[]>([]);
   const [loading, setLoading] = useState(true);
   
+  // Carousel State
+  const [carouselVisible, setCarouselVisible] = useState(false);
+  const [selectedImages, setSelectedImages] = useState<string[]>([]);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+
   // Filter & Sort State
   const [sortOpen, setSortOpen] = useState(false);
   const [selectedSort, setSelectedSort] = useState('Recommended');
@@ -59,6 +54,15 @@ export default function HavenScreen() {
     setModalVisible(false);
   };
 
+  const handleImagePress = (images: HavenImage[] | undefined) => {
+    if (images && images.length > 0) {
+      const imageUrls = images.sort((a, b) => a.display_order - b.display_order).map(img => img.image_url);
+      setSelectedImages(imageUrls);
+      setSelectedImageIndex(0);
+      setCarouselVisible(true);
+    }
+  };
+
   const RoomCard = ({ item }: { item: Haven }) => {
     const { calculateBestDiscount } = useRoomDiscounts(item.uuid_id);
     const basePrice = parseFloat(item.weekday_rate || '0');
@@ -74,14 +78,20 @@ export default function HavenScreen() {
     return (
       <View style={styles.roomCard}>
         <View style={styles.imageContainer}>
-          {firstImage ? (
-            <Image
-              source={{ uri: firstImage }}
-              style={styles.roomImage}
-            />
-          ) : (
-            <View style={styles.roomImagePlaceholder} />
-          )}
+          <TouchableOpacity 
+            activeOpacity={0.9} 
+            onPress={() => handleImagePress(item.images)}
+            style={{ flex: 1 }}
+          >
+            {firstImage ? (
+              <Image
+                source={{ uri: firstImage }}
+                style={styles.roomImage}
+              />
+            ) : (
+              <View style={styles.roomImagePlaceholder} />
+            )}
+          </TouchableOpacity>
           <TouchableOpacity style={styles.favoriteButton}>
             <Feather name="heart" size={20} color={Colors.white} />
           </TouchableOpacity>
@@ -144,6 +154,13 @@ export default function HavenScreen() {
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
         onSearch={handleSearch}
+      />
+      
+      <ImageCarouselModal
+        visible={carouselVisible}
+        images={selectedImages}
+        initialIndex={selectedImageIndex}
+        onClose={() => setCarouselVisible(false)}
       />
 
       {/* Sticky Header */}
