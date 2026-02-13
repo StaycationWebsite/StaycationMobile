@@ -11,8 +11,8 @@ const monthNames = [
 ];
 
 const bookings = [
-  { title: 'Archie Break', start: 1, end: 7 },
-  { title: '', start: 26, end: 28 },
+  { title: 'Archie Break', start: 1, end: 7, status: 'Approved' },
+  { title: 'Awaiting Payment', start: 26, end: 28, status: 'Pending' },
 ];
 
 function getWeeksForMonth(year: number, monthIndex: number) {
@@ -43,6 +43,8 @@ export default function AdminBookingCalender() {
   const [currentDate, setCurrentDate] = React.useState(new Date(2026, 1, 1));
   const [legendOpen, setLegendOpen] = React.useState(true);
   const [propertyOpen, setPropertyOpen] = React.useState(false);
+  const [statusFilter, setStatusFilter] = React.useState<'All Statuses' | 'Pending'>('All Statuses');
+  const [statusOpen, setStatusOpen] = React.useState(false);
   const [selectedProperty, setSelectedProperty] = React.useState('Haven 8 - tower-d - Floor 25th');
   const fadeAnim = React.useRef(new Animated.Value(1)).current;
   const legendAnim = React.useRef(new Animated.Value(1)).current;
@@ -107,6 +109,11 @@ export default function AdminBookingCalender() {
     outputRange: [0, 140],
   });
 
+  const filteredBookings = React.useMemo(() => {
+    if (statusFilter === 'All Statuses') return bookings;
+    return bookings.filter((booking) => booking.status === 'Pending');
+  }, [statusFilter]);
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.screen}>
@@ -137,16 +144,47 @@ export default function AdminBookingCalender() {
           </View>
 
           <View style={styles.controlsRow}>
-            <View style={styles.monthNav}>
-              <TouchableOpacity style={styles.monthButton} onPress={handlePrevMonth}>
-                <Feather name="chevron-left" size={18} color={Colors.gray[700]} />
-              </TouchableOpacity>
-              <Text style={styles.monthText}>
-                {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
-              </Text>
-              <TouchableOpacity style={styles.monthButton} onPress={handleNextMonth}>
-                <Feather name="chevron-right" size={18} color={Colors.gray[700]} />
-              </TouchableOpacity>
+            <View style={styles.monthFilterRow}>
+              <View style={styles.monthNav}>
+                <TouchableOpacity style={styles.monthButton} onPress={handlePrevMonth}>
+                  <Feather name="chevron-left" size={18} color={Colors.gray[700]} />
+                </TouchableOpacity>
+                <Text style={styles.monthText}>
+                  {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
+                </Text>
+                <TouchableOpacity style={styles.monthButton} onPress={handleNextMonth}>
+                  <Feather name="chevron-right" size={18} color={Colors.gray[700]} />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.statusDropdownWrap}>
+                <Feather name="filter" size={14} color={Colors.gray[500]} />
+                <TouchableOpacity style={styles.statusSelect} onPress={() => setStatusOpen((prev) => !prev)}>
+                  <Text style={styles.statusSelectText}>{statusFilter}</Text>
+                  <Feather name={statusOpen ? 'chevron-up' : 'chevron-down'} size={14} color={Colors.gray[700]} />
+                </TouchableOpacity>
+                {statusOpen && (
+                  <View style={styles.statusMenu}>
+                    {(['All Statuses', 'Pending'] as const).map((status) => {
+                      const isActive = statusFilter === status;
+                      return (
+                        <TouchableOpacity
+                          key={status}
+                          style={[styles.statusMenuItem, isActive && styles.statusMenuItemActive]}
+                          onPress={() => {
+                            setStatusFilter(status);
+                            setStatusOpen(false);
+                          }}
+                        >
+                          <Text style={[styles.statusMenuItemText, isActive && styles.statusMenuItemTextActive]}>
+                            {status}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                )}
+              </View>
             </View>
             <View style={styles.segmented}>
               <View style={styles.segmentActive}>
@@ -170,7 +208,7 @@ export default function AdminBookingCalender() {
 
             {weeks.map((week, rowIndex) => (
               <View key={`week-${rowIndex}`} style={styles.weekRow}>
-                {bookings.map((booking, bookingIndex) => {
+                {filteredBookings.map((booking, bookingIndex) => {
                   const weekStart = week.find((d) => d !== null) ?? 1;
                   const weekEnd = week.slice().reverse().find((d) => d !== null) ?? weekStart;
                   if (booking.end < weekStart || booking.start > weekEnd) return null;
@@ -184,7 +222,11 @@ export default function AdminBookingCalender() {
                   return (
                     <View
                       key={`booking-${rowIndex}-${bookingIndex}`}
-                      style={[styles.bookingBar, { left: `${leftPct}%`, width: `${widthPct}%` }]}
+                      style={[
+                        styles.bookingBar,
+                        booking.status === 'Pending' && styles.bookingBarPending,
+                        { left: `${leftPct}%`, width: `${widthPct}%` },
+                      ]}
                     >
                       {booking.title ? <Text style={styles.bookingLabel}>{booking.title}</Text> : null}
                     </View>
@@ -297,24 +339,84 @@ const styles = StyleSheet.create({
   },
   controlsRow: {
     marginTop: 16,
-    gap: 12,
+    gap: 8,
+    zIndex: 20,
+  },
+  monthFilterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 6,
+  },
+  statusDropdownWrap: {
+    position: 'relative',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  statusSelect: {
+    minWidth: 118,
+    height: 34,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#D4A017',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  statusSelectText: {
+    fontSize: 13,
+    color: Colors.gray[900],
+    fontFamily: Fonts.inter,
+    fontWeight: '600',
+  },
+  statusMenu: {
+    position: 'absolute',
+    top: 38,
+    right: 0,
+    width: 118,
+    borderRadius: 6,
+    overflow: 'hidden',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: Colors.gray[200],
+    zIndex: 50,
+  },
+  statusMenuItem: {
+    paddingVertical: 7,
+    paddingHorizontal: 10,
+  },
+  statusMenuItemActive: {
+    backgroundColor: '#DBEAFE',
+  },
+  statusMenuItemText: {
+    fontSize: 13,
+    color: Colors.gray[900],
+    fontFamily: Fonts.inter,
+    fontWeight: '600',
+  },
+  statusMenuItemTextActive: {
+    color: '#1D4ED8',
   },
   monthNav: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     gap: 12,
+    flex: 1,
   },
   monthButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
+    width: 30,
+    height: 30,
+    borderRadius: 8,
     backgroundColor: Colors.gray[100],
     alignItems: 'center',
     justifyContent: 'center',
   },
   monthText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
     color: Colors.gray[900],
     fontFamily: Fonts.poppins,
@@ -414,6 +516,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#22C55E',
     justifyContent: 'center',
     paddingLeft: 8,
+  },
+  bookingBarPending: {
+    backgroundColor: '#FBBF24',
   },
   bookingLabel: {
     fontSize: 10,

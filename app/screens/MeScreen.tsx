@@ -11,6 +11,7 @@ import {
 import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Colors, Fonts } from '../../constants/Styles';
 import { useAuth } from '../../hooks/useAuth';
+import AdminTopBar from '../components/AdminTopBar';
 
 export default function MeScreen() {
   const { user, logout } = useAuth();
@@ -56,72 +57,79 @@ export default function MeScreen() {
   );
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Header / Profile Section */}
-      <View style={styles.header}>
-        <View style={styles.profileInfo}>
-          <View style={styles.avatarContainer}>
-            {user?.image ? (
-              <Image source={{ uri: user.image }} style={styles.avatar} />
-            ) : (
-              <View style={styles.avatarPlaceholder}>
-                <Text style={styles.avatarInitial}>
-                  {user?.name?.[0] || user?.email?.[0] || 'A'}
-                </Text>
+    <View style={styles.screen}>
+      <AdminTopBar title="Profile" />
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        {/* Header / Profile Section */}
+        <View style={styles.header}>
+          <View style={styles.profileInfo}>
+            <View style={styles.avatarContainer}>
+              {user?.image ? (
+                <Image source={{ uri: user.image }} style={styles.avatar} />
+              ) : (
+                <View style={styles.avatarPlaceholder}>
+                  <Text style={styles.avatarInitial}>
+                    {user?.name?.[0] || user?.email?.[0] || 'A'}
+                  </Text>
+                </View>
+              )}
+              <View style={styles.adminBadge}>
+                <Text style={styles.adminBadgeText}>Admin</Text>
               </View>
-            )}
-            <View style={styles.adminBadge}>
-              <Text style={styles.adminBadgeText}>Admin</Text>
             </View>
+            <Text style={styles.userName}>{user?.name || 'Staycation Admin'}</Text>
+            <Text style={styles.userEmail}>{user?.email || 'admin@staycationhavenph.com'}</Text>
           </View>
-          <Text style={styles.userName}>{user?.name || 'Staycation Admin'}</Text>
-          <Text style={styles.userEmail}>{user?.email || 'admin@staycationhavenph.com'}</Text>
         </View>
-      </View>
 
-      {/* Dashboard Stats */}
-      <View style={styles.statsRow}>
-        <AdminStat icon="home-city-outline" label="Total Havens" value="8" />
-        <AdminStat icon="calendar-check-outline" label="Bookings" value="24" />
-        <AdminStat icon="star-outline" label="Avg Rating" value="4.8" />
-      </View>
+        {/* Dashboard Stats */}
+        <View style={styles.statsRow}>
+          <AdminStat icon="home-city-outline" label="Total Havens" value="8" />
+          <AdminStat icon="calendar-check-outline" label="Bookings" value="24" />
+          <AdminStat icon="star-outline" label="Avg Rating" value="4.8" />
+        </View>
 
-      {/* Admin Menu */}
-      <View style={styles.menuContainer}>
-        <Text style={styles.menuSectionTitle}>Management</Text>
-        <MenuItem icon="home" label="Manage Havens" onPress={() => {}} />
-        <MenuItem icon="calendar" label="Booking Overview" onPress={() => {}} />
-        <MenuItem icon="users" label="User Accounts" onPress={() => {}} />
-        <MenuItem icon="settings" label="System Settings" onPress={() => {}} isLast />
-      </View>
+        {/* Admin Menu */}
+        <View style={styles.menuContainer}>
+          <Text style={styles.menuSectionTitle}>Management</Text>
+          <MenuItem icon="home" label="Manage Havens" onPress={() => {}} />
+          <MenuItem icon="calendar" label="Booking Overview" onPress={() => {}} />
+          <MenuItem icon="users" label="User Accounts" onPress={() => {}} />
+          <MenuItem icon="settings" label="System Settings" onPress={() => {}} isLast />
+        </View>
 
-      <View style={styles.menuContainer}>
-        <Text style={styles.menuSectionTitle}>Account</Text>
-        <MenuItem icon="user" label="Edit Profile" onPress={() => {}} />
-        <MenuItem icon="bell" label="Notifications" onPress={() => {}} />
-        <MenuItem 
-          icon="log-out" 
-          label="Sign Out" 
-          onPress={handleLogout} 
-          color={Colors.red[500]}
-          isLast 
-        />
-      </View>
+        <View style={styles.menuContainer}>
+          <Text style={styles.menuSectionTitle}>Account</Text>
+          <MenuItem icon="user" label="Edit Profile" onPress={() => {}} />
+          <MenuItem icon="bell" label="Notifications" onPress={() => {}} />
+          <MenuItem 
+            icon="log-out" 
+            label="Sign Out" 
+            onPress={handleLogout} 
+            color={Colors.red[500]}
+            isLast 
+          />
+        </View>
 
-      <Text style={styles.versionText}>Version 1.0.0 (Admin Build)</Text>
-      <View style={styles.bottomSpace} />
-    </ScrollView>
+        <Text style={styles.versionText}>Version 1.0.0 (Admin Build)</Text>
+        <View style={styles.bottomSpace} />
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: Colors.gray[50],
+  },
   container: {
     flex: 1,
     backgroundColor: Colors.gray[50],
   },
   header: {
     backgroundColor: Colors.white,
-    paddingTop: 80,
+    paddingTop: 24,
     paddingBottom: 32,
     paddingHorizontal: 24,
     borderBottomLeftRadius: 32,

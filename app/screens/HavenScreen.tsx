@@ -7,6 +7,7 @@ import SearchModal from '../components/SearchModal';
 import ImageCarouselModal from '../components/ImageCarouselModal';
 import { API_CONFIG } from '../../constants/config';
 import { useRoomDiscounts } from '../../hooks/useRoomDiscounts';
+import AdminTopBar from '../components/AdminTopBar';
 
 interface HavenImage {
   id: number;
@@ -191,6 +192,8 @@ export default function HavenScreen() {
 
   return (
     <View style={styles.mainContainer}>
+      <AdminTopBar title="Manage Havens" />
+
       <SearchModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
@@ -204,16 +207,8 @@ export default function HavenScreen() {
         onClose={() => setCarouselVisible(false)}
       />
 
-      {/* Sticky Header */}
+      {/* Quick Actions */}
       <View style={styles.topSection}>
-        <View style={styles.logoSection}>
-          <Image
-            source={require('../../assets/haven_logo.png')}
-            style={styles.logo}
-          />
-          <Text style={styles.appName}>taycation Haven</Text>
-        </View>
-
         <TouchableOpacity
           style={styles.findRoomsButton}
           onPress={() => setModalVisible(true)}
@@ -380,28 +375,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 12,
     marginHorizontal: 0,
-    marginTop: 10,
-    paddingTop: 65,
+    marginTop: 0,
+    paddingTop: 12,
     borderBottomWidth: 1,
     borderBottomColor: Colors.gray[200],
     width: '100%',
-  },
-  logoSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 10,
-  },
-  logo: {
-    width: 28,
-    height: 28,
-    marginRight: 10,
-  },
-  appName: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: Colors.brand.primary,
-    fontFamily: Fonts.poppins,
   },
   header: {
     alignItems: 'center',

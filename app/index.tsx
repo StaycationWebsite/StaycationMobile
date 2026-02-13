@@ -2,16 +2,18 @@ import React from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useAuth, AuthProvider } from '../hooks/useAuth';
+import { ThemeProvider, useTheme } from '../hooks/useTheme';
 import TabNavigator from '../navigation/TabNavigator';
 import AuthNavigator from '../navigation/AuthNavigator';
 import { Colors } from '../constants/Styles';
 
 function AppContent() {
   const { isAuthenticated, isLoading } = useAuth();
+  const { resolvedMode } = useTheme();
 
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={[styles.loadingContainer, { backgroundColor: resolvedMode === 'dark' ? '#111827' : Colors.white }]}>
         <ActivityIndicator size="large" color={Colors.brand.primary} />
       </View>
     );
@@ -19,7 +21,7 @@ function AppContent() {
 
   return (
     <>
-      <StatusBar style="dark" />
+      <StatusBar style={resolvedMode === 'dark' ? 'light' : 'dark'} />
       {isAuthenticated ? (
         <TabNavigator />
       ) : (
@@ -31,9 +33,11 @@ function AppContent() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 
