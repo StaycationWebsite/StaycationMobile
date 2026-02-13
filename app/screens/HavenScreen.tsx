@@ -380,7 +380,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 12,
     marginHorizontal: 0,
-    marginTop: 0,
+    marginTop: 10,
     paddingTop: 65,
     borderBottomWidth: 1,
     borderBottomColor: Colors.gray[200],
