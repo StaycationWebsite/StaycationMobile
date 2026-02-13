@@ -8,6 +8,7 @@ import ImageCarouselModal from '../components/ImageCarouselModal';
 import { API_CONFIG } from '../../constants/config';
 import { useRoomDiscounts } from '../../hooks/useRoomDiscounts';
 import AdminTopBar from '../components/AdminTopBar';
+import { useTheme } from '../../hooks/useTheme';
 
 interface HavenImage {
   id: number;
@@ -41,7 +42,15 @@ interface Haven {
   images?: HavenImage[];
 }
 
-const RoomCard = ({ item, onImagePress }: { item: Haven, onImagePress: (images: HavenImage[] | undefined) => void }) => {
+const RoomCard = ({
+  item,
+  onImagePress,
+  theme,
+}: {
+  item: Haven,
+  onImagePress: (images: HavenImage[] | undefined) => void,
+  theme: { card: string; border: string; text: string; muted: string },
+}) => {
   const navigation = useNavigation<any>();
   const { calculateBestDiscount } = useRoomDiscounts(item.uuid_id);
   const basePrice = parseFloat(item.weekday_rate || '0');
@@ -60,7 +69,7 @@ const RoomCard = ({ item, onImagePress }: { item: Haven, onImagePress: (images: 
 
   return (
     <TouchableOpacity 
-      style={styles.roomCard} 
+      style={[styles.roomCard, { backgroundColor: theme.card, borderColor: theme.border }]}
       activeOpacity={0.9}
       onPress={handleCardPress}
     >
@@ -90,7 +99,7 @@ const RoomCard = ({ item, onImagePress }: { item: Haven, onImagePress: (images: 
         </TouchableOpacity>
         
         {/* Overlapping Pill Badge */}
-        <View style={styles.overlappingBadge}>
+        <View style={[styles.overlappingBadge, { backgroundColor: theme.card }]}>
           <View style={styles.discountBadgeButton}>
             <Text style={styles.discountBadgeButtonText}>
               {bestDiscount 
@@ -124,16 +133,16 @@ const RoomCard = ({ item, onImagePress }: { item: Haven, onImagePress: (images: 
           </View>
         </View>
 
-        <Text style={styles.havenName} numberOfLines={1}>{item.haven_name}</Text>
+        <Text style={[styles.havenName, { color: theme.text }]} numberOfLines={1}>{item.haven_name}</Text>
 
         <View style={styles.locationRating}>
           <View style={styles.locationSection}>
             <Feather name="map-pin" size={12} color={Colors.gray[500]} />
-            <Text style={styles.locationText} numberOfLines={1}>{item.tower}, {item.floor}, QC</Text>
+            <Text style={[styles.locationText, { color: theme.muted }]} numberOfLines={1}>{item.tower}, {item.floor}, QC</Text>
           </View>
           <View style={styles.ratingSection}>
             <Ionicons name="star" size={14} color={Colors.brand.primary} />
-            <Text style={styles.ratingText}>{item.rating || '4.5'}</Text>
+            <Text style={[styles.ratingText, { color: theme.text }]}>{item.rating || '4.5'}</Text>
           </View>
         </View>
       </View>
@@ -142,6 +151,18 @@ const RoomCard = ({ item, onImagePress }: { item: Haven, onImagePress: (images: 
 };
 
 export default function HavenScreen() {
+  const { resolvedMode } = useTheme();
+  const isDark = resolvedMode === 'dark';
+  const theme = {
+    page: isDark ? '#0F172A' : Colors.white,
+    surface: isDark ? '#111827' : Colors.white,
+    card: isDark ? '#1F2937' : Colors.white,
+    cardSoft: isDark ? '#111827' : Colors.gray[50],
+    border: isDark ? '#374151' : Colors.gray[200],
+    text: isDark ? '#E5E7EB' : Colors.gray[900],
+    muted: isDark ? '#9CA3AF' : Colors.gray[600],
+    chipText: isDark ? '#93C5FD' : '#2563EB',
+  };
   const [modalVisible, setModalVisible] = useState(false);
   const [havens, setHavens] = useState<Haven[]>([]);
   const [loading, setLoading] = useState(true);
@@ -191,7 +212,7 @@ export default function HavenScreen() {
   };
 
   return (
-    <View style={styles.mainContainer}>
+    <View style={[styles.mainContainer, { backgroundColor: theme.page }]}>
       <AdminTopBar title="Manage Havens" />
 
       <SearchModal
@@ -208,7 +229,7 @@ export default function HavenScreen() {
       />
 
       {/* Quick Actions */}
-      <View style={styles.topSection}>
+      <View style={[styles.topSection, { backgroundColor: theme.cardSoft, borderBottomColor: theme.border }]}>
         <TouchableOpacity
           style={styles.findRoomsButton}
           onPress={() => setModalVisible(true)}
@@ -219,7 +240,7 @@ export default function HavenScreen() {
       </View>
 
       {/* Filter & Sort Section */}
-      <View style={[styles.filterContainer, { zIndex: 100 }]}>
+      <View style={[styles.filterContainer, { zIndex: 100, backgroundColor: theme.surface, borderBottomColor: theme.border }]}>
         <View style={styles.filterScrollWrapper}>
           <ScrollView 
             horizontal 
@@ -227,32 +248,33 @@ export default function HavenScreen() {
             contentContainerStyle={styles.filterContent}
           >
             {['Price', 'Capacity', 'Rating', 'Tower'].map((filter) => (
-              <TouchableOpacity key={filter} style={styles.filterChip}>
-                <Text style={styles.filterLabel}>{filter}</Text>
+              <TouchableOpacity key={filter} style={[styles.filterChip, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                <Text style={[styles.filterLabel, { color: theme.chipText }]}>{filter}</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
         </View>
 
         <View style={styles.sortWrapper}>
-          <Text style={styles.sortLabelText}>Sort:</Text>
+          <Text style={[styles.sortLabelText, { color: theme.muted }]}>Sort:</Text>
           <TouchableOpacity
-            style={styles.sortBox}
+            style={[styles.sortBox, { backgroundColor: theme.card, borderColor: theme.border }]}
             onPress={() => setSortOpen(!sortOpen)}
           >
-            <Text style={styles.sortBoxText}>{selectedSort}</Text>
-            <Feather name="chevron-down" size={14} color={Colors.gray[900]} />
+            <Text style={[styles.sortBoxText, { color: theme.text }]}>{selectedSort}</Text>
+            <Feather name="chevron-down" size={14} color={theme.text} />
           </TouchableOpacity>
         </View>
 
         {/* Dropdown Menu */}
         {sortOpen && (
-          <View style={styles.dropdownOverlay}>
+          <View style={[styles.dropdownOverlay, { backgroundColor: theme.card, borderColor: theme.border }]}>
             {sortOptions.map((option) => (
               <TouchableOpacity
                 key={option}
                 style={[
                   styles.dropdownOption,
+                  { borderBottomColor: theme.border },
                   option === selectedSort && styles.dropdownOptionActive
                 ]}
                 onPress={() => {
@@ -262,6 +284,7 @@ export default function HavenScreen() {
               >
                 <Text style={[
                   styles.dropdownOptionText,
+                  { color: theme.text },
                   option === selectedSort && styles.dropdownOptionTextActive
                 ]}>
                   {option}
@@ -274,30 +297,30 @@ export default function HavenScreen() {
 
       {/* Scrollable Content */}
       <ScrollView
-        style={styles.scrollView}
+        style={[styles.scrollView, { backgroundColor: theme.page }]}
         contentContainerStyle={styles.scrollViewContent}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <Text style={styles.mainTitle}>Find Your Perfect</Text>
+          <Text style={[styles.mainTitle, { color: theme.text }]}>Find Your Perfect</Text>
           <Text style={styles.highlightedText}>Staycation</Text>
           <View style={styles.dot} />
-          <Text style={styles.description}>
+          <Text style={[styles.description, { color: theme.muted }]}>
             Discover our premium havens with world-class amenities. Short stays, extended stays, or your perfect getaway - all at your fingertips.
           </Text>
 
           <View style={styles.statsContainer}>
             <View style={styles.statItem}>
               <Text style={styles.statNumber}>8</Text>
-              <Text style={styles.statLabel}>Premium Havens</Text>
+              <Text style={[styles.statLabel, { color: theme.muted }]}>Premium Havens</Text>
             </View>
             <View style={styles.statItem}>
               <Text style={styles.statNumber}>4.8</Text>
-              <Text style={styles.statLabel}>Average Rating</Text>
+              <Text style={[styles.statLabel, { color: theme.muted }]}>Average Rating</Text>
             </View>
             <View style={styles.statItem}>
               <Text style={styles.statNumber}>24/7</Text>
-              <Text style={styles.statLabel}>Support</Text>
+              <Text style={[styles.statLabel, { color: theme.muted }]}>Support</Text>
             </View>
           </View>
         </View>
@@ -305,8 +328,8 @@ export default function HavenScreen() {
         {/* Room Cards Section - First 5 */}
         <View style={styles.roomsSection}>
           <View style={styles.roomsSectionHeader}>
-            <Text style={styles.roomsSectionTitle}>Staycation Haven PH</Text>
-            <Feather name="chevron-right" size={20} color={Colors.gray[600]} />
+            <Text style={[styles.roomsSectionTitle, { color: theme.text }]}>Staycation Haven PH</Text>
+            <Feather name="chevron-right" size={20} color={theme.muted} />
           </View>
         <ScrollView
           horizontal
@@ -315,15 +338,15 @@ export default function HavenScreen() {
           contentContainerStyle={styles.scrollContentContainer}
         >
           {loading ? (
-            <Text style={styles.loadingText}>Loading havens...</Text>
+            <Text style={[styles.loadingText, { color: theme.muted }]}>Loading havens...</Text>
           ) : havens.length > 0 ? (
             havens.slice(0, 5).map((haven, index) => (
               <View key={haven.uuid_id || index}>
-                <RoomCard item={haven} onImagePress={handleImagePress} />
+                <RoomCard item={haven} onImagePress={handleImagePress} theme={theme} />
               </View>
             ))
           ) : (
-            <Text style={styles.emptyText}>No havens available</Text>
+            <Text style={[styles.emptyText, { color: theme.muted }]}>No havens available</Text>
           )}
         </ScrollView>
       </View>
@@ -339,7 +362,7 @@ export default function HavenScreen() {
           >
             {havens.slice(5).map((haven, index) => (
               <View key={haven.uuid_id || index}>
-                <RoomCard item={haven} onImagePress={handleImagePress} />
+                <RoomCard item={haven} onImagePress={handleImagePress} theme={theme} />
               </View>
             ))}
           </ScrollView>

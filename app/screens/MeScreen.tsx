@@ -12,9 +12,20 @@ import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Colors, Fonts } from '../../constants/Styles';
 import { useAuth } from '../../hooks/useAuth';
 import AdminTopBar from '../components/AdminTopBar';
+import { useTheme } from '../../hooks/useTheme';
 
 export default function MeScreen() {
   const { user, logout } = useAuth();
+  const { resolvedMode } = useTheme();
+  const isDark = resolvedMode === 'dark';
+  const theme = {
+    page: isDark ? '#0F172A' : Colors.gray[50],
+    surface: isDark ? '#111827' : Colors.white,
+    text: isDark ? '#E5E7EB' : Colors.gray[900],
+    muted: isDark ? '#9CA3AF' : Colors.gray[500],
+    border: isDark ? '#374151' : Colors.gray[50],
+    iconBg: isDark ? '#1F2937' : Colors.gray[50],
+  };
 
   const handleLogout = () => {
     Alert.alert(
@@ -28,12 +39,12 @@ export default function MeScreen() {
   };
 
   const AdminStat = ({ icon, label, value }: { icon: any, label: string, value: string }) => (
-    <View style={styles.statCard}>
+    <View style={[styles.statCard, { backgroundColor: theme.surface }]}>
       <View style={styles.statIconContainer}>
         <MaterialCommunityIcons name={icon} size={24} color={Colors.brand.primary} />
       </View>
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
+      <Text style={[styles.statValue, { color: theme.text }]}>{value}</Text>
+      <Text style={[styles.statLabel, { color: theme.muted }]}>{label}</Text>
     </View>
   );
 
@@ -45,23 +56,23 @@ export default function MeScreen() {
     color?: string
   }) => (
     <TouchableOpacity 
-      style={[styles.menuItem, isLast && styles.menuItemLast]} 
+      style={[styles.menuItem, { borderBottomColor: theme.border }, isLast && styles.menuItemLast]} 
       onPress={onPress}
     >
-      <View style={styles.menuIconContainer}>
+      <View style={[styles.menuIconContainer, { backgroundColor: theme.iconBg }]}>
         <Feather name={icon} size={20} color={color} />
       </View>
       <Text style={[styles.menuLabel, { color }]}>{label}</Text>
-      <Feather name="chevron-right" size={18} color={Colors.gray[500]} />
+      <Feather name="chevron-right" size={18} color={theme.muted} />
     </TouchableOpacity>
   );
 
   return (
-    <View style={styles.screen}>
+    <View style={[styles.screen, { backgroundColor: theme.page }]}>
       <AdminTopBar title="Profile" />
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <ScrollView style={[styles.container, { backgroundColor: theme.page }]} showsVerticalScrollIndicator={false}>
         {/* Header / Profile Section */}
-        <View style={styles.header}>
+        <View style={[styles.header, { backgroundColor: theme.surface }]}>
           <View style={styles.profileInfo}>
             <View style={styles.avatarContainer}>
               {user?.image ? (
@@ -77,8 +88,8 @@ export default function MeScreen() {
                 <Text style={styles.adminBadgeText}>Admin</Text>
               </View>
             </View>
-            <Text style={styles.userName}>{user?.name || 'Staycation Admin'}</Text>
-            <Text style={styles.userEmail}>{user?.email || 'admin@staycationhavenph.com'}</Text>
+            <Text style={[styles.userName, { color: theme.text }]}>{user?.name || 'Staycation Admin'}</Text>
+            <Text style={[styles.userEmail, { color: theme.muted }]}>{user?.email || 'admin@staycationhavenph.com'}</Text>
           </View>
         </View>
 
@@ -90,16 +101,16 @@ export default function MeScreen() {
         </View>
 
         {/* Admin Menu */}
-        <View style={styles.menuContainer}>
-          <Text style={styles.menuSectionTitle}>Management</Text>
+        <View style={[styles.menuContainer, { backgroundColor: theme.surface }]}>
+          <Text style={[styles.menuSectionTitle, { color: theme.muted }]}>Management</Text>
           <MenuItem icon="home" label="Manage Havens" onPress={() => {}} />
           <MenuItem icon="calendar" label="Booking Overview" onPress={() => {}} />
           <MenuItem icon="users" label="User Accounts" onPress={() => {}} />
           <MenuItem icon="settings" label="System Settings" onPress={() => {}} isLast />
         </View>
 
-        <View style={styles.menuContainer}>
-          <Text style={styles.menuSectionTitle}>Account</Text>
+        <View style={[styles.menuContainer, { backgroundColor: theme.surface }]}>
+          <Text style={[styles.menuSectionTitle, { color: theme.muted }]}>Account</Text>
           <MenuItem icon="user" label="Edit Profile" onPress={() => {}} />
           <MenuItem icon="bell" label="Notifications" onPress={() => {}} />
           <MenuItem 
@@ -111,7 +122,7 @@ export default function MeScreen() {
           />
         </View>
 
-        <Text style={styles.versionText}>Version 1.0.0 (Admin Build)</Text>
+        <Text style={[styles.versionText, { color: theme.muted }]}>Version 1.0.0 (Admin Build)</Text>
         <View style={styles.bottomSpace} />
       </ScrollView>
     </View>

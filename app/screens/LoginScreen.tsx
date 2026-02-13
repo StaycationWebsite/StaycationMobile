@@ -15,8 +15,20 @@ import {
 import { Colors, Fonts } from '../../constants/Styles';
 import { Feather } from '@expo/vector-icons';
 import { useAuth } from '../../hooks/useAuth';
+import { useTheme } from '../../hooks/useTheme';
 
 export default function LoginScreen() {
+  const { resolvedMode } = useTheme();
+  const isDark = resolvedMode === 'dark';
+  const theme = {
+    page: isDark ? '#0F172A' : Colors.gray[50],
+    surface: isDark ? '#111827' : Colors.white,
+    input: isDark ? '#1F2937' : Colors.gray[50],
+    border: isDark ? '#374151' : Colors.gray[200],
+    text: isDark ? '#E5E7EB' : Colors.gray[900],
+    muted: isDark ? '#9CA3AF' : Colors.gray[500],
+  };
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -37,7 +49,7 @@ export default function LoginScreen() {
   return (
     <KeyboardAvoidingView 
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.page }]}
     >
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
@@ -49,21 +61,22 @@ export default function LoginScreen() {
             />
             <Text style={styles.appName}>taycation Haven</Text>
           </View>
-          <Text style={styles.adminBadge}>ADMIN PANEL</Text>
+          <Text style={[styles.adminBadge, { color: theme.muted }]}>ADMIN PANEL</Text>
         </View>
 
-        <View style={styles.formCard}>
-          <Text style={styles.title}>Welcome Admin,</Text>
-          <Text style={styles.subtitle}>Sign in to your admin arccount</Text>
+        <View style={[styles.formCard, { backgroundColor: theme.surface }]}>
+          <Text style={[styles.title, { color: theme.text }]}>Welcome Admin,</Text>
+          <Text style={[styles.subtitle, { color: theme.muted }]}>Sign in to your admin arccount</Text>
 
           {/* Email Input */}
           <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Email Address</Text>
-            <View style={styles.inputWrapper}>
-              <Feather name="mail" size={20} color={Colors.gray[500]} style={styles.inputIcon} />
+            <Text style={[styles.inputLabel, { color: theme.text }]}>Email Address</Text>
+            <View style={[styles.inputWrapper, { backgroundColor: theme.input, borderColor: theme.border }]}>
+              <Feather name="mail" size={20} color={theme.muted} style={styles.inputIcon} />
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: theme.text }]}
                 placeholder="admin@staycationhavenph.com"
+                placeholderTextColor={theme.muted}
                 value={email}
                 onChangeText={(text) => {
                   setEmail(text);
@@ -77,12 +90,13 @@ export default function LoginScreen() {
 
           {/* Password Input */}
           <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Password</Text>
-            <View style={styles.inputWrapper}>
-              <Feather name="lock" size={20} color={Colors.gray[500]} style={styles.inputIcon} />
+            <Text style={[styles.inputLabel, { color: theme.text }]}>Password</Text>
+            <View style={[styles.inputWrapper, { backgroundColor: theme.input, borderColor: theme.border }]}>
+              <Feather name="lock" size={20} color={theme.muted} style={styles.inputIcon} />
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: theme.text }]}
                 placeholder="••••••••"
+                placeholderTextColor={theme.muted}
                 value={password}
                 onChangeText={(text) => {
                   setPassword(text);
@@ -97,7 +111,7 @@ export default function LoginScreen() {
                 <Feather 
                   name={showPassword ? "eye-off" : "eye"} 
                   size={20} 
-                  color={Colors.gray[500]} 
+                  color={theme.muted} 
                 />
               </TouchableOpacity>
             </View>
@@ -119,9 +133,9 @@ export default function LoginScreen() {
             )}
           </TouchableOpacity>
 
-          <View style={styles.formDivider} />
+          <View style={[styles.formDivider, { backgroundColor: theme.border }]} />
 
-          <Text style={styles.termsText}>
+          <Text style={[styles.termsText, { color: theme.muted }]}>
             By continuing, you agree to our{' '}
             <Text style={styles.termsLink}>Terms</Text>
             {' '}and{' '}
@@ -129,7 +143,7 @@ export default function LoginScreen() {
           </Text>
         </View>
 
-        <Text style={styles.footerNote}>
+        <Text style={[styles.footerNote, { color: theme.muted }]}>
           Staycation Haven PH © 2026 Admin Dashboard
         </Text>
       </ScrollView>

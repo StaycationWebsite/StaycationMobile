@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, Ani
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Colors, Fonts } from '../../../constants/Styles';
 import AdminTopBar from '../../components/AdminTopBar';
+import { useTheme } from '../../../hooks/useTheme';
 
 const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const monthNames = [
@@ -40,6 +41,17 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 }
 
 export default function AdminBookingCalender() {
+  const { resolvedMode } = useTheme();
+  const isDark = resolvedMode === 'dark';
+  const theme = {
+    page: isDark ? '#0F172A' : Colors.white,
+    surface: isDark ? '#111827' : Colors.white,
+    surfaceAlt: isDark ? '#1F2937' : Colors.gray[100],
+    border: isDark ? '#374151' : Colors.gray[100],
+    text: isDark ? '#E5E7EB' : Colors.gray[900],
+    muted: isDark ? '#9CA3AF' : Colors.gray[500],
+  };
+
   const [currentDate, setCurrentDate] = React.useState(new Date(2026, 1, 1));
   const [legendOpen, setLegendOpen] = React.useState(true);
   const [propertyOpen, setPropertyOpen] = React.useState(false);
@@ -115,29 +127,29 @@ export default function AdminBookingCalender() {
   }, [statusFilter]);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.screen}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.page }]}>
+      <View style={[styles.screen, { backgroundColor: theme.page }]}>
         <AdminTopBar title="Booking Calendar" />
 
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          <View style={styles.propertyCard}>
-            <Text style={styles.propertyLabel}>Selected Property</Text>
+          <View style={[styles.propertyCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+            <Text style={[styles.propertyLabel, { color: theme.muted }]}>Selected Property</Text>
             <TouchableOpacity style={styles.propertyRow} onPress={toggleProperty}>
               <MaterialCommunityIcons name="office-building" size={18} color={Colors.brand.primary} />
-              <Text style={styles.propertyValue}>{selectedProperty}</Text>
-              <Feather name={propertyOpen ? 'chevron-up' : 'chevron-down'} size={18} color={Colors.gray[600]} />
+              <Text style={[styles.propertyValue, { color: theme.text }]}>{selectedProperty}</Text>
+              <Feather name={propertyOpen ? 'chevron-up' : 'chevron-down'} size={18} color={theme.muted} />
             </TouchableOpacity>
-            <Animated.View style={[styles.propertyDropdown, { height: propertyHeight, opacity: propertyAnim }]}>
+            <Animated.View style={[styles.propertyDropdown, { height: propertyHeight, opacity: propertyAnim, backgroundColor: theme.surface, borderColor: theme.border }]}>
               {['Haven 8 - tower-d - Floor 25th', 'Haven 3 - tower-a - Floor 9th', 'Haven 1 - tower-c - Floor 18th'].map((item) => (
                 <TouchableOpacity
                   key={item}
-                  style={styles.propertyOption}
+                  style={[styles.propertyOption, { borderBottomColor: theme.border }]}
                   onPress={() => {
                     setSelectedProperty(item);
                     toggleProperty();
                   }}
                 >
-                  <Text style={styles.propertyOptionText}>{item}</Text>
+                  <Text style={[styles.propertyOptionText, { color: theme.text }]}>{item}</Text>
                 </TouchableOpacity>
               ))}
             </Animated.View>
@@ -147,24 +159,24 @@ export default function AdminBookingCalender() {
             <View style={styles.monthFilterRow}>
               <View style={styles.monthNav}>
                 <TouchableOpacity style={styles.monthButton} onPress={handlePrevMonth}>
-                  <Feather name="chevron-left" size={18} color={Colors.gray[700]} />
+                  <Feather name="chevron-left" size={18} color={theme.text} />
                 </TouchableOpacity>
-                <Text style={styles.monthText}>
+                <Text style={[styles.monthText, { color: theme.text }]}>
                   {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
                 </Text>
                 <TouchableOpacity style={styles.monthButton} onPress={handleNextMonth}>
-                  <Feather name="chevron-right" size={18} color={Colors.gray[700]} />
+                  <Feather name="chevron-right" size={18} color={theme.text} />
                 </TouchableOpacity>
               </View>
 
               <View style={styles.statusDropdownWrap}>
-                <Feather name="filter" size={14} color={Colors.gray[500]} />
-                <TouchableOpacity style={styles.statusSelect} onPress={() => setStatusOpen((prev) => !prev)}>
-                  <Text style={styles.statusSelectText}>{statusFilter}</Text>
-                  <Feather name={statusOpen ? 'chevron-up' : 'chevron-down'} size={14} color={Colors.gray[700]} />
+                <Feather name="filter" size={14} color={theme.muted} />
+                <TouchableOpacity style={[styles.statusSelect, { backgroundColor: theme.surface, borderColor: isDark ? '#9CA3AF' : '#D4A017' }]} onPress={() => setStatusOpen((prev) => !prev)}>
+                  <Text style={[styles.statusSelectText, { color: theme.text }]}>{statusFilter}</Text>
+                  <Feather name={statusOpen ? 'chevron-up' : 'chevron-down'} size={14} color={theme.muted} />
                 </TouchableOpacity>
                 {statusOpen && (
-                  <View style={styles.statusMenu}>
+                  <View style={[styles.statusMenu, { backgroundColor: theme.surface, borderColor: theme.border }]}>
                     {(['All Statuses', 'Pending'] as const).map((status) => {
                       const isActive = statusFilter === status;
                       return (
@@ -176,7 +188,7 @@ export default function AdminBookingCalender() {
                             setStatusOpen(false);
                           }}
                         >
-                          <Text style={[styles.statusMenuItemText, isActive && styles.statusMenuItemTextActive]}>
+                          <Text style={[styles.statusMenuItemText, { color: theme.text }, isActive && styles.statusMenuItemTextActive]}>
                             {status}
                           </Text>
                         </TouchableOpacity>
@@ -186,23 +198,23 @@ export default function AdminBookingCalender() {
                 )}
               </View>
             </View>
-            <View style={styles.segmented}>
+            <View style={[styles.segmented, { backgroundColor: theme.surfaceAlt }]}>
               <View style={styles.segmentActive}>
                 <Text style={styles.segmentActiveText}>Month</Text>
               </View>
               <View style={styles.segment}>
-                <Text style={styles.segmentText}>Week</Text>
+                <Text style={[styles.segmentText, { color: theme.muted }]}>Week</Text>
               </View>
               <View style={styles.segment}>
-                <Text style={styles.segmentText}>Day</Text>
+                <Text style={[styles.segmentText, { color: theme.muted }]}>Day</Text>
               </View>
             </View>
           </View>
 
-          <Animated.View style={[styles.calendarCard, { opacity: fadeAnim, transform: [{ translateY: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) }] }]}>
+          <Animated.View style={[styles.calendarCard, { opacity: fadeAnim, backgroundColor: theme.surface, borderColor: theme.border, transform: [{ translateY: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) }] }]}>
             <View style={styles.weekHeader}>
               {weekDays.map((d) => (
-                <Text key={d} style={styles.weekHeaderText}>{d}</Text>
+                <Text key={d} style={[styles.weekHeaderText, { color: theme.muted }]}>{d}</Text>
               ))}
             </View>
 
@@ -236,7 +248,7 @@ export default function AdminBookingCalender() {
                   <View key={`day-${rowIndex}-${colIndex}`} style={styles.dayCell}>
                     {day && (
                       <View style={[styles.dayPill, day === 9 && styles.todayPill]}>
-                        <Text style={[styles.dayText, day === 9 && styles.todayText]}>{day}</Text>
+                        <Text style={[styles.dayText, { color: theme.text }, day === 9 && styles.todayText]}>{day}</Text>
                       </View>
                     )}
                   </View>
@@ -246,26 +258,26 @@ export default function AdminBookingCalender() {
           </Animated.View>
         </ScrollView>
 
-        <Animated.View style={[styles.legendSheet, { height: legendHeight }]}>
+        <Animated.View style={[styles.legendSheet, { height: legendHeight, backgroundColor: theme.surface, borderTopColor: theme.border }]}>
           <TouchableOpacity style={styles.legendHandleButton} onPress={toggleLegend}>
             <View style={styles.legendHandle} />
-            <Text style={styles.legendChevron}>{legendOpen ? 'Collapse' : 'Expand'}</Text>
+            <Text style={[styles.legendChevron, { color: theme.muted }]}>{legendOpen ? 'Collapse' : 'Expand'}</Text>
           </TouchableOpacity>
           <Animated.View style={{ opacity: legendOpacity }}>
-            <Text style={styles.legendTitle}>Status Legend</Text>
+            <Text style={[styles.legendTitle, { color: theme.text }]}>Status Legend</Text>
             <View style={styles.legendRow}>
               <View style={[styles.legendDot, { backgroundColor: '#FBBF24' }]} />
-              <Text style={styles.legendText}>Pending</Text>
+              <Text style={[styles.legendText, { color: theme.muted }]}>Pending</Text>
               <View style={[styles.legendDot, { backgroundColor: '#22C55E' }]} />
-              <Text style={styles.legendText}>Approved</Text>
+              <Text style={[styles.legendText, { color: theme.muted }]}>Approved</Text>
               <View style={[styles.legendDot, { backgroundColor: '#3B82F6' }]} />
-              <Text style={styles.legendText}>Checked-in</Text>
+              <Text style={[styles.legendText, { color: theme.muted }]}>Checked-in</Text>
             </View>
             <View style={styles.legendRow}>
               <View style={[styles.legendDot, { backgroundColor: '#8B5CF6' }]} />
-              <Text style={styles.legendText}>Checked-out</Text>
+              <Text style={[styles.legendText, { color: theme.muted }]}>Checked-out</Text>
               <View style={[styles.legendDot, { backgroundColor: '#EF4444' }]} />
-              <Text style={styles.legendText}>Declined</Text>
+              <Text style={[styles.legendText, { color: theme.muted }]}>Declined</Text>
             </View>
           </Animated.View>
         </Animated.View>
