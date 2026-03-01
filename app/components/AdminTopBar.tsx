@@ -111,6 +111,7 @@ export default function AdminTopBar({ title }: AdminTopBarProps) {
     AdminBookingCalender: 'Booking Calendar',
     AdminReservations: 'Reservations',
     AdminBlockedDates: 'Blocked Dates',
+    AdminMaintenance: 'Maintenance',
     ManageHavens: 'Haven Management',
     AdminProfile: 'Profile',
   };

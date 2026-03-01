@@ -4,6 +4,7 @@ import AdminDashboardScreen from '../app/screens/Admin/AdminDashboardScreen';
 import AdminBookingCalender from '../app/screens/Admin/AdminBookingCalender';
 import AdminReservationsScreen from '../app/screens/Admin/AdminReservationsScreen';
 import AdminBlockedDatesScreen from '../app/screens/Admin/AdminBlockedDatesScreen';
+import AdminMaintenanceScreen from '../app/screens/Admin/AdminMaintenanceScreen';
 import MeScreen from '../app/screens/MeScreen';
 import RoomDetailsScreen from '../app/screens/RoomDetailsScreen';
 
@@ -16,6 +17,7 @@ export default function TabNavigator() {
       <Stack.Screen name="AdminBookingCalender" component={AdminBookingCalender} />
       <Stack.Screen name="AdminReservations" component={AdminReservationsScreen} />
       <Stack.Screen name="AdminBlockedDates" component={AdminBlockedDatesScreen} />
+      <Stack.Screen name="AdminMaintenance" component={AdminMaintenanceScreen} />
       <Stack.Screen name="ManageHavens" component={HavenScreen} />
       <Stack.Screen name="AdminProfile" component={MeScreen} />
       <Stack.Screen name="RoomDetails" component={RoomDetailsScreen} />

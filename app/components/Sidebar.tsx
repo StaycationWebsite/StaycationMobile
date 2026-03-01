@@ -136,6 +136,7 @@ export default function Sidebar({ visible, onClose, activeRoute = '' }: SidebarP
                 <MenuItem 
                   icon="tool" 
                   label="Maintenance" 
+                  route="AdminMaintenance"
                   iconColor="#F59E0B" 
                   iconType="feather" 
                 />
