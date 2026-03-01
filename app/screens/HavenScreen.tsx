@@ -1,19 +1,29 @@
-import { Text, View, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
-import { Colors, Fonts } from '../../constants/Styles';
+﻿import React, { useEffect, useMemo, useState } from 'react';
+import {
+  ActivityIndicator,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
-import { useState, useEffect, useMemo } from 'react';
 import { useNavigation } from '@react-navigation/native';
-import ImageCarouselModal from '../components/ImageCarouselModal';
+
+import { Colors, Fonts } from '../../constants/Styles';
 import { API_CONFIG } from '../../constants/config';
 import { useRoomDiscounts } from '../../hooks/useRoomDiscounts';
-import AdminTopBar from '../components/AdminTopBar';
 import { useTheme } from '../../hooks/useTheme';
+import AdminTopBar from '../components/AdminTopBar';
+import ImageCarouselModal from '../components/ImageCarouselModal';
 
 interface HavenImage {
   id: number;
   image_url: string;
   display_order: number;
 }
+
 interface Haven {
   uuid_id: string;
   haven_name: string;
@@ -24,156 +34,122 @@ interface Haven {
   capacity?: number;
   beds?: string;
   room_size?: string;
-  amenities?: {
-    airConditioning?: boolean;
-    balcony?: boolean;
-    glowBed?: boolean;
-    kitchen?: boolean;
-    netflix?: boolean;
-    parking?: boolean;
-    poolAccess?: boolean;
-    ps4?: boolean;
-    towels?: boolean;
-    tv?: boolean;
-    washerDryer?: boolean;
-    wifi?: boolean;
-  };
   images?: HavenImage[];
 }
 
-const RoomCard = ({
+type SortOption = 'Recently Added' | 'Price: Low to High' | 'Price: High to Low' | 'Rating' | 'Capacity';
+
+const SORT_OPTIONS: SortOption[] = [
+  'Recently Added',
+  'Price: Low to High',
+  'Price: High to Low',
+  'Rating',
+  'Capacity',
+];
+
+const HavenCard = ({
   item,
-  onImagePress,
   theme,
+  onPreview,
 }: {
-  item: Haven,
-  onImagePress: (images: HavenImage[] | undefined) => void,
-  theme: { card: string; border: string; text: string; muted: string },
+  item: Haven;
+  theme: { card: string; border: string; text: string; muted: string; chipBg: string };
+  onPreview: (images: HavenImage[] | undefined) => void;
 }) => {
   const navigation = useNavigation<any>();
   const { calculateBestDiscount } = useRoomDiscounts(item.uuid_id);
+
   const basePrice = parseFloat(item.weekday_rate || '0');
-  const firstImage = item.images && item.images.length > 0 ? item.images[0].image_url : null;
-
-  const bestDiscount = useMemo(() => {
-    return calculateBestDiscount(basePrice);
-  }, [basePrice, calculateBestDiscount]);
-
+  const bestDiscount = useMemo(() => calculateBestDiscount(basePrice), [basePrice, calculateBestDiscount]);
   const displayPrice = bestDiscount ? Math.floor(bestDiscount.discountedPrice) : Math.floor(basePrice);
-  const savings = bestDiscount ? Math.floor(bestDiscount.savings) : 0;
+  const firstImage = item.images?.[0]?.image_url || null;
 
-  const handleCardPress = () => {
-    navigation.navigate('RoomDetails', { haven: item });
-  };
+  const discountLabel = bestDiscount
+    ? bestDiscount.discount_type === 'percentage'
+      ? `${bestDiscount.discount_value}% OFF`
+      : `PHP ${Math.floor(bestDiscount.discount_value).toLocaleString('en-US')} OFF`
+    : 'No active discount';
 
   return (
-    <TouchableOpacity 
-      style={[styles.roomCard, { backgroundColor: theme.card, borderColor: theme.border }]}
-      activeOpacity={0.9}
-      onPress={handleCardPress}
-    >
-      <View style={styles.imageContainer}>
-        <TouchableOpacity 
-          activeOpacity={0.9} 
-          onPress={() => onImagePress(item.images)}
-          style={{ flex: 1 }}
-        >
-          {firstImage ? (
-            <Image
-              source={{ uri: firstImage }}
-              style={styles.roomImage}
-            />
-          ) : (
-            <View style={styles.roomImagePlaceholder} />
-          )}
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={styles.favoriteButton}
-          onPress={(e) => {
-            e.stopPropagation();
-            // Toggle favorite logic
-          }}
-        >
-          <Ionicons name="heart" size={20} color={Colors.white} />
-        </TouchableOpacity>
-        
-        {/* Overlapping Pill Badge */}
-        <View style={[styles.overlappingBadge, { backgroundColor: theme.card }]}>
-          <View style={styles.discountBadgeButton}>
-            <Text style={styles.discountBadgeButtonText}>
-              {bestDiscount 
-                ? (bestDiscount.discount_type === 'percentage' 
-                    ? `-${bestDiscount.discount_value}% OFF` 
-                    : `-₱${Math.floor(bestDiscount.discount_value)} OFF`)
-                : '-₱0 OFF'}
-            </Text>
+    <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}> 
+      <TouchableOpacity style={styles.cardImageWrap} activeOpacity={0.9} onPress={() => onPreview(item.images)}>
+        {firstImage ? (
+          <Image source={{ uri: firstImage }} style={styles.cardImage} />
+        ) : (
+          <View style={styles.cardImagePlaceholder}>
+            <Feather name="image" size={22} color={Colors.gray[500]} />
           </View>
-          <View style={styles.sampleTag}>
-            <Feather name="tag" size={12} color={Colors.brand.primary} />
-            <Text style={styles.sampleTagText}>SAMPLE</Text>
-          </View>
+        )}
+        <View style={styles.cardPricePill}>
+          <Text style={styles.cardPricePillText}>PHP {displayPrice.toLocaleString('en-US')}</Text>
         </View>
-      </View>
+      </TouchableOpacity>
 
-      <View style={styles.cardContent}>
-        <View style={styles.priceSection}>
-          <View style={styles.priceInfo}>
-            <View style={styles.priceRow}>
-              <Text style={styles.pricePerNight}>₱{displayPrice.toLocaleString('en-US')}</Text>
-              {bestDiscount && (
-                <Text style={styles.originalPrice}>₱{Math.floor(basePrice).toLocaleString('en-US')}</Text>
-              )}
-              {bestDiscount && (
-                <View style={styles.saveBadge}>
-                  <Text style={styles.saveBadgeText}>Save</Text>
-                </View>
-              )}
-            </View>
+      <View style={styles.cardBody}>
+        <View style={styles.cardHeadingRow}>
+          <Text style={[styles.cardTitle, { color: theme.text }]} numberOfLines={1}>
+            {item.haven_name}
+          </Text>
+          <View style={[styles.cardChip, { backgroundColor: theme.chipBg }]}>
+            <Text style={styles.cardChipText}>{discountLabel}</Text>
           </View>
         </View>
 
-        <Text style={[styles.havenName, { color: theme.text }]} numberOfLines={1}>{item.haven_name}</Text>
-
-        <View style={styles.locationRating}>
-          <View style={styles.locationSection}>
-            <Feather name="map-pin" size={12} color={Colors.gray[500]} />
-            <Text style={[styles.locationText, { color: theme.muted }]} numberOfLines={1}>{item.tower}, {item.floor}, QC</Text>
+        <View style={styles.cardMetaRow}>
+          <View style={styles.metaItem}>
+            <Feather name="map-pin" size={12} color={theme.muted} />
+            <Text style={[styles.metaText, { color: theme.muted }]}>{item.tower}, {item.floor}</Text>
           </View>
-          <View style={styles.ratingSection}>
+          <View style={styles.metaItem}>
             <Ionicons name="star" size={14} color={Colors.brand.primary} />
-            <Text style={[styles.ratingText, { color: theme.text }]}>{item.rating || '4.5'}</Text>
+            <Text style={[styles.metaText, { color: theme.text }]}>{item.rating || 'N/A'}</Text>
+          </View>
+          <View style={styles.metaItem}>
+            <Feather name="users" size={12} color={theme.muted} />
+            <Text style={[styles.metaText, { color: theme.muted }]}>{item.capacity || 0} pax</Text>
           </View>
         </View>
+
+        <View style={styles.cardActions}>
+          <TouchableOpacity
+            style={styles.secondaryBtn}
+            onPress={() => onPreview(item.images)}
+          >
+            <Text style={styles.secondaryBtnText}>Preview</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.primaryBtn}
+            onPress={() => navigation.navigate('RoomDetails', { haven: item })}
+          >
+            <Text style={styles.primaryBtnText}>Open Details</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-    </TouchableOpacity>
+    </View>
   );
 };
 
 export default function HavenScreen() {
   const { resolvedMode } = useTheme();
   const isDark = resolvedMode === 'dark';
+
   const theme = {
-    page: isDark ? '#0F172A' : Colors.white,
+    page: isDark ? '#0B1220' : '#F3F6FB',
     surface: isDark ? '#111827' : Colors.white,
-    card: isDark ? '#1F2937' : Colors.white,
-    cardSoft: isDark ? '#111827' : Colors.gray[50],
-    border: isDark ? '#374151' : Colors.gray[200],
+    card: isDark ? '#111827' : Colors.white,
+    border: isDark ? '#273244' : '#E2E8F0',
     text: isDark ? '#E5E7EB' : Colors.gray[900],
     muted: isDark ? '#9CA3AF' : Colors.gray[600],
-    chipText: isDark ? '#93C5FD' : '#2563EB',
+    chipBg: isDark ? '#1F2937' : '#EEF2FF',
   };
+
   const [havens, setHavens] = useState<Haven[]>([]);
   const [loading, setLoading] = useState(true);
-  
-  // Carousel State
+  const [sortOpen, setSortOpen] = useState(false);
+  const [selectedSort, setSelectedSort] = useState<SortOption>('Recently Added');
   const [carouselVisible, setCarouselVisible] = useState(false);
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-
-  // Filter & Sort State
-  const [sortOpen, setSortOpen] = useState(false);
-  const [selectedSort, setSelectedSort] = useState('Recommended');
-  const sortOptions = ['Recommended', 'Price: Low to High', 'Price: High to Low', 'Rating', 'Capacity'];
 
   useEffect(() => {
     fetchHavens();
@@ -184,29 +160,56 @@ export default function HavenScreen() {
       setLoading(true);
       const response = await fetch(API_CONFIG.HAVEN_API);
       const data = await response.json();
-      if (data.data && Array.isArray(data.data)) {
-        console.log('Havens fetched:', data.data.length, 'rooms');
-        console.log('First room data:', data.data[0]);
+      if (Array.isArray(data?.data)) {
         setHavens(data.data);
+      } else {
+        setHavens([]);
       }
     } catch (error) {
       console.error('Error fetching havens:', error);
+      setHavens([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleImagePress = (images: HavenImage[] | undefined) => {
-    if (images && images.length > 0) {
-      const imageUrls = images.sort((a, b) => a.display_order - b.display_order).map(img => img.image_url);
-      setSelectedImages(imageUrls);
-      setSelectedImageIndex(0);
-      setCarouselVisible(true);
+  const sortedHavens = useMemo(() => {
+    const list = [...havens];
+    switch (selectedSort) {
+      case 'Price: Low to High':
+        return list.sort((a, b) => parseFloat(a.weekday_rate || '0') - parseFloat(b.weekday_rate || '0'));
+      case 'Price: High to Low':
+        return list.sort((a, b) => parseFloat(b.weekday_rate || '0') - parseFloat(a.weekday_rate || '0'));
+      case 'Rating':
+        return list.sort((a, b) => parseFloat(b.rating || '0') - parseFloat(a.rating || '0'));
+      case 'Capacity':
+        return list.sort((a, b) => (b.capacity || 0) - (a.capacity || 0));
+      default:
+        return list;
     }
+  }, [havens, selectedSort]);
+
+  const summary = useMemo(() => {
+    const total = havens.length;
+    const avgPrice = total
+      ? Math.floor(havens.reduce((sum, h) => sum + parseFloat(h.weekday_rate || '0'), 0) / total)
+      : 0;
+    const avgRating = total
+      ? (havens.reduce((sum, h) => sum + parseFloat(h.rating || '0'), 0) / total).toFixed(1)
+      : '0.0';
+    return { total, avgPrice, avgRating };
+  }, [havens]);
+
+  const handleImagePress = (images: HavenImage[] | undefined) => {
+    if (!images || images.length === 0) return;
+    const urls = [...images].sort((a, b) => a.display_order - b.display_order).map((img) => img.image_url);
+    setSelectedImages(urls);
+    setSelectedImageIndex(0);
+    setCarouselVisible(true);
   };
 
   return (
-    <View style={[styles.mainContainer, { backgroundColor: theme.page }]}>
+    <View style={[styles.container, { backgroundColor: theme.page }]}>
       <AdminTopBar title="Manage Havens" />
 
       <ImageCarouselModal
@@ -216,455 +219,305 @@ export default function HavenScreen() {
         onClose={() => setCarouselVisible(false)}
       />
 
-      {/* Filter & Sort Section */}
-      <View style={[styles.filterContainer, { zIndex: 100, backgroundColor: theme.surface, borderBottomColor: theme.border }]}>
-        <View style={styles.filterScrollWrapper}>
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false} 
-            contentContainerStyle={styles.filterContent}
-          >
-            {['Price', 'Capacity', 'Rating', 'Tower'].map((filter) => (
-              <TouchableOpacity key={filter} style={[styles.filterChip, { backgroundColor: theme.card, borderColor: theme.border }]}>
-                <Text style={[styles.filterLabel, { color: theme.chipText }]}>{filter}</Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-
-        <View style={styles.sortWrapper}>
-          <Text style={[styles.sortLabelText, { color: theme.muted }]}>Sort:</Text>
-          <TouchableOpacity
-            style={[styles.sortBox, { backgroundColor: theme.card, borderColor: theme.border }]}
-            onPress={() => setSortOpen(!sortOpen)}
-          >
-            <Text style={[styles.sortBoxText, { color: theme.text }]}>{selectedSort}</Text>
-            <Feather name="chevron-down" size={14} color={theme.text} />
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <View style={[styles.heroCard, { backgroundColor: theme.surface, borderColor: theme.border }]}> 
+          <View>
+            <Text style={[styles.heroTitle, { color: theme.text }]}>Haven Inventory</Text>
+            <Text style={[styles.heroSubtitle, { color: theme.muted }]}>Monitor active properties, pricing, and room readiness.</Text>
+          </View>
+          <TouchableOpacity style={styles.refreshBtn} onPress={fetchHavens}>
+            <Feather name="refresh-cw" size={15} color={Colors.white} />
+            <Text style={styles.refreshBtnText}>Refresh</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Dropdown Menu */}
-        {sortOpen && (
-          <View style={[styles.dropdownOverlay, { backgroundColor: theme.card, borderColor: theme.border }]}>
-            {sortOptions.map((option) => (
-              <TouchableOpacity
-                key={option}
-                style={[
-                  styles.dropdownOption,
-                  { borderBottomColor: theme.border },
-                  option === selectedSort && styles.dropdownOptionActive
-                ]}
-                onPress={() => {
-                  setSelectedSort(option);
-                  setSortOpen(false);
-                }}
-              >
-                <Text style={[
-                  styles.dropdownOptionText,
-                  { color: theme.text },
-                  option === selectedSort && styles.dropdownOptionTextActive
-                ]}>
-                  {option}
-                </Text>
-              </TouchableOpacity>
+        <View style={styles.kpiRow}>
+          <View style={[styles.kpiCard, { backgroundColor: theme.surface, borderColor: theme.border }]}> 
+            <Text style={[styles.kpiLabel, { color: theme.muted }]}>Total Havens</Text>
+            <Text style={[styles.kpiValue, { color: theme.text }]}>{summary.total}</Text>
+          </View>
+          <View style={[styles.kpiCard, { backgroundColor: theme.surface, borderColor: theme.border }]}> 
+            <Text style={[styles.kpiLabel, { color: theme.muted }]}>Avg. Price</Text>
+            <Text style={[styles.kpiValue, { color: theme.text }]}>PHP {summary.avgPrice.toLocaleString('en-US')}</Text>
+          </View>
+          <View style={[styles.kpiCard, { backgroundColor: theme.surface, borderColor: theme.border }]}> 
+            <Text style={[styles.kpiLabel, { color: theme.muted }]}>Avg. Rating</Text>
+            <Text style={[styles.kpiValue, { color: theme.text }]}>{summary.avgRating}</Text>
+          </View>
+        </View>
+
+        <View style={[styles.toolbar, { backgroundColor: theme.surface, borderColor: theme.border }]}> 
+          <Text style={[styles.sortLabel, { color: theme.muted }]}>Sort</Text>
+          <TouchableOpacity
+            style={[styles.sortBox, { borderColor: theme.border, backgroundColor: theme.page }]}
+            onPress={() => setSortOpen((prev) => !prev)}
+          >
+            <Text style={[styles.sortValue, { color: theme.text }]}>{selectedSort}</Text>
+            <Feather name={sortOpen ? 'chevron-up' : 'chevron-down'} size={14} color={theme.muted} />
+          </TouchableOpacity>
+          {sortOpen && (
+            <View style={[styles.sortMenu, { backgroundColor: theme.surface, borderColor: theme.border }]}> 
+              {SORT_OPTIONS.map((option) => (
+                <TouchableOpacity
+                  key={option}
+                  style={styles.sortOption}
+                  onPress={() => {
+                    setSelectedSort(option);
+                    setSortOpen(false);
+                  }}
+                >
+                  <Text style={[styles.sortOptionText, { color: theme.text }]}>{option}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        </View>
+
+        {loading ? (
+          <View style={styles.stateBlock}>
+            <ActivityIndicator color={Colors.brand.primary} size="small" />
+            <Text style={[styles.stateText, { color: theme.muted }]}>Loading havens...</Text>
+          </View>
+        ) : sortedHavens.length === 0 ? (
+          <View style={styles.stateBlock}>
+            <Feather name="home" size={24} color={theme.muted} />
+            <Text style={[styles.stateText, { color: theme.muted }]}>No havens available</Text>
+          </View>
+        ) : (
+          <View style={styles.listWrap}>
+            {sortedHavens.map((haven, index) => (
+              <HavenCard key={haven.uuid_id || index} item={haven} theme={theme} onPreview={handleImagePress} />
             ))}
           </View>
         )}
-      </View>
-
-      {/* Scrollable Content */}
-      <ScrollView
-        style={[styles.scrollView, { backgroundColor: theme.page }]}
-        contentContainerStyle={styles.scrollViewContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Room Cards Section - First 5 */}
-        <View style={styles.roomsSection}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.roomsScroll}
-          contentContainerStyle={styles.scrollContentContainer}
-        >
-          {loading ? (
-            <Text style={[styles.loadingText, { color: theme.muted }]}>Loading havens...</Text>
-          ) : havens.length > 0 ? (
-            havens.slice(0, 5).map((haven, index) => (
-              <View key={haven.uuid_id || index}>
-                <RoomCard item={haven} onImagePress={handleImagePress} theme={theme} />
-              </View>
-            ))
-          ) : (
-            <Text style={[styles.emptyText, { color: theme.muted }]}>No havens available</Text>
-          )}
-        </ScrollView>
-      </View>
-
-      {/* Remaining Rooms Section */}
-      {havens.length > 5 && (
-        <View style={styles.remainingSection}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.roomsScroll}
-            contentContainerStyle={styles.scrollContentContainer}
-          >
-            {havens.slice(5).map((haven, index) => (
-              <View key={haven.uuid_id || index}>
-                <RoomCard item={haven} onImagePress={handleImagePress} theme={theme} />
-              </View>
-            ))}
-          </ScrollView>
-        </View>
-      )}
       </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  mainContainer: {
-    flex: 1,
-    backgroundColor: Colors.white,
-  },
-  scrollView: {
-    flex: 1,
-    backgroundColor: Colors.white,
-  },
-  scrollViewContent: {
-    alignItems: 'center',
-  },
   container: {
     flex: 1,
-    backgroundColor: Colors.white,
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    width: '100%',
-    maxWidth: '100%',
   },
-  statItem: {
+  content: {
+    padding: 16,
+    paddingBottom: 28,
+    gap: 12,
+  },
+  heroCard: {
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    justifyContent: 'center',
   },
-  statContent: {
-    marginLeft: 12,
-  },
-  statNumber: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: Colors.brand.primary,
+  heroTitle: {
+    fontSize: 22,
+    fontWeight: '700',
     fontFamily: Fonts.poppins,
-    marginBottom: 6,
   },
-  statLabel: {
-    fontSize: 14,
-    color: Colors.gray[700],
+  heroSubtitle: {
+    marginTop: 3,
+    fontSize: 13,
+    fontFamily: Fonts.inter,
+    maxWidth: 220,
+  },
+  refreshBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: Colors.brand.primary,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+  },
+  refreshBtnText: {
+    color: Colors.white,
+    fontSize: 12,
+    fontWeight: '700',
     fontFamily: Fonts.inter,
   },
-  roomsSection: {
-    paddingVertical: 24,
-    marginTop: 20,
-    paddingHorizontal: 20,
-    width: '100%',
+  kpiRow: {
+    flexDirection: 'row',
+    gap: 8,
   },
-  roomsScroll: {
-    paddingHorizontal: 0,
+  kpiCard: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
   },
-  scrollContentContainer: {
-    paddingRight: 20,
+  kpiLabel: {
+    fontSize: 11,
+    fontFamily: Fonts.inter,
   },
-  roomCard: {
-    width: 280,
-    backgroundColor: Colors.white,
+  kpiValue: {
+    marginTop: 4,
+    fontSize: 16,
+    fontWeight: '700',
+    fontFamily: Fonts.poppins,
+  },
+  toolbar: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    position: 'relative',
+    zIndex: 50,
+  },
+  sortLabel: {
+    fontSize: 12,
+    marginBottom: 6,
+    fontFamily: Fonts.inter,
+  },
+  sortBox: {
+    borderWidth: 1,
+    borderRadius: 10,
+    minHeight: 40,
+    paddingHorizontal: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  sortValue: {
+    fontSize: 13,
+    fontFamily: Fonts.inter,
+    fontWeight: '600',
+  },
+  sortMenu: {
+    position: 'absolute',
+    left: 12,
+    right: 12,
+    top: 86,
+    borderWidth: 1,
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+  sortOption: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  sortOptionText: {
+    fontSize: 13,
+    fontFamily: Fonts.inter,
+  },
+  listWrap: {
+    gap: 12,
+  },
+  card: {
+    borderWidth: 1,
     borderRadius: 16,
     overflow: 'hidden',
-    marginRight: 16,
-    borderWidth: 1,
-    borderColor: Colors.gray[100],
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 3,
   },
-  imageContainer: {
+  cardImageWrap: {
+    height: 170,
     position: 'relative',
-    width: '100%',
-    height: 180,
-    backgroundColor: Colors.gray[200],
+    backgroundColor: Colors.gray[100],
   },
-  roomImage: {
+  cardImage: {
     width: '100%',
     height: '100%',
     resizeMode: 'cover',
   },
-  roomImagePlaceholder: {
+  cardImagePlaceholder: {
     width: '100%',
     height: '100%',
-    backgroundColor: Colors.gray[200],
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  favoriteButton: {
+  cardPricePill: {
     position: 'absolute',
-    top: 12,
     right: 12,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  overlappingBadge: {
-    position: 'absolute',
-    bottom: -15,
-    left: 20,
-    right: 20,
-    height: 40,
-    backgroundColor: Colors.white,
-    borderRadius: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-    zIndex: 10,
-  },
-  discountBadgeButton: {
-    backgroundColor: Colors.brand.primary,
-    borderRadius: 16,
-    paddingHorizontal: 12,
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  discountBadgeButtonText: {
-    fontSize: 11,
-    fontWeight: 'bold',
-    color: Colors.white,
-    fontFamily: Fonts.poppins,
-  },
-  sampleTag: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-  },
-  sampleTagText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: Colors.brand.primary,
-    fontFamily: Fonts.poppins,
-  },
-  cardContent: {
-    padding: 16,
-    paddingTop: 24,
-  },
-  priceSection: {
-    marginBottom: 4,
-  },
-  priceInfo: {
-    width: '100%',
-  },
-  priceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  pricePerNight: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: Colors.brand.primary,
-    fontFamily: Fonts.poppins,
-  },
-  originalPrice: {
-    fontSize: 13,
-    color: Colors.gray[500],
-    fontFamily: Fonts.inter,
-    textDecorationLine: 'line-through',
-  },
-  saveBadge: {
-    backgroundColor: '#DCFCE7', // Light green
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  saveBadgeText: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: '#166534', // Dark green
-    fontFamily: Fonts.inter,
-  },
-  havenName: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.gray[900],
-    fontFamily: Fonts.poppins,
-    marginBottom: 10,
-  },
-  locationRating: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  locationSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    flex: 1,
-  },
-  locationText: {
-    fontSize: 12,
-    color: Colors.gray[500],
-    fontFamily: Fonts.inter,
-  },
-  ratingSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  ratingText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: Colors.gray[900],
-    fontFamily: Fonts.poppins,
-  },
-  bookButton: {
-    backgroundColor: Colors.brand.primary,
-    borderRadius: 8,
-    paddingVertical: 8,
-    alignItems: 'center',
-    marginTop: 12,
-  },
-  bookButtonText: {
-    color: Colors.white,
-    fontSize: 12,
-    fontWeight: '700',
-    fontFamily: Fonts.poppins,
-  },
-  loadingText: {
-    fontSize: 14,
-    color: Colors.gray[600],
-    fontFamily: Fonts.inter,
-    textAlign: 'center',
-    padding: 20,
-  },
-  emptyText: {
-    fontSize: 14,
-    color: Colors.gray[600],
-    fontFamily: Fonts.inter,
-    textAlign: 'center',
-    padding: 20,
-  },
-  remainingSection: {
-    paddingVertical: 24,
-    paddingHorizontal: 20,
-    width: '100%',
-  },
-  sectionHeading: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.gray[900],
-    fontFamily: Fonts.poppins,
-    marginBottom: 16,
-  },
-  // Filter & Sort Styles
-  filterContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 20,
-    backgroundColor: Colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.gray[200],
-  },
-  filterScrollWrapper: {
-    flex: 1,
-    marginRight: 10,
-  },
-  filterContent: {
-    paddingRight: 10,
-  },
-  filterChip: {
-    borderRadius: 50,
-    borderWidth: 1,
-    borderColor: Colors.gray[200],
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginRight: 8,
-    backgroundColor: Colors.white,
-  },
-  filterLabel: {
-    color: '#2563EB', // Blue as requested
-    fontSize: 12,
-    fontWeight: '600',
-    fontFamily: Fonts.poppins,
-  },
-  sortWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  sortLabelText: {
-    marginRight: 8,
-    color: Colors.gray[600],
-    fontSize: 12,
-    fontFamily: Fonts.inter,
-  },
-  sortBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#DAA520', // Golden-yellow border
-    borderRadius: 6,
+    bottom: 12,
+    backgroundColor: 'rgba(17, 24, 39, 0.74)',
+    borderRadius: 999,
     paddingHorizontal: 10,
     paddingVertical: 6,
-    backgroundColor: Colors.white,
-    minWidth: 100,
-    justifyContent: 'space-between',
   },
-  sortBoxText: {
+  cardPricePillText: {
+    color: Colors.white,
+    fontSize: 12,
+    fontWeight: '700',
+    fontFamily: Fonts.inter,
+  },
+  cardBody: {
+    padding: 14,
+  },
+  cardHeadingRow: {
+    gap: 8,
+  },
+  cardTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    fontFamily: Fonts.poppins,
+  },
+  cardChip: {
+    alignSelf: 'flex-start',
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  cardChipText: {
+    color: '#3730A3',
+    fontSize: 11,
+    fontFamily: Fonts.inter,
+    fontWeight: '700',
+  },
+  cardMetaRow: {
+    marginTop: 10,
+    flexDirection: 'row',
+    gap: 10,
+    flexWrap: 'wrap',
+  },
+  metaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  metaText: {
     fontSize: 12,
     fontFamily: Fonts.inter,
-    color: Colors.gray[900],
-    fontWeight: '500',
-    marginRight: 4,
-  },
-  dropdownOverlay: {
-    position: 'absolute',
-    top: 50,
-    right: 20,
-    backgroundColor: Colors.white,
-    borderRadius: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 5,
-    width: 180,
-    borderWidth: 1,
-    borderColor: Colors.gray[100],
-    zIndex: 1000,
-    overflow: 'hidden',
-  },
-  dropdownOption: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.gray[50],
-  },
-  dropdownOptionActive: {
-    backgroundColor: '#EFF6FF', // Light blue background for active
-  },
-  dropdownOptionText: {
-    fontSize: 13,
-    color: Colors.gray[900],
-    fontFamily: Fonts.inter,
-  },
-  dropdownOptionTextActive: {
-    color: '#2563EB', // Blue text for active
     fontWeight: '600',
+  },
+  cardActions: {
+    marginTop: 12,
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 8,
+  },
+  secondaryBtn: {
+    borderWidth: 1,
+    borderColor: Colors.gray[200],
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  secondaryBtnText: {
+    fontSize: 12,
+    color: Colors.gray[700],
+    fontFamily: Fonts.inter,
+    fontWeight: '600',
+  },
+  primaryBtn: {
+    backgroundColor: Colors.brand.primary,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  primaryBtnText: {
+    color: Colors.white,
+    fontSize: 12,
+    fontFamily: Fonts.inter,
+    fontWeight: '700',
+  },
+  stateBlock: {
+    minHeight: 140,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  stateText: {
+    fontSize: 13,
+    fontFamily: Fonts.inter,
   },
 });

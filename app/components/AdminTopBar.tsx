@@ -110,6 +110,7 @@ export default function AdminTopBar({ title }: AdminTopBarProps) {
     AdminDashboard: 'Dashboard',
     AdminBookingCalender: 'Booking Calendar',
     AdminReservations: 'Reservations',
+    AdminBlockedDates: 'Blocked Dates',
     ManageHavens: 'Haven Management',
     AdminProfile: 'Profile',
   };

@@ -19,11 +19,11 @@ interface SidebarProps {
   activeRoute?: string;
 }
 
-export default function Sidebar({ visible, onClose, activeRoute = 'Dashboard' }: SidebarProps) {
+export default function Sidebar({ visible, onClose, activeRoute = '' }: SidebarProps) {
   const navigation = useNavigation<any>();
 
   const MenuItem = ({ icon, label, route, iconColor = Colors.gray[600], iconType = 'feather' }: any) => {
-    const isActive = label === activeRoute;
+    const isActive = Boolean(activeRoute) && label === activeRoute;
     
     const renderIcon = () => {
       const color = isActive ? Colors.white : iconColor;
@@ -119,6 +119,7 @@ export default function Sidebar({ visible, onClose, activeRoute = 'Dashboard' }:
                 <MenuItem 
                   icon="calendar-remove" 
                   label="Blocked Dates" 
+                  route="AdminBlockedDates"
                   iconColor="#EF4444" 
                   iconType="material" 
                 />
