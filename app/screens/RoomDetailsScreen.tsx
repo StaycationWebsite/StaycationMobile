@@ -142,7 +142,7 @@ export default function RoomDetailsScreen() {
                 <Text style={styles.locationTitle}>{haven.tower}, {haven.floor}</Text>
                 <Text style={styles.locationSubtitle}>Quezon City, Metro Manila, Philippines</Text>
                 <View style={styles.mapPlaceholder}>
-                  <Feather name="map" size={40} color={Colors.gray[300]} />
+	                  <Feather name="map" size={40} color={Colors.gray[500]} />
                   <Text style={styles.mapText}>Interactive map coming soon</Text>
                 </View>
               </View>
@@ -385,7 +385,7 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.inter,
     marginBottom: 16,
   },
-  mapPlaceholder: {
+	  mapPlaceholder: {
     width: '100%',
     height: 180,
     backgroundColor: Colors.gray[100],
@@ -394,14 +394,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderStyle: 'dashed',
-    borderColor: Colors.gray[300],
-  },
-  mapText: {
-    marginTop: 8,
-    fontSize: 12,
-    color: Colors.gray[400],
-    fontFamily: Fonts.inter,
-  },
+	    borderColor: Colors.gray[200],
+	  },
+	  mapText: {
+	    marginTop: 8,
+	    fontSize: 12,
+	    color: Colors.gray[500],
+	    fontFamily: Fonts.inter,
+	  },
   infoCardsRow: {
     flexDirection: 'row',
     gap: 12,
@@ -415,9 +415,12 @@ const styles = StyleSheet.create({
     borderColor: Colors.gray[100],
     backgroundColor: Colors.gray[50],
   },
-  infoCardIcon: {
-    marginBottom: 12,
-  },
+	  infoCardIcon: {
+	    marginBottom: 12,
+	  },
+	  infoCardText: {
+	    flex: 1,
+	  },
   infoCardTitle: {
     fontSize: 14,
     fontWeight: '700',

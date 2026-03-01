@@ -263,10 +263,10 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.gray[100],
   },
   dayButtonBooked: {
-    backgroundColor: Colors.gray[300],
+    backgroundColor: Colors.gray[200],
   },
   dayButtonBlocked: {
-    backgroundColor: Colors.gray[300],
+    backgroundColor: Colors.gray[200],
   },
   dayButtonInRange: {
     backgroundColor: Colors.brand.primarySoft,
@@ -281,10 +281,10 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.inter,
   },
   dayTextOtherMonth: {
-    color: Colors.gray[400],
+    color: Colors.gray[500],
   },
   dayTextDisabled: {
-    color: Colors.gray[400],
+    color: Colors.gray[500],
   },
   dayTextInRange: {
     color: Colors.brand.primary,

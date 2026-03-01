@@ -3,7 +3,6 @@ import { Colors, Fonts } from '../../constants/Styles';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigation } from '@react-navigation/native';
-import SearchModal from '../components/SearchModal';
 import ImageCarouselModal from '../components/ImageCarouselModal';
 import { API_CONFIG } from '../../constants/config';
 import { useRoomDiscounts } from '../../hooks/useRoomDiscounts';
@@ -163,7 +162,6 @@ export default function HavenScreen() {
     muted: isDark ? '#9CA3AF' : Colors.gray[600],
     chipText: isDark ? '#93C5FD' : '#2563EB',
   };
-  const [modalVisible, setModalVisible] = useState(false);
   const [havens, setHavens] = useState<Haven[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -198,10 +196,6 @@ export default function HavenScreen() {
     }
   };
 
-  const handleSearch = () => {
-    setModalVisible(false);
-  };
-
   const handleImagePress = (images: HavenImage[] | undefined) => {
     if (images && images.length > 0) {
       const imageUrls = images.sort((a, b) => a.display_order - b.display_order).map(img => img.image_url);
@@ -215,29 +209,12 @@ export default function HavenScreen() {
     <View style={[styles.mainContainer, { backgroundColor: theme.page }]}>
       <AdminTopBar title="Manage Havens" />
 
-      <SearchModal
-        visible={modalVisible}
-        onClose={() => setModalVisible(false)}
-        onSearch={handleSearch}
-      />
-      
       <ImageCarouselModal
         visible={carouselVisible}
         images={selectedImages}
         initialIndex={selectedImageIndex}
         onClose={() => setCarouselVisible(false)}
       />
-
-      {/* Quick Actions */}
-      <View style={[styles.topSection, { backgroundColor: theme.cardSoft, borderBottomColor: theme.border }]}>
-        <TouchableOpacity
-          style={styles.findRoomsButton}
-          onPress={() => setModalVisible(true)}
-        >
-          <Feather name="search" size={18} color={Colors.white} style={styles.buttonIcon} />
-          <Text style={styles.findRoomsButtonText}>Find Rooms</Text>
-        </TouchableOpacity>
-      </View>
 
       {/* Filter & Sort Section */}
       <View style={[styles.filterContainer, { zIndex: 100, backgroundColor: theme.surface, borderBottomColor: theme.border }]}>
@@ -301,36 +278,8 @@ export default function HavenScreen() {
         contentContainerStyle={styles.scrollViewContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.header}>
-          <Text style={[styles.mainTitle, { color: theme.text }]}>Find Your Perfect</Text>
-          <Text style={styles.highlightedText}>Staycation</Text>
-          <View style={styles.dot} />
-          <Text style={[styles.description, { color: theme.muted }]}>
-            Discover our premium havens with world-class amenities. Short stays, extended stays, or your perfect getaway - all at your fingertips.
-          </Text>
-
-          <View style={styles.statsContainer}>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>8</Text>
-              <Text style={[styles.statLabel, { color: theme.muted }]}>Premium Havens</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>4.8</Text>
-              <Text style={[styles.statLabel, { color: theme.muted }]}>Average Rating</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>24/7</Text>
-              <Text style={[styles.statLabel, { color: theme.muted }]}>Support</Text>
-            </View>
-          </View>
-        </View>
-
         {/* Room Cards Section - First 5 */}
         <View style={styles.roomsSection}>
-          <View style={styles.roomsSectionHeader}>
-            <Text style={[styles.roomsSectionTitle, { color: theme.text }]}>Staycation Haven PH</Text>
-            <Feather name="chevron-right" size={20} color={theme.muted} />
-          </View>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -393,81 +342,6 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: '100%',
   },
-  topSection: {
-    backgroundColor: Colors.gray[50],
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    marginHorizontal: 0,
-    marginTop: 0,
-    paddingTop: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.gray[200],
-    width: '100%',
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 40,
-    marginTop: 20,
-    paddingHorizontal: 20,
-    width: '100%',
-  },
-  findRoomsButton: {
-    width: '100%',
-    backgroundColor: Colors.brand.primary,
-    paddingVertical: 14,
-    borderRadius: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 2,
-    flexDirection: 'row',
-  },
-  buttonIcon: {
-    marginRight: 10,
-  },
-  findRoomsButtonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: Colors.white,
-    fontFamily: Fonts.poppins,
-  },
-  buttonDropdownIcon: {
-    marginLeft: 10,
-  },
-  mainTitle: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: Colors.gray[900],
-    fontFamily: Fonts.poppins,
-    marginBottom: 4,
-  },
-  highlightedText: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: Colors.brand.primary,
-    fontFamily: Fonts.poppins,
-    marginBottom: 16,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.brand.primary,
-    marginBottom: 20,
-  },
-  description: {
-    fontSize: 14,
-    color: Colors.gray[600],
-    textAlign: 'center',
-    fontFamily: Fonts.inter,
-    lineHeight: 22,
-    marginHorizontal: 10,
-    marginBottom: 24,
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
-  },
   statItem: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -492,18 +366,6 @@ const styles = StyleSheet.create({
     marginTop: 20,
     paddingHorizontal: 20,
     width: '100%',
-  },
-  roomsSectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  roomsSectionTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: Colors.gray[900],
-    fontFamily: Fonts.poppins,
   },
   roomsScroll: {
     paddingHorizontal: 0,

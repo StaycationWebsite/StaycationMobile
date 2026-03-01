@@ -74,7 +74,7 @@ export default function Sidebar({ visible, onClose, activeRoute = 'Dashboard' }:
                 <Text style={styles.portalSubtitle}>Owner Portal</Text>
               </View>
               <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                <Feather name="x" size={24} color={Colors.gray[400]} />
+                <Feather name="x" size={24} color={Colors.gray[500]} />
               </TouchableOpacity>
             </View>
 
@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
   sectionHeader: {
     fontSize: 11,
     fontWeight: 'bold',
-    color: Colors.gray[400],
+    color: Colors.gray[500],
     letterSpacing: 1.2,
     marginTop: 24,
     marginBottom: 12,
