@@ -16,6 +16,8 @@ import AdminTopBar from '../../components/AdminTopBar';
 import { useTheme } from '../../../hooks/useTheme';
 
 type StatusFilter = 'All Status' | 'Active' | 'Expired';
+type SortDirection = 'asc' | 'desc';
+type BlockedSortKey = 'haven' | 'from' | 'to' | 'status' | 'reason';
 
 interface HavenOption {
   id: string;
@@ -83,6 +85,8 @@ export default function AdminBlockedDatesScreen() {
   const [havenOpen, setHavenOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
   const [page, setPage] = useState(1);
+  const [sortBy, setSortBy] = useState<BlockedSortKey>('from');
+  const [sortDir, setSortDir] = useState<SortDirection>('asc');
 
   React.useEffect(() => {
     const loadData = async () => {
@@ -171,9 +175,49 @@ export default function AdminBlockedDatesScreen() {
     return list;
   }, [blockedDates, search, selectedHaven, selectedStatus]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const sortedFiltered = useMemo(() => {
+    const list = [...filtered];
+    list.sort((a, b) => {
+      let aVal: string | number = '';
+      let bVal: string | number = '';
+      switch (sortBy) {
+        case 'haven':
+          aVal = String(a.haven_name || '');
+          bVal = String(b.haven_name || '');
+          break;
+        case 'from':
+          aVal = new Date(a.from_date || 0).getTime();
+          bVal = new Date(b.from_date || 0).getTime();
+          break;
+        case 'to':
+          aVal = new Date(a.to_date || 0).getTime();
+          bVal = new Date(b.to_date || 0).getTime();
+          break;
+        case 'status':
+          aVal = getStatus(a);
+          bVal = getStatus(b);
+          break;
+        case 'reason':
+          aVal = String(a.reason || '');
+          bVal = String(b.reason || '');
+          break;
+      }
+
+      if (typeof aVal === 'number' && typeof bVal === 'number') {
+        return sortDir === 'asc' ? aVal - bVal : bVal - aVal;
+      }
+      const x = String(aVal).toLowerCase();
+      const y = String(bVal).toLowerCase();
+      if (x < y) return sortDir === 'asc' ? -1 : 1;
+      if (x > y) return sortDir === 'asc' ? 1 : -1;
+      return 0;
+    });
+    return list;
+  }, [filtered, sortBy, sortDir]);
+
+  const totalPages = Math.max(1, Math.ceil(sortedFiltered.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
-  const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const paginated = sortedFiltered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   const onSelectHaven = (value: string) => {
     setSelectedHaven(value);
@@ -185,6 +229,20 @@ export default function AdminBlockedDatesScreen() {
     setSelectedStatus(value);
     setStatusOpen(false);
     setPage(1);
+  };
+
+  const toggleSort = (key: BlockedSortKey) => {
+    if (sortBy === key) {
+      setSortDir((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+      return;
+    }
+    setSortBy(key);
+    setSortDir('asc');
+  };
+
+  const sortIcon = (key: BlockedSortKey) => {
+    if (sortBy !== key) return 'chevrons-up';
+    return sortDir === 'asc' ? 'arrow-up' : 'arrow-down';
   };
 
   return (
@@ -292,11 +350,26 @@ export default function AdminBlockedDatesScreen() {
           </View>
 
           <View style={[styles.tableHeader, { borderBottomColor: theme.border }]}>
-            <Text style={[styles.headerCell, { color: theme.muted }]}>Haven</Text>
-            <Text style={[styles.headerCell, { color: theme.muted }]}>From</Text>
-            <Text style={[styles.headerCell, { color: theme.muted }]}>To</Text>
-            <Text style={[styles.headerCell, { color: theme.muted }]}>Status</Text>
-            <Text style={[styles.headerCellWide, { color: theme.muted }]}>Reason</Text>
+            <TouchableOpacity style={styles.sortHeaderCell} onPress={() => toggleSort('haven')}>
+              <Text style={[styles.headerCell, { color: theme.muted }]}>Haven</Text>
+              <Feather name={sortIcon('haven')} size={12} color={theme.muted} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.sortHeaderCell} onPress={() => toggleSort('from')}>
+              <Text style={[styles.headerCell, { color: theme.muted }]}>From</Text>
+              <Feather name={sortIcon('from')} size={12} color={theme.muted} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.sortHeaderCell} onPress={() => toggleSort('to')}>
+              <Text style={[styles.headerCell, { color: theme.muted }]}>To</Text>
+              <Feather name={sortIcon('to')} size={12} color={theme.muted} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.sortHeaderCell} onPress={() => toggleSort('status')}>
+              <Text style={[styles.headerCell, { color: theme.muted }]}>Status</Text>
+              <Feather name={sortIcon('status')} size={12} color={theme.muted} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.sortHeaderCellWide} onPress={() => toggleSort('reason')}>
+              <Text style={[styles.headerCellWide, { color: theme.muted }]}>Reason</Text>
+              <Feather name={sortIcon('reason')} size={12} color={theme.muted} />
+            </TouchableOpacity>
           </View>
 
           {loading ? (
@@ -522,16 +595,26 @@ const styles = StyleSheet.create({
     minWidth: 640,
   },
   headerCell: {
-    width: 100,
     fontSize: 11,
     fontFamily: Fonts.inter,
     fontWeight: '700',
   },
+  sortHeaderCell: {
+    width: 100,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
   headerCellWide: {
-    width: 240,
     fontSize: 11,
     fontFamily: Fonts.inter,
     fontWeight: '700',
+  },
+  sortHeaderCellWide: {
+    width: 240,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   tableRow: {
     borderBottomWidth: 1,
