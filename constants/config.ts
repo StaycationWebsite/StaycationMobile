@@ -3,4 +3,5 @@ export const API_CONFIG = {
   RESERVATIONS_API: 'https://www.staycationhavenph.com/api/bookings',
   BLOCKED_DATES_API: 'https://www.staycationhavenph.com/api/blocked-dates',
   MAINTENANCE_API: 'https://www.staycationhavenph.com/api/maintenance',
+  CLEANING_API: 'https://www.staycationhavenph.com/api/cleaning',
 };

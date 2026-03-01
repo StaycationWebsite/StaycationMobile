@@ -143,6 +143,7 @@ export default function Sidebar({ visible, onClose, activeRoute = '' }: SidebarP
                 <MenuItem 
                   icon="sparkles" 
                   label="Cleaning Management" 
+                  route="AdminCleaningManagement"
                   iconColor="#F59E0B" 
                   iconType="ion" 
                 />
