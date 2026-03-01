@@ -1,5 +1,5 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import HavenScreen from '../app/screens/HavenScreen';
+import HavenScreen from '../app/screens/Admin/HavenScreen';
 import AdminDashboardScreen from '../app/screens/Admin/AdminDashboardScreen';
 import AdminBookingCalender from '../app/screens/Admin/AdminBookingCalender';
 import AdminReservationsScreen from '../app/screens/Admin/AdminReservationsScreen';
