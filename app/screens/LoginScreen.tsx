@@ -40,18 +40,30 @@ export default function LoginScreen() {
       return;
     }
 
-    const result = await login({ email, password });
-    if (!result.success) {
-      Alert.alert('Login Failed', result.error || 'Invalid credentials');
+    try {
+      const result = await login({ email, password });
+      if (!result.success) {
+        Alert.alert('Login Failed', result.error || 'Invalid credentials');
+      }
+    } catch (err) {
+      console.error('Login Error:', err);
+      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
     }
   };
 
   return (
-    <KeyboardAvoidingView 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 24 : 0}
       style={[styles.container, { backgroundColor: theme.page }]}
     >
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent} 
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        bounces={false}
+        alwaysBounceVertical={false}
+      >
         <View style={styles.header}>
           <View style={styles.logoRow}>
             <Image 
@@ -59,14 +71,14 @@ export default function LoginScreen() {
               style={styles.logo}
               resizeMode="contain"
             />
-            <Text style={styles.appName}>taycation Haven</Text>
+            <Text style={styles.appName}>Staycation Haven</Text>
           </View>
           <Text style={[styles.adminBadge, { color: theme.muted }]}>ADMIN PANEL</Text>
         </View>
 
         <View style={[styles.formCard, { backgroundColor: theme.surface }]}>
           <Text style={[styles.title, { color: theme.text }]}>Welcome Admin,</Text>
-          <Text style={[styles.subtitle, { color: theme.muted }]}>Sign in to your admin arccount</Text>
+          <Text style={[styles.subtitle, { color: theme.muted }]}>Sign in to your admin account</Text>
 
           {/* Email Input */}
           <View style={styles.inputContainer}>
@@ -103,6 +115,8 @@ export default function LoginScreen() {
                   if (error) clearError();
                 }}
                 secureTextEntry={!showPassword}
+                autoCorrect={false}
+                spellCheck={false}
               />
               <TouchableOpacity 
                 onPress={() => setShowPassword(!showPassword)}
@@ -160,6 +174,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'center',
     padding: 24,
+    paddingBottom: 40,
   },
   header: {
     alignItems: 'center',
