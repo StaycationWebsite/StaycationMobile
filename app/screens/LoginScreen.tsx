@@ -1,25 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Text, 
-  View, 
-  StyleSheet, 
-  TouchableOpacity, 
-  TextInput, 
-  Image, 
-  KeyboardAvoidingView, 
-  Platform, 
+﻿import React, { useState } from 'react';
+import {
+  Text,
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  TextInput,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   ActivityIndicator,
-  Alert
+  Alert,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { Colors, Fonts } from '../../constants/Styles';
 import { Feather } from '@expo/vector-icons';
+
+import { Colors, Fonts } from '../../constants/Styles';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../hooks/useTheme';
 
 export default function LoginScreen() {
-  const navigation = useNavigation<any>();
   const { resolvedMode } = useTheme();
   const isDark = resolvedMode === 'dark';
   const theme = {
@@ -34,16 +33,7 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const { login, isLoading, error, clearError, user } = useAuth();
-
-  useEffect(() => {
-    if (user) {
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'AdminDashboard' }],
-      });
-    }
-  }, [user, navigation]);
+  const { login, isLoading, error, clearError } = useAuth();
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -63,40 +53,37 @@ export default function LoginScreen() {
   };
 
   return (
-    <KeyboardAvoidingView 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 24 : 0}
       style={[styles.container, { backgroundColor: theme.page }]}
     >
-      <ScrollView 
-        contentContainerStyle={styles.scrollContent} 
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        bounces={false}
+        alwaysBounceVertical={false}
       >
-        <View style={styles.innerContent}>
         <View style={styles.header}>
           <View style={styles.logoRow}>
-            <Image 
-              source={require('../../assets/haven_logo.png')} 
-              style={styles.logo}
-              resizeMode="contain"
-            />
-            <Text style={styles.appName}>taycation Haven</Text>
+            <Image source={require('../../assets/haven_logo.png')} style={styles.logo} resizeMode="contain" />
+            <Text style={styles.appName}>Staycation Haven</Text>
           </View>
           <Text style={[styles.adminBadge, { color: theme.muted }]}>ADMIN PANEL</Text>
         </View>
 
         <View style={[styles.formCard, { backgroundColor: theme.surface }]}>
           <Text style={[styles.title, { color: theme.text }]}>Welcome Admin,</Text>
-          <Text style={[styles.subtitle, { color: theme.muted }]}>Sign in to your admin arccount</Text>
+          <Text style={[styles.subtitle, { color: theme.muted }]}>Sign in to your admin account</Text>
 
-          {/* Email Input */}
           <View style={styles.inputContainer}>
             <Text style={[styles.inputLabel, { color: theme.text }]}>Email Address</Text>
             <View style={[styles.inputWrapper, { backgroundColor: theme.input, borderColor: theme.border }]}>
               <Feather name="mail" size={20} color={theme.muted} style={styles.inputIcon} />
               <TextInput
                 style={[styles.input, { color: theme.text }]}
-                placeholder="admin@staycationhavenph.com"
+                placeholder={'\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022'}
                 placeholderTextColor={theme.muted}
                 value={email}
                 onChangeText={(text) => {
@@ -109,14 +96,13 @@ export default function LoginScreen() {
             </View>
           </View>
 
-          {/* Password Input */}
           <View style={styles.inputContainer}>
             <Text style={[styles.inputLabel, { color: theme.text }]}>Password</Text>
             <View style={[styles.inputWrapper, { backgroundColor: theme.input, borderColor: theme.border }]}>
               <Feather name="lock" size={20} color={theme.muted} style={styles.inputIcon} />
               <TextInput
                 style={[styles.input, { color: theme.text }]}
-                placeholder="••••••••"
+                placeholder={'\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022'}
                 placeholderTextColor={theme.muted}
                 value={password}
                 onChangeText={(text) => {
@@ -127,15 +113,8 @@ export default function LoginScreen() {
                 autoCorrect={false}
                 spellCheck={false}
               />
-              <TouchableOpacity 
-                onPress={() => setShowPassword(!showPassword)}
-                style={styles.showPasswordBtn}
-              >
-                <Feather 
-                  name={showPassword ? "eye-off" : "eye"} 
-                  size={20} 
-                  color={theme.muted} 
-                />
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.showPasswordBtn}>
+                <Feather name={showPassword ? 'eye-off' : 'eye'} size={20} color={theme.muted} />
               </TouchableOpacity>
             </View>
           </View>
@@ -144,33 +123,21 @@ export default function LoginScreen() {
             <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={styles.loginButton} 
-            onPress={handleLogin}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <ActivityIndicator color={Colors.white} />
-            ) : (
-              <Text style={styles.loginButtonText}>Sign In</Text>
-            )}
+          <TouchableOpacity style={styles.loginButton} onPress={handleLogin} disabled={isLoading}>
+            {isLoading ? <ActivityIndicator color={Colors.white} /> : <Text style={styles.loginButtonText}>Sign In</Text>}
           </TouchableOpacity>
 
           <View style={[styles.formDivider, { backgroundColor: theme.border }]} />
 
           <Text style={[styles.termsText, { color: theme.muted }]}>
-            By continuing, you agree to our{' '}
-            <Text style={styles.termsLink}>Terms</Text>
-            {' '}and{' '}
-            <Text style={styles.termsLink}>Privacy Policy</Text>
+            By continuing, you agree to our <Text style={styles.termsLink}>Terms</Text> and <Text style={styles.termsLink}>Privacy Policy</Text>
           </Text>
         </View>
-
-        <Text style={[styles.footerNote, { color: theme.muted }]}>
-          Staycation Haven PH © 2026 Admin Dashboard
-        </Text>
-        </View>
       </ScrollView>
+
+      <View style={[styles.fixedFooter, { backgroundColor: theme.page }]}>
+        <Text style={[styles.footerNote, { color: theme.muted }]}>Staycation Haven PH 2026 Admin Dashboard</Text>
+      </View>
     </KeyboardAvoidingView>
   );
 }
@@ -184,10 +151,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'center',
     padding: 24,
-  },
-  innerContent: {
-    flex: 1,
-    justifyContent: 'center',
+    paddingBottom: 16,
   },
   header: {
     alignItems: 'center',
@@ -317,11 +281,15 @@ const styles = StyleSheet.create({
     textDecorationLine: 'underline',
     fontWeight: '600',
   },
+  fixedFooter: {
+    paddingHorizontal: 24,
+    paddingBottom: 12,
+  },
   footerNote: {
     textAlign: 'center',
-    marginTop: 40,
     fontSize: 12,
     color: Colors.gray[500],
     fontFamily: Fonts.inter,
   },
 });
+
