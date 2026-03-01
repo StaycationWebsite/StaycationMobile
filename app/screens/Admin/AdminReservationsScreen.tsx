@@ -23,6 +23,8 @@ type ReservationStatus =
   | 'completed'
   | 'rejected'
   | 'cancelled';
+type SortDirection = 'asc' | 'desc';
+type ReservationSortKey = 'booking' | 'guest' | 'dates' | 'status';
 
 interface Reservation {
   id: string | number;
@@ -92,6 +94,8 @@ export default function AdminReservationsScreen() {
   const [categoryFilter, setCategoryFilter] = useState<'All' | ReservationStatus>('All');
   const [showOpen, setShowOpen] = useState(false);
   const [categoryOpen, setCategoryOpen] = useState(false);
+  const [sortBy, setSortBy] = useState<ReservationSortKey>('booking');
+  const [sortDir, setSortDir] = useState<SortDirection>('asc');
 
   React.useEffect(() => {
     const fetchReservations = async () => {
@@ -167,8 +171,63 @@ export default function AdminReservationsScreen() {
       return bookingId.includes(query) || guestName.includes(query);
     });
 
-    return filtered.slice(0, showCount);
+    return filtered;
   }, [reservations, searchTerm, categoryFilter, showCount]);
+
+  const sortedReservations = useMemo(() => {
+    const list = [...filteredReservations];
+    list.sort((a, b) => {
+      const aStatus = normalizeStatus(a.status);
+      const bStatus = normalizeStatus(b.status);
+      let aVal: string | number = '';
+      let bVal: string | number = '';
+
+      switch (sortBy) {
+        case 'booking':
+          aVal = String(a.booking_id || '');
+          bVal = String(b.booking_id || '');
+          break;
+        case 'guest':
+          aVal = String(a.guest_name || '');
+          bVal = String(b.guest_name || '');
+          break;
+        case 'dates':
+          aVal = new Date(a.check_in_date || 0).getTime();
+          bVal = new Date(b.check_in_date || 0).getTime();
+          break;
+        case 'status':
+          aVal = String(aStatus || '');
+          bVal = String(bStatus || '');
+          break;
+      }
+
+      if (typeof aVal === 'number' && typeof bVal === 'number') {
+        return sortDir === 'asc' ? aVal - bVal : bVal - aVal;
+      }
+      const x = String(aVal).toLowerCase();
+      const y = String(bVal).toLowerCase();
+      if (x < y) return sortDir === 'asc' ? -1 : 1;
+      if (x > y) return sortDir === 'asc' ? 1 : -1;
+      return 0;
+    });
+    return list;
+  }, [filteredReservations, sortBy, sortDir]);
+
+  const pagedReservations = useMemo(() => sortedReservations.slice(0, showCount), [sortedReservations, showCount]);
+
+  const toggleSort = (key: ReservationSortKey) => {
+    if (sortBy === key) {
+      setSortDir((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+      return;
+    }
+    setSortBy(key);
+    setSortDir('asc');
+  };
+
+  const sortIcon = (key: ReservationSortKey) => {
+    if (sortBy !== key) return 'chevrons-up';
+    return sortDir === 'asc' ? 'arrow-up' : 'arrow-down';
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: theme.page }]}>
@@ -291,10 +350,22 @@ export default function AdminReservationsScreen() {
           </View>
 
           <View style={[styles.tableHeader, { borderBottomColor: theme.border }]}>
-            <Text style={[styles.tableHeaderText, { color: theme.muted }]}>Booking ID</Text>
-            <Text style={[styles.tableHeaderText, { color: theme.muted }]}>Guest</Text>
-            <Text style={[styles.tableHeaderText, { color: theme.muted }]}>Stay Dates</Text>
-            <Text style={[styles.tableHeaderText, { color: theme.muted }]}>Status</Text>
+            <TouchableOpacity style={styles.sortHeaderCell} onPress={() => toggleSort('booking')}>
+              <Text style={[styles.tableHeaderText, { color: theme.muted }]}>Booking ID</Text>
+              <Feather name={sortIcon('booking')} size={12} color={theme.muted} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.sortHeaderCell} onPress={() => toggleSort('guest')}>
+              <Text style={[styles.tableHeaderText, { color: theme.muted }]}>Guest</Text>
+              <Feather name={sortIcon('guest')} size={12} color={theme.muted} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.sortHeaderCell} onPress={() => toggleSort('dates')}>
+              <Text style={[styles.tableHeaderText, { color: theme.muted }]}>Stay Dates</Text>
+              <Feather name={sortIcon('dates')} size={12} color={theme.muted} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.sortHeaderCell} onPress={() => toggleSort('status')}>
+              <Text style={[styles.tableHeaderText, { color: theme.muted }]}>Status</Text>
+              <Feather name={sortIcon('status')} size={12} color={theme.muted} />
+            </TouchableOpacity>
           </View>
 
           {loading ? (
@@ -302,13 +373,13 @@ export default function AdminReservationsScreen() {
               <ActivityIndicator size="small" color={Colors.brand.primary} />
               <Text style={[styles.stateText, { color: theme.muted }]}>Loading reservations...</Text>
             </View>
-          ) : filteredReservations.length === 0 ? (
+          ) : pagedReservations.length === 0 ? (
             <View style={styles.centerState}>
               <Feather name="inbox" size={20} color={theme.muted} />
               <Text style={[styles.stateText, { color: theme.muted }]}>No current reservation</Text>
             </View>
           ) : (
-            filteredReservations.map((item) => {
+            pagedReservations.map((item) => {
               const normalized = normalizeStatus(item.status);
               const statusMeta = normalized ? STATUS_META[normalized] : null;
               return (
@@ -486,8 +557,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     paddingBottom: 8,
   },
-  tableHeaderText: {
+  sortHeaderCell: {
     width: '24%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  tableHeaderText: {
     fontSize: 11,
     fontFamily: Fonts.inter,
     fontWeight: '600',
