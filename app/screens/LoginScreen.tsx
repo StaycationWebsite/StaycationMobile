@@ -52,18 +52,16 @@ export default function LoginScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 24 : 0}
+    <KeyboardAvoidingView 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={[styles.container, { backgroundColor: theme.page }]}
     >
       <ScrollView 
         contentContainerStyle={styles.scrollContent} 
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
-        bounces={false}
-        alwaysBounceVertical={false}
       >
+        <View style={styles.innerContent}>
         <View style={styles.header}>
           <View style={styles.logoRow}>
             <Image 
@@ -71,14 +69,14 @@ export default function LoginScreen() {
               style={styles.logo}
               resizeMode="contain"
             />
-            <Text style={styles.appName}>Staycation Haven</Text>
+            <Text style={styles.appName}>taycation Haven</Text>
           </View>
           <Text style={[styles.adminBadge, { color: theme.muted }]}>ADMIN PANEL</Text>
         </View>
 
         <View style={[styles.formCard, { backgroundColor: theme.surface }]}>
           <Text style={[styles.title, { color: theme.text }]}>Welcome Admin,</Text>
-          <Text style={[styles.subtitle, { color: theme.muted }]}>Sign in to your admin account</Text>
+          <Text style={[styles.subtitle, { color: theme.muted }]}>Sign in to your admin arccount</Text>
 
           {/* Email Input */}
           <View style={styles.inputContainer}>
@@ -160,6 +158,7 @@ export default function LoginScreen() {
         <Text style={[styles.footerNote, { color: theme.muted }]}>
           Staycation Haven PH © 2026 Admin Dashboard
         </Text>
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -174,7 +173,10 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'center',
     padding: 24,
-    paddingBottom: 40,
+  },
+  innerContent: {
+    flex: 1,
+    justifyContent: 'center',
   },
   header: {
     alignItems: 'center',
