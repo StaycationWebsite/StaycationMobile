@@ -109,6 +109,7 @@ export default function AdminTopBar({ title }: AdminTopBarProps) {
   const activeSidebarRouteByScreen: Record<string, string> = {
     AdminDashboard: 'Dashboard',
     AdminBookingCalender: 'Booking Calendar',
+    AdminReservations: 'Reservations',
     ManageHavens: 'Haven Management',
     AdminProfile: 'Profile',
   };

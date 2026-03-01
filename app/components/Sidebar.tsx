@@ -112,6 +112,7 @@ export default function Sidebar({ visible, onClose, activeRoute = 'Dashboard' }:
                 <MenuItem 
                   icon="note-text-outline" 
                   label="Reservations" 
+                  route="AdminReservations"
                   iconColor="#8B5CF6" 
                   iconType="material" 
                 />
