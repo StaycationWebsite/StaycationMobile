@@ -19,11 +19,11 @@ interface SidebarProps {
   activeRoute?: string;
 }
 
-export default function Sidebar({ visible, onClose, activeRoute = 'Dashboard' }: SidebarProps) {
+export default function Sidebar({ visible, onClose, activeRoute = '' }: SidebarProps) {
   const navigation = useNavigation<any>();
 
   const MenuItem = ({ icon, label, route, iconColor = Colors.gray[600], iconType = 'feather' }: any) => {
-    const isActive = label === activeRoute;
+    const isActive = Boolean(activeRoute) && label === activeRoute;
     
     const renderIcon = () => {
       const color = isActive ? Colors.white : iconColor;
@@ -208,6 +208,13 @@ export default function Sidebar({ visible, onClose, activeRoute = 'Dashboard' }:
                   label="Settings" 
                   iconColor="#6B7280" 
                   iconType="feather" 
+                />
+                <MenuItem
+                  icon="user"
+                  label="Profile"
+                  route="AdminProfile"
+                  iconColor="#3B82F6"
+                  iconType="feather"
                 />
                 <MenuItem 
                   icon="shield-alert-outline" 

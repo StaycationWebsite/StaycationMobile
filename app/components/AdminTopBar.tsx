@@ -4,7 +4,7 @@ import { Feather, MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { Colors, Fonts } from '../../constants/Styles';
 import Sidebar from './Sidebar';
 import { useAuth } from '../../hooks/useAuth';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { useTheme } from '../../hooks/useTheme';
 
 type AdminTopBarProps = {
@@ -15,6 +15,7 @@ export default function AdminTopBar({ title }: AdminTopBarProps) {
   const { user, logout } = useAuth();
   const { mode, resolvedMode, setMode } = useTheme();
   const navigation = useNavigation<any>();
+  const route = useRoute();
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -105,6 +106,14 @@ export default function AdminTopBar({ title }: AdminTopBarProps) {
   };
 
   const isDark = resolvedMode === 'dark';
+  const activeSidebarRouteByScreen: Record<string, string> = {
+    AdminDashboard: 'Dashboard',
+    AdminBookingCalender: 'Booking Calendar',
+    ManageHavens: 'Haven Management',
+    AdminProfile: 'Profile',
+  };
+  const activeSidebarRoute = activeSidebarRouteByScreen[route.name] || title || '';
+
   const theme = {
     bar: isDark ? '#111827' : '#F3F4F6',
     border: isDark ? '#1F2937' : '#E5E7EB',
@@ -119,7 +128,11 @@ export default function AdminTopBar({ title }: AdminTopBarProps) {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.bar }]}>
-      <Sidebar visible={sidebarVisible} onClose={() => setSidebarVisible(false)} />
+      <Sidebar
+        visible={sidebarVisible}
+        onClose={() => setSidebarVisible(false)}
+        activeRoute={activeSidebarRoute}
+      />
       <View style={[styles.container, { backgroundColor: theme.bar, borderBottomColor: theme.border }]}>
         <View style={styles.leftGroup}>
           <TouchableOpacity style={styles.menuButton} onPress={() => setSidebarVisible((prev) => !prev)}>
