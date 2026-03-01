@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Text, 
   View, 
@@ -12,12 +12,14 @@ import {
   ActivityIndicator,
   Alert
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { Colors, Fonts } from '../../constants/Styles';
 import { Feather } from '@expo/vector-icons';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../hooks/useTheme';
 
 export default function LoginScreen() {
+  const navigation = useNavigation<any>();
   const { resolvedMode } = useTheme();
   const isDark = resolvedMode === 'dark';
   const theme = {
@@ -32,7 +34,16 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const { login, isLoading, error, clearError } = useAuth();
+  const { login, isLoading, error, clearError, user } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'AdminDashboard' }],
+      });
+    }
+  }, [user, navigation]);
 
   const handleLogin = async () => {
     if (!email || !password) {

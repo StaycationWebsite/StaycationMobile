@@ -19,11 +19,11 @@ interface SidebarProps {
   activeRoute?: string;
 }
 
-export default function Sidebar({ visible, onClose, activeRoute = '' }: SidebarProps) {
+export default function Sidebar({ visible, onClose, activeRoute = 'Dashboard' }: SidebarProps) {
   const navigation = useNavigation<any>();
 
   const MenuItem = ({ icon, label, route, iconColor = Colors.gray[600], iconType = 'feather' }: any) => {
-    const isActive = Boolean(activeRoute) && label === activeRoute;
+    const isActive = label === activeRoute;
     
     const renderIcon = () => {
       const color = isActive ? Colors.white : iconColor;
@@ -74,7 +74,7 @@ export default function Sidebar({ visible, onClose, activeRoute = '' }: SidebarP
                 <Text style={styles.portalSubtitle}>Owner Portal</Text>
               </View>
               <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                <Feather name="x" size={24} color={Colors.gray[500]} />
+                <Feather name="x" size={24} color={Colors.gray[400]} />
               </TouchableOpacity>
             </View>
 
@@ -132,7 +132,7 @@ export default function Sidebar({ visible, onClose, activeRoute = '' }: SidebarP
                   iconType="material" 
                 />
                 <MenuItem 
-                  icon="wrench" 
+                  icon="tool" 
                   label="Maintenance" 
                   iconColor="#F59E0B" 
                   iconType="feather" 
@@ -208,13 +208,6 @@ export default function Sidebar({ visible, onClose, activeRoute = '' }: SidebarP
                   label="Settings" 
                   iconColor="#6B7280" 
                   iconType="feather" 
-                />
-                <MenuItem
-                  icon="user"
-                  label="Profile"
-                  route="AdminProfile"
-                  iconColor="#3B82F6"
-                  iconType="feather"
                 />
                 <MenuItem 
                   icon="shield-alert-outline" 
@@ -300,7 +293,7 @@ const styles = StyleSheet.create({
   sectionHeader: {
     fontSize: 11,
     fontWeight: 'bold',
-    color: Colors.gray[500],
+    color: Colors.gray[400],
     letterSpacing: 1.2,
     marginTop: 24,
     marginBottom: 12,
