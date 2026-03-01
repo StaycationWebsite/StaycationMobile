@@ -29,6 +29,8 @@ interface Haven {
 }
 
 type StatusFilter = 'All Status' | 'Available' | 'Unavailable';
+type SortDirection = 'asc' | 'desc';
+type HavenSortKey = 'floor' | 'view' | 'sixHour' | 'tenHour' | 'weekday' | 'weekend' | 'status';
 
 const SHOW_OPTIONS = [8, 16, 24] as const;
 
@@ -76,6 +78,8 @@ export default function HavenScreen() {
   const [showOpen, setShowOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
   const [page, setPage] = useState(1);
+  const [sortBy, setSortBy] = useState<HavenSortKey>('floor');
+  const [sortDir, setSortDir] = useState<SortDirection>('asc');
 
   useEffect(() => {
     const fetchHavens = async () => {
@@ -115,11 +119,66 @@ export default function HavenScreen() {
     });
   }, [havens, search, statusFilter]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / showCount));
+  const sortedFiltered = useMemo(() => {
+    const list = [...filtered];
+    list.sort((a, b) => {
+      const ratesA = deriveRates(a);
+      const ratesB = deriveRates(b);
+
+      const valueFor = (item: Haven, rates: ReturnType<typeof deriveRates>) => {
+        switch (sortBy) {
+          case 'floor':
+            return String(item.floor || '');
+          case 'view':
+            return String(item.view || 'Pool');
+          case 'sixHour':
+            return rates.sixHour;
+          case 'tenHour':
+            return rates.tenHour;
+          case 'weekday':
+            return rates.weekday;
+          case 'weekend':
+            return rates.weekend;
+          case 'status':
+            return normalizeStatus(item);
+          default:
+            return '';
+        }
+      };
+
+      const aVal = valueFor(a, ratesA);
+      const bVal = valueFor(b, ratesB);
+      if (typeof aVal === 'number' && typeof bVal === 'number') {
+        return sortDir === 'asc' ? aVal - bVal : bVal - aVal;
+      }
+      const aStr = String(aVal).toLowerCase();
+      const bStr = String(bVal).toLowerCase();
+      if (aStr < bStr) return sortDir === 'asc' ? -1 : 1;
+      if (aStr > bStr) return sortDir === 'asc' ? 1 : -1;
+      return 0;
+    });
+    return list;
+  }, [filtered, sortBy, sortDir]);
+
+  const totalPages = Math.max(1, Math.ceil(sortedFiltered.length / showCount));
   const currentPage = Math.min(page, totalPages);
-  const startIndex = filtered.length === 0 ? 0 : (currentPage - 1) * showCount + 1;
-  const endIndex = Math.min(currentPage * showCount, filtered.length);
-  const paginated = filtered.slice((currentPage - 1) * showCount, currentPage * showCount);
+  const startIndex = sortedFiltered.length === 0 ? 0 : (currentPage - 1) * showCount + 1;
+  const endIndex = Math.min(currentPage * showCount, sortedFiltered.length);
+  const paginated = sortedFiltered.slice((currentPage - 1) * showCount, currentPage * showCount);
+
+  const toggleSort = (key: HavenSortKey) => {
+    if (sortBy === key) {
+      setSortDir((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+      return;
+    }
+    setSortBy(key);
+    setSortDir('asc');
+  };
+
+  const sortIcon = (key: HavenSortKey) => {
+    if (sortBy !== key) return 'chevrons-up';
+    return sortDir === 'asc' ? 'arrow-up' : 'arrow-down';
+  };
 
   const onChangeShowCount = (value: (typeof SHOW_OPTIONS)[number]) => {
     setShowCount(value);
@@ -219,16 +278,37 @@ export default function HavenScreen() {
         <View style={[styles.tableCard, { backgroundColor: theme.surface, borderColor: theme.border }]}> 
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <View>
-              <View style={[styles.tableHeader, { borderBottomColor: theme.border }]}>
-                <Text style={[styles.headerCell, { color: theme.muted }]}>Floor</Text>
-                <Text style={[styles.headerCell, { color: theme.muted }]}>View</Text>
-                <View style={styles.headerSortCell}><Text style={[styles.headerCell, { color: theme.muted }]}>6H Rate</Text><Feather name="chevrons-up" size={12} color={theme.muted} /></View>
-                <View style={styles.headerSortCell}><Text style={[styles.headerCell, { color: theme.muted }]}>10H Rate</Text><Feather name="chevrons-up" size={12} color={theme.muted} /></View>
-                <Text style={[styles.headerCell, { color: theme.muted }]}>Weekday</Text>
-                <Text style={[styles.headerCell, { color: theme.muted }]}>Weekend</Text>
-                <Text style={[styles.headerCell, { color: theme.muted }]}>Status</Text>
-                <Text style={[styles.headerCell, { color: theme.muted }]}>Actions</Text>
-              </View>
+	              <View style={[styles.tableHeader, { borderBottomColor: theme.border }]}>
+                  <TouchableOpacity style={styles.headerSortCellWide} onPress={() => toggleSort('floor')}>
+                    <Text style={[styles.headerCell, { color: theme.muted }]}>Floor</Text>
+                    <Feather name={sortIcon('floor')} size={12} color={theme.muted} />
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.headerSortCell} onPress={() => toggleSort('view')}>
+                    <Text style={[styles.headerCell, { color: theme.muted }]}>View</Text>
+                    <Feather name={sortIcon('view')} size={12} color={theme.muted} />
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.headerSortCell} onPress={() => toggleSort('sixHour')}>
+                    <Text style={[styles.headerCell, { color: theme.muted }]}>6H Rate</Text>
+                    <Feather name={sortIcon('sixHour')} size={12} color={theme.muted} />
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.headerSortCell} onPress={() => toggleSort('tenHour')}>
+                    <Text style={[styles.headerCell, { color: theme.muted }]}>10H Rate</Text>
+                    <Feather name={sortIcon('tenHour')} size={12} color={theme.muted} />
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.headerSortCell} onPress={() => toggleSort('weekday')}>
+                    <Text style={[styles.headerCell, { color: theme.muted }]}>Weekday</Text>
+                    <Feather name={sortIcon('weekday')} size={12} color={theme.muted} />
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.headerSortCell} onPress={() => toggleSort('weekend')}>
+                    <Text style={[styles.headerCell, { color: theme.muted }]}>Weekend</Text>
+                    <Feather name={sortIcon('weekend')} size={12} color={theme.muted} />
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.headerSortCell} onPress={() => toggleSort('status')}>
+                    <Text style={[styles.headerCell, { color: theme.muted }]}>Status</Text>
+                    <Feather name={sortIcon('status')} size={12} color={theme.muted} />
+                  </TouchableOpacity>
+	                <Text style={[styles.headerCell, { color: theme.muted }]}>Actions</Text>
+	              </View>
 
               {loading ? (
                 <View style={styles.stateWrap}>
@@ -283,9 +363,9 @@ export default function HavenScreen() {
           </ScrollView>
 
           <View style={styles.footerRow}>
-            <Text style={[styles.footerText, { color: theme.muted }]}>
-              Showing {startIndex} to {endIndex} of {filtered.length} entries
-            </Text>
+	            <Text style={[styles.footerText, { color: theme.muted }]}>
+	              Showing {startIndex} to {endIndex} of {sortedFiltered.length} entries
+	            </Text>
 
             <View style={styles.paginationWrap}>
               <TouchableOpacity
@@ -465,6 +545,12 @@ const styles = StyleSheet.create({
   },
   headerSortCell: {
     width: 110,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  headerSortCellWide: {
+    width: 220,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
