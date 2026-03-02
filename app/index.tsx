@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 import { store, persistor } from './redux/store';
 import { useAuth } from './hooks/useAuth';
+import { useTheme } from './hooks/useTheme';
 import AuthNavigator from '../navigation/AuthNavigator';
 import AdminNavigator from '../navigation/AdminNavigator';
 import WelcomeBackScreen from './components/WelcomeBackScreen';
@@ -16,9 +17,11 @@ const WHITE = '#FFFFFF';
 
 function AppContent() {
   const { isAuthenticated, isLoading, user } = useAuth();
+  const { theme, mode } = useTheme();
   const [showWelcomeBack, setShowWelcomeBack] = useState(false);
   const hasBootstrapped = useRef(false);
   const previousAuthState = useRef(false);
+  const navigationTheme = mode === 'dark' ? DarkTheme : DefaultTheme;
 
   useEffect(() => {
     if (isLoading) return;
@@ -55,8 +58,21 @@ function AppContent() {
   }
 
   return (
-    <>
-      <StatusBar style="dark" />
+    <NavigationContainer
+      theme={{
+        ...navigationTheme,
+        colors: {
+          ...navigationTheme.colors,
+          background: theme.colors.background,
+          card: theme.colors.surface,
+          text: theme.colors.text,
+          border: theme.colors.border,
+          primary: theme.colors.primary,
+          notification: theme.colors.primary,
+        },
+      }}
+    >
+      <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
       {isAuthenticated && showWelcomeBack ? (
         <WelcomeBackScreen adminName={user?.name} />
       ) : isAuthenticated ? (
@@ -64,7 +80,7 @@ function AppContent() {
       ) : (
         <AuthNavigator />
       )}
-    </>
+    </NavigationContainer>
   );
 }
 
@@ -72,9 +88,7 @@ export default function App() {
   return (
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
-        <NavigationContainer>
-          <AppContent />
-        </NavigationContainer>
+        <AppContent />
       </PersistGate>
     </Provider>
   );
