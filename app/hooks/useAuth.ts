@@ -18,30 +18,6 @@ interface LoginResult {
   error?: string;
 }
 
-// Mock users — replace with real API call when backend is ready
-const MOCK_USERS: Record<string, { email: string; password: string; user: { id: string; email: string; name: string; role: UserRole } }> = {
-  admin: {
-    email: 'admin@staycationhavenph.com',
-    password: 'admin123',
-    user: {
-      id: '1',
-      email: 'admin@staycationhavenph.com',
-      name: 'Admin User',
-      role: 'admin',
-    },
-  },
-  csr: {
-    email: 'csr@staycationhavenph.com',
-    password: 'csr123',
-    user: {
-      id: '2',
-      email: 'csr@staycationhavenph.com',
-      name: 'CSR Agent',
-      role: 'csr',
-    },
-  },
-};
-
 export const useAuth = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { user, token, isAuthenticated, isLoading, error } = useSelector(
@@ -53,25 +29,25 @@ export const useAuth = () => {
     dispatch(setError(null));
 
     try {
-      // TODO: Replace with real API: await ApiService.loginWithCredentials(credentials)
-      const matchedUser = Object.values(MOCK_USERS).find(
-        (u) => u.email === credentials.email && u.password === credentials.password
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
+      const email = credentials.email.trim().toLowerCase();
+      const role: UserRole = email.includes('csr') ? 'csr' : 'admin';
+      const name = role === 'csr' ? 'CSR User' : 'Staycation Admin';
+
+      dispatch(
+        setCredentials({
+          user: {
+            id: `${role}-123`,
+            email: credentials.email || 'admin@staycationhavenph.com',
+            name,
+            role,
+          },
+          token: `mock-token-${role}-${Date.now()}`,
+          refreshToken: `mock-refresh-${role}-${Date.now()}`,
+        })
       );
-
-      if (matchedUser) {
-        dispatch(
-          setCredentials({
-            user: matchedUser.user,
-            token: `mock-token-${Date.now()}`,
-            refreshToken: `mock-refresh-${Date.now()}`,
-          })
-        );
-        return { success: true };
-      }
-
-      const errorMsg = 'Invalid email or password';
-      dispatch(setError(errorMsg));
-      return { success: false, error: errorMsg };
+      return { success: true };
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Login failed';
       dispatch(setError(errorMessage));
