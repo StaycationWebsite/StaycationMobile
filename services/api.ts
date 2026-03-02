@@ -3,11 +3,42 @@ import { ApiResponse, AuthProvider, LoginCredentials, AuthResponse, Session } fr
 const API_BASE_URL = 'https://www.staycationhavenph.com/api/auth';
 
 export class ApiService {
+  private static async parseJsonSafely(response: Response): Promise<any | null> {
+    const raw = await response.text();
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }
+
+  private static extractAuthErrorFromUrl(data: any): string | null {
+    if (!data || typeof data !== 'object' || typeof data.url !== 'string') return null;
+    try {
+      const parsed = new URL(data.url);
+      const raw = parsed.searchParams.get('error');
+      return raw ? decodeURIComponent(raw) : null;
+    } catch {
+      return null;
+    }
+  }
+
   // Get available authentication providers
   static async getAuthProviders(): Promise<ApiResponse<AuthProvider[]>> {
     try {
-      const response = await fetch(`${API_BASE_URL}/providers`);
-      const data = await response.json();
+      const response = await fetch(`${API_BASE_URL}/providers`, {
+        credentials: 'include',
+      });
+      const data = await this.parseJsonSafely(response);
+
+      if (!response.ok) {
+        return {
+          success: false,
+          error: (data && (data.error || data.message)) || `Failed to fetch auth providers (${response.status})`,
+        };
+      }
+
       return data;
     } catch (error) {
       return {
@@ -22,13 +53,29 @@ export class ApiService {
     try {
       const response = await fetch(`${API_BASE_URL}/signin/credentials`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(credentials),
       });
 
-      const data = await response.json();
+      const data = await this.parseJsonSafely(response);
+      if (!response.ok) {
+        return {
+          success: false,
+          error: (data && (data.error || data.message)) || `Login failed (${response.status})`,
+        };
+      }
+
+      const nextAuthError = this.extractAuthErrorFromUrl(data);
+      if (nextAuthError) {
+        return {
+          success: false,
+          error: nextAuthError,
+        };
+      }
+
       return data;
     } catch (error) {
       return {
@@ -41,8 +88,18 @@ export class ApiService {
   // Get current session
   static async getSession(): Promise<ApiResponse<Session>> {
     try {
-      const response = await fetch(`${API_BASE_URL}/session`);
-      const data = await response.json();
+      const response = await fetch(`${API_BASE_URL}/session`, {
+        credentials: 'include',
+      });
+      const data = await this.parseJsonSafely(response);
+
+      if (!response.ok) {
+        return {
+          success: false,
+          error: (data && (data.error || data.message)) || `Failed to get session (${response.status})`,
+        };
+      }
+
       return data;
     } catch (error) {
       return {
@@ -57,8 +114,17 @@ export class ApiService {
     try {
       const response = await fetch(`${API_BASE_URL}/signout`, {
         method: 'POST',
+        credentials: 'include',
       });
-      const data = await response.json();
+      const data = await this.parseJsonSafely(response);
+
+      if (!response.ok) {
+        return {
+          success: false,
+          error: (data && (data.error || data.message)) || `Sign out failed (${response.status})`,
+        };
+      }
+
       return data;
     } catch (error) {
       return {
@@ -77,6 +143,7 @@ export class ApiService {
     try {
       const response = await fetch(`${API_BASE_URL}/callback/${provider}`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -86,7 +153,14 @@ export class ApiService {
         }),
       });
 
-      const data = await response.json();
+      const data = await this.parseJsonSafely(response);
+      if (!response.ok) {
+        return {
+          success: false,
+          error: (data && (data.error || data.message)) || `OAuth callback failed (${response.status})`,
+        };
+      }
+
       return data;
     } catch (error) {
       return {
