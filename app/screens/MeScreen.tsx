@@ -1,63 +1,68 @@
 import React from 'react';
-import { 
-  Text, 
-  View, 
-  StyleSheet, 
-  TouchableOpacity, 
-  Image, 
+import {
+  Text,
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
   ScrollView,
-  Alert
+  Alert,
 } from 'react-native';
 import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
-import { Colors, Fonts } from '../../constants/Styles';
-import { useAuth } from '../../hooks/useAuth';
+import { Colors } from '../../constants/Styles';
+import { useAuth } from '../hooks/useAuth';
 
 export default function MeScreen() {
   const { user, logout } = useAuth();
 
   const handleLogout = () => {
-    Alert.alert(
-      "Logout",
-      "Are you sure you want to logout?",
-      [
-        { text: "Cancel", style: "cancel" },
-        { text: "Logout", onPress: logout, style: 'destructive' }
-      ]
-    );
+    Alert.alert('Logout', 'Are you sure you want to logout?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Logout', onPress: logout, style: 'destructive' },
+    ]);
   };
 
-  const AdminStat = ({ icon, label, value }: { icon: any, label: string, value: string }) => (
+  const StatItem = ({ icon, label, value }: { icon: string; label: string; value: string }) => (
     <View style={styles.statCard}>
       <View style={styles.statIconContainer}>
-        <MaterialCommunityIcons name={icon} size={24} color={Colors.brand.primary} />
+        <MaterialCommunityIcons name={icon as any} size={22} color={Colors.brand.primary} />
       </View>
       <Text style={styles.statValue}>{value}</Text>
       <Text style={styles.statLabel}>{label}</Text>
     </View>
   );
 
-  const MenuItem = ({ icon, label, onPress, isLast = false, color = Colors.gray[700] }: { 
-    icon: any, 
-    label: string, 
-    onPress: () => void, 
-    isLast?: boolean,
-    color?: string
+  const MenuItem = ({
+    icon,
+    label,
+    onPress,
+    isLast = false,
+    color = Colors.gray[700],
+  }: {
+    icon: string;
+    label: string;
+    onPress: () => void;
+    isLast?: boolean;
+    color?: string;
   }) => (
-    <TouchableOpacity 
-      style={[styles.menuItem, isLast && styles.menuItemLast]} 
+    <TouchableOpacity
+      style={[styles.menuItem, isLast && styles.menuItemLast]}
       onPress={onPress}
+      activeOpacity={0.7}
     >
       <View style={styles.menuIconContainer}>
-        <Feather name={icon} size={20} color={color} />
+        <Feather name={icon as any} size={18} color={color} />
       </View>
       <Text style={[styles.menuLabel, { color }]}>{label}</Text>
-      <Feather name="chevron-right" size={18} color={Colors.gray[500]} />
+      <Feather name="chevron-right" size={16} color={Colors.gray[400]} />
     </TouchableOpacity>
   );
 
+  const roleLabel = user?.role === 'admin' ? 'Admin' : user?.role === 'manager' ? 'Manager' : 'CSR';
+
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Header / Profile Section */}
+      {/* Header */}
       <View style={styles.header}>
         <View style={styles.profileInfo}>
           <View style={styles.avatarContainer}>
@@ -66,27 +71,27 @@ export default function MeScreen() {
             ) : (
               <View style={styles.avatarPlaceholder}>
                 <Text style={styles.avatarInitial}>
-                  {user?.name?.[0] || user?.email?.[0] || 'A'}
+                  {user?.name?.[0]?.toUpperCase() ?? 'A'}
                 </Text>
               </View>
             )}
-            <View style={styles.adminBadge}>
-              <Text style={styles.adminBadgeText}>Admin</Text>
+            <View style={styles.roleBadge}>
+              <Text style={styles.roleBadgeText}>{roleLabel}</Text>
             </View>
           </View>
-          <Text style={styles.userName}>{user?.name || 'Staycation Admin'}</Text>
-          <Text style={styles.userEmail}>{user?.email || 'admin@staycationhavenph.com'}</Text>
+          <Text style={styles.userName}>{user?.name ?? 'Staycation User'}</Text>
+          <Text style={styles.userEmail}>{user?.email ?? ''}</Text>
         </View>
       </View>
 
-      {/* Dashboard Stats */}
+      {/* Stats Row */}
       <View style={styles.statsRow}>
-        <AdminStat icon="home-city-outline" label="Total Havens" value="8" />
-        <AdminStat icon="calendar-check-outline" label="Bookings" value="24" />
-        <AdminStat icon="star-outline" label="Avg Rating" value="4.8" />
+        <StatItem icon="home-city-outline" label="Total Havens" value="8" />
+        <StatItem icon="calendar-check-outline" label="Bookings" value="24" />
+        <StatItem icon="star-outline" label="Avg Rating" value="4.8" />
       </View>
 
-      {/* Admin Menu */}
+      {/* Management Menu */}
       <View style={styles.menuContainer}>
         <Text style={styles.menuSectionTitle}>Management</Text>
         <MenuItem icon="home" label="Manage Havens" onPress={() => {}} />
@@ -95,33 +100,31 @@ export default function MeScreen() {
         <MenuItem icon="settings" label="System Settings" onPress={() => {}} isLast />
       </View>
 
+      {/* Account Menu */}
       <View style={styles.menuContainer}>
         <Text style={styles.menuSectionTitle}>Account</Text>
         <MenuItem icon="user" label="Edit Profile" onPress={() => {}} />
         <MenuItem icon="bell" label="Notifications" onPress={() => {}} />
-        <MenuItem 
-          icon="log-out" 
-          label="Sign Out" 
-          onPress={handleLogout} 
+        <MenuItem
+          icon="log-out"
+          label="Sign Out"
+          onPress={handleLogout}
           color={Colors.red[500]}
-          isLast 
+          isLast
         />
       </View>
 
-      <Text style={styles.versionText}>Version 1.0.0 (Admin Build)</Text>
-      <View style={styles.bottomSpace} />
+      <Text style={styles.versionText}>Version 1.0.0</Text>
+      <View style={{ height: 40 }} />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.gray[50],
-  },
+  container: { flex: 1, backgroundColor: Colors.gray[50] },
   header: {
     backgroundColor: Colors.white,
-    paddingTop: 80,
+    paddingTop: 60,
     paddingBottom: 32,
     paddingHorizontal: 24,
     borderBottomLeftRadius: 32,
@@ -132,22 +135,13 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 2,
   },
-  profileInfo: {
-    alignItems: 'center',
-  },
-  avatarContainer: {
-    position: 'relative',
-    marginBottom: 16,
-  },
-  avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-  },
+  profileInfo: { alignItems: 'center' },
+  avatarContainer: { position: 'relative', marginBottom: 16 },
+  avatar: { width: 96, height: 96, borderRadius: 48 },
   avatarPlaceholder: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 96,
+    height: 96,
+    borderRadius: 48,
     backgroundColor: Colors.brand.primarySoft,
     justifyContent: 'center',
     alignItems: 'center',
@@ -155,50 +149,36 @@ const styles = StyleSheet.create({
     borderColor: Colors.brand.primary,
   },
   avatarInitial: {
-    fontSize: 40,
+    fontSize: 38,
     fontWeight: 'bold',
     color: Colors.brand.primary,
   },
-  adminBadge: {
+  roleBadge: {
     position: 'absolute',
     bottom: 0,
+    alignSelf: 'center',
     backgroundColor: Colors.brand.primary,
     paddingHorizontal: 12,
-    paddingVertical: 4,
+    paddingVertical: 3,
     borderRadius: 12,
     borderWidth: 2,
     borderColor: Colors.white,
   },
-  adminBadgeText: {
-    color: Colors.white,
-    fontSize: 10,
-    fontWeight: 'bold',
-    textTransform: 'uppercase',
-  },
-  userName: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: Colors.gray[900],
-    fontFamily: Fonts.poppins,
-    marginBottom: 4,
-  },
-  userEmail: {
-    fontSize: 14,
-    color: Colors.gray[500],
-    fontFamily: Fonts.inter,
-  },
+  roleBadgeText: { color: Colors.white, fontSize: 10, fontWeight: '700' },
+  userName: { fontSize: 20, fontWeight: 'bold', color: Colors.gray[900], marginBottom: 4 },
+  userEmail: { fontSize: 13, color: Colors.gray[500] },
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    marginTop: -24,
+    marginTop: -20,
     marginBottom: 24,
   },
   statCard: {
     flex: 1,
     backgroundColor: Colors.white,
-    borderRadius: 20,
-    padding: 16,
+    borderRadius: 18,
+    padding: 14,
     marginHorizontal: 4,
     alignItems: 'center',
     shadowColor: '#000',
@@ -207,27 +187,15 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
   },
-  statIconContainer: {
-    marginBottom: 8,
-  },
-  statValue: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: Colors.gray[900],
-    fontFamily: Fonts.poppins,
-  },
-  statLabel: {
-    fontSize: 10,
-    color: Colors.gray[500],
-    fontFamily: Fonts.inter,
-    textAlign: 'center',
-  },
+  statIconContainer: { marginBottom: 6 },
+  statValue: { fontSize: 17, fontWeight: 'bold', color: Colors.gray[900] },
+  statLabel: { fontSize: 10, color: Colors.gray[500], textAlign: 'center', marginTop: 2 },
   menuContainer: {
     backgroundColor: Colors.white,
-    borderRadius: 24,
+    borderRadius: 20,
     marginHorizontal: 20,
-    paddingVertical: 12,
-    marginBottom: 24,
+    paddingVertical: 8,
+    marginBottom: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
@@ -235,48 +203,32 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   menuSectionTitle: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: Colors.gray[500],
+    fontSize: 11,
+    fontWeight: '700',
+    color: Colors.gray[400],
     textTransform: 'uppercase',
     letterSpacing: 1,
     paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingVertical: 10,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingVertical: 14,
     borderBottomWidth: 1,
     borderBottomColor: Colors.gray[50],
   },
-  menuItemLast: {
-    borderBottomWidth: 0,
-  },
+  menuItemLast: { borderBottomWidth: 0 },
   menuIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     backgroundColor: Colors.gray[50],
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+    marginRight: 14,
   },
-  menuLabel: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: '500',
-    fontFamily: Fonts.inter,
-  },
-  versionText: {
-    textAlign: 'center',
-    color: Colors.gray[500],
-    fontSize: 12,
-    fontFamily: Fonts.inter,
-    marginBottom: 16,
-  },
-  bottomSpace: {
-    height: 40,
-  },
+  menuLabel: { flex: 1, fontSize: 15, fontWeight: '500' },
+  versionText: { textAlign: 'center', color: Colors.gray[400], fontSize: 12, marginBottom: 16 },
 });

@@ -1,341 +1,127 @@
-import { Text, View, StyleSheet, TouchableOpacity, Modal, Pressable, ActivityIndicator, ScrollView } from 'react-native';
-import { Colors, Fonts } from '../../constants/Styles';
-import { API_CONFIG } from '../../constants/config';
-import { Feather } from '@expo/vector-icons';
-import { useState, useEffect } from 'react';
-import DateRangePicker from './DateRangePicker';
+import React, { useState } from 'react';
+import {
+  View, Text, StyleSheet, TouchableOpacity,
+  Modal, ScrollView, TouchableWithoutFeedback,
+} from 'react-native';
+import { Feather, Ionicons } from '@expo/vector-icons';
+import { Colors } from '../../constants/Styles';
 
 interface SearchModalProps {
   visible: boolean;
   onClose: () => void;
-  onSearch: () => void;
-}
-
-interface Haven {
-  uuid_id: string;
-  haven_name: string;
+  onSearch: (params: { location: string; checkIn: string; checkOut: string; guests: number }) => void;
 }
 
 export default function SearchModal({ visible, onClose, onSearch }: SearchModalProps) {
   const [location, setLocation] = useState('');
-  const [startDate, setStartDate] = useState<string | null>(null);
-  const [endDate, setEndDate] = useState<string | null>(null);
-  const [guests, setGuests] = useState('1 Guest');
-  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
-  const [havens, setHavens] = useState<Haven[]>([]);
-  const [loadingHavens, setLoadingHavens] = useState(false);
+  const [guests, setGuests] = useState(2);
 
-  const guestOptions = ['1 Guest', '2 Guests', '3 Guests', '4 Guests', '5 Guests', '6 Guests', '7 Guests', '8 Guests', '9 Guests', '10 Guests'];
-
-  useEffect(() => {
-    fetchHavens();
-  }, []);
-
-  const fetchHavens = async () => {
-    try {
-      setLoadingHavens(true);
-      const response = await fetch(API_CONFIG.HAVEN_API);
-      const data = await response.json();
-      if (data.data && Array.isArray(data.data)) {
-        setHavens(data.data);
-      }
-    } catch (error) {
-      console.error('Error fetching havens:', error);
-    } finally {
-      setLoadingHavens(false);
-    }
+  const handleSearch = () => {
+    onSearch({ location, checkIn: '', checkOut: '', guests });
+    onClose();
   };
+
   return (
-    <Modal
-      visible={visible}
-      transparent={true}
-      animationType="slide"
-      onRequestClose={onClose}
-    >
-      <Pressable style={styles.overlay} onPress={onClose}>
-        <Pressable style={styles.container} onPress={(e) => e.stopPropagation()}>
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Feather name="map-pin" size={20} color={Colors.brand.primary} />
-              <Text style={styles.sectionTitle}>LOCATION</Text>
-            </View>
-            <TouchableOpacity
-              style={styles.inputField}
-              onPress={() => setActiveDropdown(activeDropdown === 'location' ? null : 'location')}
-            >
-              <Feather name="map-pin" size={18} color={Colors.gray[500]} />
-              <View style={styles.inputContent}>
-                <Text style={styles.inputLabel}>Location</Text>
-                <Text style={styles.placeholder}>{location || 'Where?'}</Text>
-              </View>
-              <Feather
-                name={activeDropdown === 'location' ? 'chevron-up' : 'chevron-down'}
-                size={18}
-                color={Colors.gray[500]}
-              />
-            </TouchableOpacity>
-            {activeDropdown === 'location' && (
-              <View style={styles.dropdownMenu}>
-                {loadingHavens ? (
-                  <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="small" color={Colors.brand.primary} />
-                  </View>
-                ) : (
-                  <ScrollView style={styles.dropdownScroll}>
-                    {havens.map((haven: Haven) => (
-                      <TouchableOpacity
-                        key={haven.uuid_id}
-                        style={[styles.dropdownItem, location === haven.haven_name && styles.dropdownItemActive]}
-                        onPress={() => {
-                          setLocation(haven.haven_name);
-                          setActiveDropdown(null);
-                        }}
-                      >
-                        <Feather name="map-pin" size={16} color={location === haven.haven_name ? Colors.brand.primary : Colors.gray[500]} style={styles.dropdownItemIcon} />
-                        <Text style={[styles.dropdownItemText, location === haven.haven_name && styles.dropdownItemTextActive]}>{haven.haven_name}</Text>
-                      </TouchableOpacity>
-                    ))}
-                  </ScrollView>
-                )}
-              </View>
-            )}
-          </View>
+    <Modal animationType="slide" transparent visible={visible} onRequestClose={onClose}>
+      <TouchableWithoutFeedback onPress={onClose}>
+        <View style={styles.overlay} />
+      </TouchableWithoutFeedback>
 
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Feather name="calendar" size={20} color={Colors.brand.primary} />
-              <Text style={styles.sectionTitle}>DATES</Text>
-            </View>
-            <TouchableOpacity
-              style={styles.inputField}
-              onPress={() => setActiveDropdown(activeDropdown === 'dates' ? null : 'dates')}
-            >
-              <Feather name="calendar" size={18} color={Colors.gray[500]} />
-              <View style={styles.inputContent}>
-                <Text style={styles.inputLabel}>When</Text>
-                <Text style={styles.placeholder}>
-                  {startDate && endDate
-                    ? `${new Date(startDate).toLocaleDateString()} - ${new Date(endDate).toLocaleDateString()}`
-                    : 'Add dates'}
-                </Text>
-              </View>
-              <Feather
-                name={activeDropdown === 'dates' ? 'chevron-up' : 'chevron-down'}
-                size={18}
-                color={Colors.gray[500]}
-              />
-            </TouchableOpacity>
-            {activeDropdown === 'dates' && (
-              <View style={styles.datePickerContainer}>
-                <DateRangePicker
-                  startDate={startDate}
-                  endDate={endDate}
-                  onDateRangeChange={(start, end) => {
-                    setStartDate(start);
-                    setEndDate(end);
-                  }}
-                />
-              </View>
-            )}
-          </View>
+      <View style={styles.sheet}>
+        {/* Handle */}
+        <View style={styles.handle} />
 
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Feather name="users" size={20} color={Colors.brand.primary} />
-              <Text style={styles.sectionTitle}>GUESTS</Text>
-            </View>
-            <TouchableOpacity
-              style={styles.inputField}
-              onPress={() => setActiveDropdown(activeDropdown === 'guests' ? null : 'guests')}
-            >
-              <Feather name="user" size={18} color={Colors.gray[500]} />
-              <View style={styles.inputContent}>
-                <Text style={styles.inputLabel}>Who</Text>
-                <Text style={styles.inputValue}>{guests}</Text>
-              </View>
-              <Feather
-                name={activeDropdown === 'guests' ? 'chevron-up' : 'chevron-down'}
-                size={18}
-                color={Colors.gray[500]}
-              />
-            </TouchableOpacity>
-            {activeDropdown === 'guests' && (
-              <View style={styles.dropdownMenu}>
-                {guestOptions.map((option, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={styles.dropdownItem}
-                    onPress={() => {
-                      setGuests(option);
-                      setActiveDropdown(null);
-                    }}
-                  >
-                    <Text style={styles.dropdownItemText}>{option}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
-          </View>
+        <Text style={styles.title}>Find Your Haven</Text>
 
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.searchButton} onPress={onSearch}>
-              <Text style={styles.searchButtonText}>Search Rooms</Text>
+        {/* Location */}
+        <View style={styles.field}>
+          <Text style={styles.fieldLabel}>Location</Text>
+          <TouchableOpacity style={styles.fieldRow}>
+            <Feather name="map-pin" size={16} color={Colors.brand.primary} />
+            <Text style={styles.fieldValue}>Quezon City, Philippines</Text>
+            <Feather name="chevron-down" size={16} color={Colors.gray[400]} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Dates */}
+        <View style={styles.datesRow}>
+          <View style={[styles.field, { flex: 1 }]}>
+            <Text style={styles.fieldLabel}>Check-in</Text>
+            <TouchableOpacity style={styles.fieldRow}>
+              <Feather name="calendar" size={16} color={Colors.brand.primary} />
+              <Text style={styles.fieldValue}>Select date</Text>
             </TouchableOpacity>
           </View>
-        </Pressable>
-      </Pressable>
+          <View style={styles.dateDivider} />
+          <View style={[styles.field, { flex: 1 }]}>
+            <Text style={styles.fieldLabel}>Check-out</Text>
+            <TouchableOpacity style={styles.fieldRow}>
+              <Feather name="calendar" size={16} color={Colors.brand.primary} />
+              <Text style={styles.fieldValue}>Select date</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Guests */}
+        <View style={styles.field}>
+          <Text style={styles.fieldLabel}>Guests</Text>
+          <View style={styles.guestRow}>
+            <Ionicons name="person-outline" size={16} color={Colors.brand.primary} />
+            <TouchableOpacity
+              style={styles.guestBtn}
+              onPress={() => setGuests(Math.max(1, guests - 1))}
+            >
+              <Feather name="minus" size={16} color={Colors.gray[700]} />
+            </TouchableOpacity>
+            <Text style={styles.guestCount}>{guests}</Text>
+            <TouchableOpacity
+              style={styles.guestBtn}
+              onPress={() => setGuests(Math.min(10, guests + 1))}
+            >
+              <Feather name="plus" size={16} color={Colors.gray[700]} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <TouchableOpacity style={styles.searchBtn} onPress={handleSearch} activeOpacity={0.85}>
+          <Feather name="search" size={18} color={Colors.white} />
+          <Text style={styles.searchBtnText}>Search Rooms</Text>
+        </TouchableOpacity>
+      </View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
+  sheet: {
+    backgroundColor: Colors.white, borderTopLeftRadius: 28, borderTopRightRadius: 28,
+    padding: 24, paddingBottom: 40,
+    shadowColor: '#000', shadowOffset: { width: 0, height: -8 }, shadowOpacity: 0.1, shadowRadius: 16, elevation: 16,
   },
-  container: {
-    backgroundColor: Colors.white,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 28,
+  handle: { width: 40, height: 4, borderRadius: 2, backgroundColor: Colors.gray[200], alignSelf: 'center', marginBottom: 20 },
+  title: { fontSize: 20, fontWeight: '700', color: Colors.gray[900], marginBottom: 24 },
+  field: { marginBottom: 18 },
+  fieldLabel: { fontSize: 12, fontWeight: '600', color: Colors.gray[500], marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
+  fieldRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    backgroundColor: Colors.gray[50], borderRadius: 14, padding: 14,
+    borderWidth: 1, borderColor: Colors.gray[100],
   },
-  section: {
-    marginBottom: 16,
+  fieldValue: { flex: 1, fontSize: 14, color: Colors.gray[700], fontWeight: '500' },
+  datesRow: { flexDirection: 'row', gap: 8, marginBottom: 18 },
+  dateDivider: { width: 1, backgroundColor: Colors.gray[200], alignSelf: 'stretch', marginVertical: 8 },
+  guestRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    backgroundColor: Colors.gray[50], borderRadius: 14, padding: 14,
+    borderWidth: 1, borderColor: Colors.gray[100],
   },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
+  guestBtn: { width: 30, height: 30, borderRadius: 15, backgroundColor: Colors.white, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: Colors.gray[200] },
+  guestCount: { flex: 1, fontSize: 16, fontWeight: '700', color: Colors.gray[900], textAlign: 'center' },
+  searchBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
+    backgroundColor: Colors.brand.primary, borderRadius: 16, height: 54, marginTop: 8,
+    shadowColor: Colors.brand.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4,
   },
-  sectionTitle: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: Colors.gray[600],
-    fontFamily: Fonts.poppins,
-    marginLeft: 10,
-    letterSpacing: 1,
-  },
-  inputField: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.gray[200],
-    borderRadius: 50,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: Colors.white,
-  },
-  inputContent: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  inputLabel: {
-    fontSize: 11,
-    color: Colors.gray[500],
-    fontFamily: Fonts.inter,
-    marginBottom: 2,
-    fontWeight: '500',
-  },
-  placeholder: {
-    fontSize: 15,
-    color: Colors.gray[500],
-    fontFamily: Fonts.inter,
-    fontWeight: '500',
-  },
-  inputValue: {
-    fontSize: 15,
-    color: Colors.gray[900],
-    fontFamily: Fonts.inter,
-    fontWeight: '600',
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 16,
-  },
-  cancelButton: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 50,
-    borderWidth: 1,
-    borderColor: Colors.gray[200],
-    alignItems: 'center',
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.gray[900],
-    fontFamily: Fonts.poppins,
-  },
-  searchButton: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 50,
-    backgroundColor: Colors.brand.primary,
-    alignItems: 'center',
-  },
-  searchButtonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: Colors.white,
-    fontFamily: Fonts.poppins,
-  },
-  dropdownMenu: {
-    backgroundColor: Colors.white,
-    borderWidth: 1,
-    borderColor: Colors.gray[200],
-    borderTopWidth: 1,
-    borderBottomLeftRadius: 12,
-    borderBottomRightRadius: 12,
-    marginTop: 6,
-    marginHorizontal: 0,
-    maxHeight: 300,
-  },
-  dropdownScroll: {
-    maxHeight: 300,
-  },
-  dropdownItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.gray[100],
-  },
-  dropdownItemIcon: {
-    marginRight: 12,
-  },
-  dropdownItemText: {
-    fontSize: 14,
-    color: Colors.gray[900],
-    fontFamily: Fonts.inter,
-    fontWeight: '500',
-  },
-  dropdownItemActive: {
-    backgroundColor: Colors.brand.primarySoft,
-  },
-  dropdownItemTextActive: {
-    color: Colors.brand.primary,
-    fontWeight: '600',
-  },
-  loadingContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderTopWidth: 1,
-    borderTopColor: Colors.gray[100],
-  },
-  datePickerContainer: {
-    marginTop: 6,
-    marginHorizontal: 0,
-    maxHeight: 280,
-    overflow: 'hidden',
-  },
+  searchBtnText: { fontSize: 16, fontWeight: '700', color: Colors.white },
 });

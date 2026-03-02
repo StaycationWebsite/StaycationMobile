@@ -1,100 +1,116 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { AuthState, User, Session } from '../types/auth';
-import { AuthService } from '../services/auth';
+import { useSelector, useDispatch } from 'react-redux';
+import { RootState, AppDispatch } from '../app/redux/store';
+import { setCredentials, logout as logoutAction, setLoading, setError } from '../app/redux/slices/authSlice';
+import { useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-interface AuthContextType extends AuthState {
-  login: (credentials: { email: string; password: string }) => Promise<{ success: boolean; error?: string }>;
-  logout: () => Promise<void>;
-  clearError: () => void;
+interface LoginCredentials {
+  email: string;
+  password: string;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+interface LoginResult {
+  success: boolean;
+  error?: string;
+}
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [authState, setAuthState] = useState<AuthState>(AuthService.getInitialState());
-
-  useEffect(() => {
-    initializeAuth();
-  }, []);
-
-  const initializeAuth = useCallback(async () => {
-    setAuthState(prev => ({ ...prev, isLoading: true }));
-    try {
-      const isAuthenticated = await AuthService.isAuthenticated();
-      const currentUser = await AuthService.getCurrentUser();
-      const session = currentUser ? await AuthService.getSession() : null;
-      
-      setAuthState({
-        user: currentUser,
-        session,
-        isLoading: false,
-        isAuthenticated,
-      });
-    } catch (error) {
-      setAuthState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: error instanceof Error ? error.message : 'Authentication failed'
-      }));
-    }
-  }, []);
-
-  const login = useCallback(async (credentials: { email: string; password: string }) => {
-    setAuthState(prev => ({ ...prev, isLoading: true, error: undefined }));
-    try {
-      const response = await AuthService.loginWithCredentials(credentials);
-      if (response.success) {
-        setAuthState({
-          user: response.data?.user || null,
-          session: response.data || null,
-          isLoading: false,
-          isAuthenticated: true,
-        });
-        return { success: true };
-      } else {
-        setAuthState(prev => ({ ...prev, isLoading: false, error: response.error }));
-        return { success: false, error: response.error };
-      }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Login failed';
-      setAuthState(prev => ({ ...prev, isLoading: false, error: errorMessage }));
-      return { success: false, error: errorMessage };
-    }
-  }, []);
-
-  const logout = useCallback(async () => {
-    setAuthState(prev => ({ ...prev, isLoading: true }));
-    try {
-      const success = await AuthService.signOut();
-      if (success) {
-        setAuthState(AuthService.getInitialState());
-      } else {
-        setAuthState(prev => ({ ...prev, isLoading: false, error: 'Sign out failed' }));
-      }
-    } catch (error) {
-      setAuthState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: error instanceof Error ? error.message : 'Sign out failed'
-      }));
-    }
-  }, []);
-
-  const clearError = useCallback(() => {
-    setAuthState(prev => ({ ...prev, error: undefined }));
-  }, []);
-
-  return (
-    <AuthContext.Provider value={{ ...authState, login, logout, clearError }}>
-      {children}
-    </AuthContext.Provider>
-  );
+// Mock user database for testing
+const MOCK_USERS = {
+  // Admin user
+  admin: {
+    email: 'admin@staycationhavenph.com',
+    password: 'admin123',
+    user: {
+      id: '1',
+      email: 'admin@staycationhavenph.com',
+      name: 'Admin User',
+      role: 'admin' as const,
+    },
+  },
+  // CSR user
+  csr: {
+    email: 'csr@staycationhavenph.com',
+    password: 'csr123',
+    user: {
+      id: '2',
+      email: 'csr@staycationhavenph.com',
+      name: 'CSR Agent',
+      role: 'csr' as const,
+    },
+  },
 };
 
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  const dispatch = useDispatch<AppDispatch>();
+  const { user, token, isAuthenticated, isLoading, error } = useSelector(
+    (state: RootState) => state.auth
+  );
+
+  // 🔥 TEMPORARY FIX: Clear storage on mount to force fresh login
+  // Remove this useEffect after testing!
+  useEffect(() => {
+    const clearOldSession = async () => {
+      await AsyncStorage.clear();
+      dispatch(logoutAction());
+      console.log('🗑️ Old session cleared - please login again');
+    };
+    clearOldSession();
+  }, []);
+
+  const login = async (credentials: LoginCredentials): Promise<LoginResult> => {
+    dispatch(setLoading(true));
+    dispatch(setError(null));
+
+    try {
+      // Check against mock users
+      const matchedUser = Object.values(MOCK_USERS).find(
+        (mockUser) => 
+          mockUser.email === credentials.email && 
+          mockUser.password === credentials.password
+      );
+
+      if (matchedUser) {
+        const mockToken = 'mock-token-123';
+        const mockRefreshToken = 'mock-refresh-token-456';
+
+        dispatch(setCredentials({
+          user: matchedUser.user,
+          token: mockToken,
+          refreshToken: mockRefreshToken,
+        }));
+
+        return { success: true };
+      }
+
+      // If no match found
+      const errorMsg = 'Invalid email or password';
+      dispatch(setError(errorMsg));
+      return { success: false, error: errorMsg };
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Login failed';
+      dispatch(setError(errorMessage));
+      return { success: false, error: errorMessage };
+    } finally {
+      dispatch(setLoading(false));
+    }
+  };
+
+  const logout = () => {
+    dispatch(logoutAction());
+  };
+
+  const clearError = () => {
+    dispatch(setError(null));
+  };
+
+  return {
+    user,
+    token,
+    isAuthenticated,
+    isLoading,
+    error,
+    login,
+    logout,
+    clearError,
+  };
 };

@@ -1,10 +1,17 @@
 import React from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { useAuth, AuthProvider } from '../hooks/useAuth';
-import TabNavigator from '../navigation/TabNavigator';
+import { NavigationContainer } from '@react-navigation/native';
+import { Provider } from 'react-redux';
+import { PersistGate } from 'redux-persist/integration/react';
+import { store, persistor } from './redux/store';
+import { useAuth } from './hooks/useAuth';
 import AuthNavigator from '../navigation/AuthNavigator';
-import { Colors } from '../constants/Styles';
+import AdminNavigator from '../navigation/AdminNavigator';
+import '../utils/ignoreWarnings';
+
+const PRIMARY_COLOR = '#2563EB';
+const WHITE = '#FFFFFF';
 
 function AppContent() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -12,7 +19,7 @@ function AppContent() {
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={Colors.brand.primary} />
+        <ActivityIndicator size="large" color={PRIMARY_COLOR} />
       </View>
     );
   }
@@ -21,7 +28,7 @@ function AppContent() {
     <>
       <StatusBar style="dark" />
       {isAuthenticated ? (
-        <TabNavigator />
+        <AdminNavigator />
       ) : (
         <AuthNavigator />
       )}
@@ -31,9 +38,13 @@ function AppContent() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <Provider store={store}>
+      <PersistGate loading={null} persistor={persistor}>
+        <NavigationContainer>
+          <AppContent />
+        </NavigationContainer>
+      </PersistGate>
+    </Provider>
   );
 }
 
@@ -42,6 +53,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: Colors.white,
+    backgroundColor: WHITE,
   },
 });
