@@ -12,6 +12,7 @@ import {
 import { Feather, MaterialCommunityIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { Colors, Fonts } from '../../constants/Styles';
 import { useNavigation } from '@react-navigation/native';
+import { useTheme } from '../../hooks/useTheme';
 
 interface SidebarProps {
   visible: boolean;
@@ -21,12 +22,25 @@ interface SidebarProps {
 
 export default function Sidebar({ visible, onClose, activeRoute = '' }: SidebarProps) {
   const navigation = useNavigation<any>();
+  const { resolvedMode } = useTheme();
+  const isDark = resolvedMode === 'dark';
+
+  const theme = {
+    panel: isDark ? '#111827' : Colors.white,
+    panelBorder: isDark ? '#1F2937' : Colors.gray[100],
+    heading: isDark ? '#E5E7EB' : '#1E293B',
+    text: isDark ? '#D1D5DB' : Colors.gray[700],
+    muted: isDark ? '#9CA3AF' : Colors.gray[500],
+    divider: isDark ? '#1F2937' : Colors.gray[100],
+    icon: isDark ? '#9CA3AF' : Colors.gray[500],
+    avatar: isDark ? '#374151' : Colors.gray[200],
+  };
 
   const MenuItem = ({ icon, label, route, iconColor = Colors.gray[600], iconType = 'feather' }: any) => {
     const isActive = Boolean(activeRoute) && label === activeRoute;
     
     const renderIcon = () => {
-      const color = isActive ? Colors.white : iconColor;
+      const color = isActive ? Colors.white : (iconColor || theme.text);
       if (iconType === 'material') return <MaterialCommunityIcons name={icon} size={20} color={color} />;
       if (iconType === 'ion') return <Ionicons name={icon} size={20} color={color} />;
       if (iconType === 'fa5') return <FontAwesome5 name={icon} size={18} color={color} />;
@@ -46,13 +60,13 @@ export default function Sidebar({ visible, onClose, activeRoute = '' }: SidebarP
         <View style={styles.menuIconWrapper}>
           {renderIcon()}
         </View>
-        <Text style={[styles.menuLabel, isActive && styles.activeMenuLabel]}>{label}</Text>
+        <Text style={[styles.menuLabel, { color: theme.text }, isActive && styles.activeMenuLabel]}>{label}</Text>
       </TouchableOpacity>
     );
   };
 
   const SectionHeader = ({ title }: { title: string }) => (
-    <Text style={styles.sectionHeader}>{title}</Text>
+    <Text style={[styles.sectionHeader, { color: theme.muted }]}>{title}</Text>
   );
 
   return (
@@ -65,16 +79,16 @@ export default function Sidebar({ visible, onClose, activeRoute = '' }: SidebarP
       <View style={styles.overlay}>
         <Pressable style={styles.backdrop} onPress={onClose} />
         
-        <View style={styles.sidebarContainer}>
+        <View style={[styles.sidebarContainer, { backgroundColor: theme.panel, shadowColor: isDark ? '#000' : '#000' }]}>
           <SafeAreaView style={styles.safeArea}>
             {/* Header */}
-            <View style={styles.header}>
+            <View style={[styles.header, { borderBottomColor: theme.panelBorder }]}>
               <View>
-                <Text style={styles.brandTitle}>Staycation Haven</Text>
-                <Text style={styles.portalSubtitle}>Owner Portal</Text>
+                <Text style={[styles.brandTitle, { color: theme.heading }]}>Staycation Haven</Text>
+                <Text style={[styles.portalSubtitle, { color: theme.muted }]}>Owner Portal</Text>
               </View>
               <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                <Feather name="x" size={24} color={Colors.gray[500]} />
+                <Feather name="x" size={24} color={theme.icon} />
               </TouchableOpacity>
             </View>
 
@@ -89,7 +103,7 @@ export default function Sidebar({ visible, onClose, activeRoute = '' }: SidebarP
                   iconType="feather"
                 />
 
-                <View style={styles.divider} />
+                <View style={[styles.divider, { backgroundColor: theme.divider }]} />
 
                 {/* Overview Section */}
                 <SectionHeader title="OVERVIEW" />
@@ -223,12 +237,12 @@ export default function Sidebar({ visible, onClose, activeRoute = '' }: SidebarP
             </ScrollView>
 
             {/* Footer / User Info */}
-            <View style={styles.sidebarFooter}>
+            <View style={[styles.sidebarFooter, { borderTopColor: theme.panelBorder }]}>
               <View style={styles.userBrief}>
-                <View style={styles.miniAvatar} />
+                <View style={[styles.miniAvatar, { backgroundColor: theme.avatar }]} />
                 <View>
-                  <Text style={styles.userName}>Admin Chief</Text>
-                  <Text style={styles.userRole}>Super Admin</Text>
+                  <Text style={[styles.userName, { color: theme.heading }]}>Admin Chief</Text>
+                  <Text style={[styles.userRole, { color: theme.muted }]}>Super Admin</Text>
                 </View>
               </View>
             </View>

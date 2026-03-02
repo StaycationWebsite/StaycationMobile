@@ -4,24 +4,28 @@ import {
   View, 
   StyleSheet, 
   TouchableOpacity, 
-  ScrollView, 
-  Dimensions,
-  Image,
-  Alert
+  ScrollView
 } from 'react-native';
 import { Colors, Fonts } from '../../../constants/Styles';
 import { Feather, MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
-import { useAuth } from '../../../hooks/useAuth';
 import AdminTopBar from '../../components/AdminTopBar';
-
-const { width } = Dimensions.get('window');
+import { useTheme } from '../../../hooks/useTheme';
 
 export default function AdminDashboardScreen() {
-  const navigation = useNavigation<any>();
+  const { resolvedMode } = useTheme();
+  const isDark = resolvedMode === 'dark';
+
+  const theme = {
+    page: isDark ? '#0B1220' : Colors.gray[50],
+    surface: isDark ? '#111827' : Colors.white,
+    border: isDark ? '#1F2937' : Colors.gray[100],
+    text: isDark ? '#E5E7EB' : Colors.gray[900],
+    muted: isDark ? '#94A3B8' : Colors.gray[500],
+    iconPlate: isDark ? '#1F2937' : Colors.gray[100],
+  };
 
   const MetricCard = ({ title, value, icon, color, trend, type }: any) => (
-    <View style={styles.metricCard}>
+    <View style={[styles.metricCard, { backgroundColor: theme.surface, shadowColor: '#000' }]}>
       <View style={styles.metricHeader}>
         <View style={[styles.metricIconBox, { backgroundColor: color + '15' }]}>
           <MaterialCommunityIcons name={icon} size={22} color={color} />
@@ -36,8 +40,8 @@ export default function AdminDashboardScreen() {
         )}
       </View>
       <View style={styles.metricBody}>
-        <Text style={styles.metricValue}>{value}</Text>
-        <Text style={styles.metricTitle}>{title}</Text>
+        <Text style={[styles.metricValue, { color: theme.text }]}>{value}</Text>
+        <Text style={[styles.metricTitle, { color: theme.muted }]}>{title}</Text>
       </View>
     </View>
   );
@@ -46,25 +50,25 @@ export default function AdminDashboardScreen() {
     <View style={styles.counterItem}>
       <View style={[styles.counterCircle, { borderColor: color }]}>
         <MaterialCommunityIcons name={icon} size={20} color={color} />
-        <Text style={[styles.counterNumber, { color: Colors.gray[900] }]}>{count}</Text>
+        <Text style={[styles.counterNumber, { color: theme.text }]}>{count}</Text>
       </View>
-      <Text style={styles.counterLabel}>{label}</Text>
+      <Text style={[styles.counterLabel, { color: theme.muted }]}>{label}</Text>
     </View>
   );
 
   const BookingRow = ({ name, property, date, status, avatar }: any) => (
-    <View style={styles.tableRow}>
+    <View style={[styles.tableRow, { borderBottomColor: theme.border }]}>
       <View style={styles.guestCell}>
-        <View style={styles.miniAvatar}>
-          <Text style={styles.avatarInitial}>{name[0]}</Text>
+        <View style={[styles.miniAvatar, { backgroundColor: theme.iconPlate }]}>
+          <Text style={[styles.avatarInitial, { color: theme.muted }]}>{name[0]}</Text>
         </View>
         <View>
-          <Text style={styles.guestName}>{name}</Text>
-          <Text style={styles.propertySub}>{property}</Text>
+          <Text style={[styles.guestName, { color: theme.text }]}>{name}</Text>
+          <Text style={[styles.propertySub, { color: theme.muted }]}>{property}</Text>
         </View>
       </View>
       <View style={styles.dateCell}>
-        <Text style={styles.dateText}>{date}</Text>
+        <Text style={[styles.dateText, { color: theme.muted }]}>{date}</Text>
       </View>
       <View style={[styles.statusBadge, { backgroundColor: status === 'Confirmed' ? '#DCFCE7' : '#FEF9C3' }]}>
         <Text style={[styles.statusBadgeText, { color: status === 'Confirmed' ? '#166534' : '#854D0E' }]}>{status}</Text>
@@ -73,9 +77,9 @@ export default function AdminDashboardScreen() {
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.gray[50] }}>
+    <View style={{ flex: 1, backgroundColor: theme.page }}>
       <AdminTopBar title="Dashboard" />
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <ScrollView style={[styles.container, { backgroundColor: theme.page }]} showsVerticalScrollIndicator={false}>
         <View style={styles.contentPadding} />
         
         {/* Top Row: Key Metrics */}
@@ -114,8 +118,8 @@ export default function AdminDashboardScreen() {
 
         {/* Middle Section: Operational Overview */}
         <View style={styles.sectionRow}>
-          <View style={styles.todayCard}>
-            <Text style={styles.cardTitle}>Today's Overview</Text>
+          <View style={[styles.todayCard, { backgroundColor: theme.surface }]}>
+            <Text style={[styles.cardTitle, { color: theme.text }]}>Today's Overview</Text>
             <View style={styles.countersRow}>
               <StatusCounter label="Check-ins" count="5" color="#10B981" icon="login-variant" />
               <StatusCounter label="Check-outs" count="3" color="#EF4444" icon="logout-variant" />
@@ -123,25 +127,25 @@ export default function AdminDashboardScreen() {
             </View>
           </View>
 
-          <View style={styles.satisfactionCard}>
-            <Text style={styles.cardTitle}>Guest Satisfaction</Text>
+          <View style={[styles.satisfactionCard, { backgroundColor: theme.surface }]}>
+            <Text style={[styles.cardTitle, { color: theme.text }]}>Guest Satisfaction</Text>
             <View style={styles.satisfactionContent}>
-              <Text style={styles.bigScore}>4.8<Text style={styles.scoreScale}>/5</Text></Text>
+              <Text style={[styles.bigScore, { color: theme.text }]}>4.8<Text style={[styles.scoreScale, { color: theme.muted }]}>/5</Text></Text>
               <View style={styles.starsRow}>
                 {[1,2,3,4,5].map(i => (
                   <Ionicons key={i} name="star" size={16} color={i <= 4 ? "#EAB308" : Colors.gray[200]} />
                 ))}
               </View>
-              <Text style={styles.totalReviews}>Total Reviews: 128</Text>
+              <Text style={[styles.totalReviews, { color: theme.muted }]}>Total Reviews: 128</Text>
             </View>
           </View>
         </View>
 
         {/* Bottom Section */}
         <View style={styles.sectionContainer}>
-          <View style={styles.bookingsCard}>
+          <View style={[styles.bookingsCard, { backgroundColor: theme.surface }]}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.cardTitle}>Recent Bookings</Text>
+              <Text style={[styles.cardTitle, { color: theme.text }]}>Recent Bookings</Text>
               <TouchableOpacity><Text style={styles.viewAllText}>View All</Text></TouchableOpacity>
             </View>
             <BookingRow name="John Doe" property="Haven 1" date="Feb 9-11" status="Confirmed" />
@@ -149,14 +153,14 @@ export default function AdminDashboardScreen() {
             <BookingRow name="Mike Ross" property="Haven 1" date="Feb 12-15" status="Confirmed" />
           </View>
 
-          <View style={styles.propertyStatsCard}>
-            <Text style={styles.cardTitle}>Property Stats</Text>
+          <View style={[styles.propertyStatsCard, { backgroundColor: theme.surface }]}>
+            <Text style={[styles.cardTitle, { color: theme.text }]}>Property Stats</Text>
             <View style={styles.statsInner}>
               <View style={styles.statBadge}>
                 <MaterialCommunityIcons name="office-building" size={18} color={Colors.brand.primary} />
                 <Text style={styles.statBadgeText}>4 Listed</Text>
               </View>
-              <Text style={styles.chartTitle}>Weekly Occupancy</Text>
+              <Text style={[styles.chartTitle, { color: theme.muted }]}>Weekly Occupancy</Text>
               <View style={styles.barChartPlaceholder}>
                 {[40, 70, 55, 90, 85, 60, 75].map((h, i) => (
                   <View key={i} style={[styles.chartBar, { height: h * 0.6, backgroundColor: i === 3 ? Colors.brand.primary : Colors.brand.primary + '40' }]} />
