@@ -27,9 +27,13 @@ export default function LoginScreen() {
       Alert.alert('Error', 'Please enter both email and password.');
       return;
     }
-    const result = await login({ email: email.trim(), password });
-    if (!result.success) {
-      Alert.alert('Login Failed', result.error ?? 'Invalid credentials');
+    try {
+      const result = await login({ email: email.trim(), password });
+      if (!result.success) {
+        Alert.alert('Login Failed', result.error ?? 'Invalid credentials');
+      }
+    } catch (error) {
+      Alert.alert('Error', error instanceof Error ? error.message : 'Unexpected login error');
     }
   };
 
