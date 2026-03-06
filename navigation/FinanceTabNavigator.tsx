@@ -69,11 +69,9 @@ export default function FinanceTabNavigator() {
       </View>
 
       <View style={styles.screensWrapper}>
-        <Animated.View style={[styles.screensRow, { transform: [{ translateX: slideAnim }] }]}>
-          <View style={{ width }}><PaymentManagementScreen /></View>
-          <View style={{ width }}><SecurityDepositScreen /></View>
-          <View style={{ width }}><DiscountManagementScreen /></View>
-        </Animated.View>
+        {activeTab === 0 && <PaymentManagementScreen />}
+        {activeTab === 1 && <SecurityDepositScreen />}
+        {activeTab === 2 && <DiscountManagementScreen />}
       </View>
     </SafeAreaView>
   );

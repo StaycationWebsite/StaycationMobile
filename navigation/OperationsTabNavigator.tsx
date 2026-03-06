@@ -39,7 +39,7 @@ export default function OperationsTabNavigator() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.headerText}>
           <Text style={styles.headerTitle}>Operations</Text>
@@ -69,13 +69,11 @@ export default function OperationsTabNavigator() {
       </View>
 
       <View style={styles.screensWrapper}>
-        <Animated.View style={[styles.screensRow, { transform: [{ translateX: slideAnim }] }]}>
-          <View style={{ width }}><DeliverablesManagementScreen /></View>
-          <View style={{ width }}><CleanersManagementScreen /></View>
-          <View style={{ width }}><InventoryManagementScreen /></View>
-        </Animated.View>
+        {activeTab === 0 && <DeliverablesManagementScreen />}
+        {activeTab === 1 && <CleanersManagementScreen />}
+        {activeTab === 2 && <InventoryManagementScreen />}
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -105,6 +103,7 @@ const styles = StyleSheet.create({
     position: 'absolute', bottom: 0, left: 0,
     height: 3, backgroundColor: Colors.brand.primary, borderRadius: 2,
   },
-  screensWrapper: { flex: 1, overflow: 'hidden' },
+  screensWrapper: { flex: 1},
   screensRow: { flexDirection: 'row', flex: 1 },
+  screenItem: { width, flex: 1 },
 });
