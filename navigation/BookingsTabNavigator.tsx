@@ -1,39 +1,31 @@
 import React, { useState, useRef } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { View, Text, StyleSheet, TouchableOpacity, Animated, Dimensions } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Colors } from '../constants/Styles';
 import { useNavigation } from '@react-navigation/native';
 
 import BookingManagementScreen from '../app/screens/Admin/BookingManagementScreen';
+import AdminReservationsScreen from '../app/screens/Admin/AdminReservationsScreen';
 import BookingCalendarScreen from '../app/screens/Admin/BookingCalendarScreen';
 
 const { width } = Dimensions.get('window');
-const TABS = ['Management', 'Calendar'];
+const TABS = ['Management', 'Reservations', 'Calendar'];
 const TAB_COUNT = TABS.length;
 
 export default function BookingsTabNavigator() {
   const navigation = useNavigation<any>();
   const [activeTab, setActiveTab] = useState(0);
-  const slideAnim = useRef(new Animated.Value(0)).current;
   const indicatorAnim = useRef(new Animated.Value(0)).current;
 
   const switchTab = (index: number) => {
     if (index === activeTab) return;
-    Animated.parallel([
-      Animated.spring(slideAnim, {
-        toValue: -index * width,
-        useNativeDriver: true,
-        tension: 68,
-        friction: 12,
-      }),
-      Animated.spring(indicatorAnim, {
-        toValue: index * (width / TAB_COUNT),
-        useNativeDriver: true,
-        tension: 68,
-        friction: 12,
-      }),
-    ]).start();
+    Animated.spring(indicatorAnim, {
+      toValue: index * (width / TAB_COUNT),
+      useNativeDriver: true,
+      tension: 68,
+      friction: 12,
+    }).start();
     setActiveTab(index);
   };
 
@@ -44,7 +36,10 @@ export default function BookingsTabNavigator() {
           <Text style={styles.headerTitle}>Bookings</Text>
           <Text style={styles.headerSubtitle}>Manage all reservations</Text>
         </View>
-        <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Profile')}>
+        <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('BlockedDates')}>
+          <MaterialCommunityIcons name="calendar-remove-outline" size={20} color={Colors.red[500]} />
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.iconButton, { marginLeft: 8 }]} onPress={() => navigation.navigate('Profile')}>
           <Feather name="user" size={20} color={Colors.gray[700]} />
         </TouchableOpacity>
       </View>
@@ -69,16 +64,13 @@ export default function BookingsTabNavigator() {
         />
       </View>
 
-      {/* Sliding screen container */}
+      {/* Screen container */}
       <View style={styles.screensWrapper}>
-        <Animated.View style={[styles.screensRow, { transform: [{ translateX: slideAnim }] }]}>
-          <View style={{ width }}>
-            <BookingManagementScreen />
-          </View>
-          <View style={{ width }}>
-            <BookingCalendarScreen />
-          </View>
-        </Animated.View>
+        {activeTab === 0
+          ? <BookingManagementScreen />
+          : activeTab === 1
+          ? <AdminReservationsScreen />
+          : <BookingCalendarScreen />}
       </View>
     </SafeAreaView>
   );
@@ -110,6 +102,5 @@ const styles = StyleSheet.create({
     position: 'absolute', bottom: 0, left: 0,
     height: 3, backgroundColor: Colors.brand.primary, borderRadius: 2,
   },
-  screensWrapper: { flex: 1, overflow: 'hidden' },
-  screensRow: { flexDirection: 'row', flex: 1 },
+  screensWrapper: { flex: 1 },
 });

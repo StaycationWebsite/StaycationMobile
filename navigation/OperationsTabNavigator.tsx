@@ -8,38 +8,30 @@ import { useNavigation } from '@react-navigation/native';
 import DeliverablesManagementScreen from '../app/screens/Admin/DeliverablesManagementScreen';
 import CleanersManagementScreen from '../app/screens/Admin/CleanersManagementScreen';
 import InventoryManagementScreen from '../app/screens/Admin/InventoryManagementScreen';
+import MaintenanceManagementScreen from '../app/screens/Admin/MaintenanceManagementScreen';
 
 const { width } = Dimensions.get('window');
-const TABS = ['Deliverables', 'Cleaners', 'Inventory'];
+const TABS = ['Deliverables', 'Cleaners', 'Inventory', 'Maintenance'];
 const TAB_COUNT = TABS.length;
 
 export default function OperationsTabNavigator() {
   const navigation = useNavigation<any>();
   const [activeTab, setActiveTab] = useState(0);
-  const slideAnim = useRef(new Animated.Value(0)).current;
   const indicatorAnim = useRef(new Animated.Value(0)).current;
 
   const switchTab = (index: number) => {
     if (index === activeTab) return;
-    Animated.parallel([
-      Animated.spring(slideAnim, {
-        toValue: -index * width,
-        useNativeDriver: true,
-        tension: 68,
-        friction: 12,
-      }),
-      Animated.spring(indicatorAnim, {
-        toValue: index * (width / TAB_COUNT),
-        useNativeDriver: true,
-        tension: 68,
-        friction: 12,
-      }),
-    ]).start();
+    Animated.spring(indicatorAnim, {
+      toValue: index * (width / TAB_COUNT),
+      useNativeDriver: true,
+      tension: 68,
+      friction: 12,
+    }).start();
     setActiveTab(index);
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <View style={styles.headerText}>
           <Text style={styles.headerTitle}>Operations</Text>
@@ -69,11 +61,15 @@ export default function OperationsTabNavigator() {
       </View>
 
       <View style={styles.screensWrapper}>
-        {activeTab === 0 && <DeliverablesManagementScreen />}
-        {activeTab === 1 && <CleanersManagementScreen />}
-        {activeTab === 2 && <InventoryManagementScreen />}
+        {activeTab === 0
+          ? <DeliverablesManagementScreen />
+          : activeTab === 1
+          ? <CleanersManagementScreen />
+          : activeTab === 2
+          ? <InventoryManagementScreen />
+          : <MaintenanceManagementScreen />}
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 

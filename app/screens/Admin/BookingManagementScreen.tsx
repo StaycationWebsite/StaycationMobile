@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import {
   Text, View, StyleSheet, TouchableOpacity, ScrollView,
   RefreshControl, Modal, TextInput, KeyboardAvoidingView,
@@ -33,6 +34,20 @@ const INITIAL_BOOKINGS: Booking[] = [
 const HAVEN_OPTIONS = ['Haven 101', 'Haven 103', 'Haven 205', 'Haven 302'];
 const STATUS_OPTIONS: BookingStatus[] = ['Confirmed', 'Pending', 'Checked-in', 'Cancelled'];
 const FILTER_TABS = ['All', 'Confirmed', 'Pending', 'Checked-in'];
+
+const statusChipColorMap: Record<string, { chipBg: string; text: string; border: string }> = {
+  Confirmed:    { chipBg: Colors.green[100],  text: Colors.green[500],  border: Colors.green[500] },
+  Pending:      { chipBg: Colors.yellow[100], text: '#92400E',          border: '#D97706' },
+  'Checked-in': { chipBg: Colors.blue[100],   text: Colors.blue[500],   border: Colors.blue[500] },
+  Cancelled:    { chipBg: Colors.red[100],    text: Colors.red[500],    border: Colors.red[500] },
+};
+
+const tabColorMap: Record<string, { chipBg: string; text: string; badge: string }> = {
+  All:          { chipBg: Colors.brand.primarySoft, text: Colors.brand.primaryDark, badge: Colors.brand.primary },
+  Confirmed:    { chipBg: Colors.green[100],        text: Colors.green[500],        badge: Colors.green[500] },
+  Pending:      { chipBg: Colors.yellow[100],       text: '#92400E',                badge: '#D97706' },
+  'Checked-in': { chipBg: Colors.blue[100],         text: Colors.blue[500],         badge: Colors.blue[500] },
+};
 
 const emptyForm = {
   guest: '', room: HAVEN_OPTIONS[0], checkIn: '', checkOut: '',
@@ -71,21 +86,32 @@ const FormInput = ({ label, placeholder, value, onChange, error, keyboardType, m
   </View>
 );
 
-const SelectorRow = ({ label, options, value, onChange }: {
+const SelectorRow = ({ label, options, value, onChange, colorMap }: {
   label: string; options: string[]; value: string; onChange: (v: string) => void;
+  colorMap?: Record<string, { chipBg: string; text: string; border: string }>;
 }) => (
   <View style={styles.fieldGroup}>
     <Text style={styles.fieldLabel}>{label}</Text>
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.selectorRow}>
-      {options.map(opt => (
-        <TouchableOpacity
-          key={opt}
-          style={[styles.selectorChip, value === opt && styles.selectorChipActive]}
-          onPress={() => onChange(opt)}
-        >
-          <Text style={[styles.selectorChipText, value === opt && styles.selectorChipTextActive]}>{opt}</Text>
-        </TouchableOpacity>
-      ))}
+      {options.map(opt => {
+        const isActive = value === opt;
+        const c = colorMap?.[opt];
+        return (
+          <TouchableOpacity
+            key={opt}
+            style={[
+              styles.selectorChip,
+              isActive && (c ? { backgroundColor: c.chipBg, borderColor: c.border } : styles.selectorChipActive),
+            ]}
+            onPress={() => onChange(opt)}
+          >
+            <Text style={[
+              styles.selectorChipText,
+              isActive && (c ? { color: c.text } : styles.selectorChipTextActive),
+            ]}>{opt}</Text>
+          </TouchableOpacity>
+        );
+      })}
     </ScrollView>
   </View>
 );
@@ -102,6 +128,43 @@ export default function BookingManagementScreen() {
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // ── Date / Time picker ───────────────────────────────────────
+  const [pickerVisible, setPickerVisible] = useState(false);
+  const [pickerMode, setPickerMode] = useState<'date' | 'time'>('date');
+  const [pickerTarget, setPickerTarget] = useState<'checkIn' | 'checkOut'>('checkIn');
+  const [pickerTempDate, setPickerTempDate] = useState(new Date());
+
+  const formatDateTime = (d: Date) => {
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const h = d.getHours();
+    const m = d.getMinutes().toString().padStart(2, '0');
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const hour = h % 12 || 12;
+    return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}, ${hour}:${m} ${ampm}`;
+  };
+
+  const openDatePicker = (target: 'checkIn' | 'checkOut') => {
+    setPickerTarget(target);
+    setPickerMode('date');
+    setPickerTempDate(new Date());
+    setPickerVisible(true);
+  };
+
+  const onPickerChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
+    if (event.type === 'dismissed') { setPickerVisible(false); return; }
+    if (!selectedDate) return;
+    if (pickerMode === 'date') {
+      setPickerTempDate(selectedDate);
+      setPickerVisible(false);
+      setTimeout(() => { setPickerMode('time'); setPickerVisible(true); }, 50);
+    } else {
+      const combined = new Date(pickerTempDate);
+      combined.setHours(selectedDate.getHours(), selectedDate.getMinutes());
+      setField(pickerTarget, formatDateTime(combined));
+      setPickerVisible(false);
+    }
+  };
 
   // ── Helpers ──────────────────────────────────────────────────
   const onRefresh = async () => {
@@ -283,7 +346,7 @@ export default function BookingManagementScreen() {
   const FormSheet = () => {
     const isEdit = modalMode === 'edit';
     return (
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, justifyContent: 'flex-end' }}>
+      <KeyboardAvoidingView behavior="padding" style={{ flex: 1, justifyContent: 'flex-end' }}>
         <View style={styles.bottomSheet}>
           <View style={styles.sheetHandle} />
           <View style={styles.sheetHeader}>
@@ -298,29 +361,43 @@ export default function BookingManagementScreen() {
             </TouchableOpacity>
           </View>
 
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.sheetContent}>
+          <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.sheetContent}>
             <FormInput label="Guest Name" placeholder="e.g. Juan dela Cruz"
               value={form.guest} onChange={(v: string) => setField('guest', v)} error={errors.guest} />
 
             <SelectorRow label="Haven / Room" options={HAVEN_OPTIONS} value={form.room} onChange={v => setField('room', v)} />
 
-            <View style={styles.dateRow}>
-              <View style={{ flex: 1 }}>
-                <FormInput label="Check-in Date" placeholder="e.g. Feb 20, 2026"
-                  value={form.checkIn} onChange={(v: string) => setField('checkIn', v)} error={errors.checkIn} />
+            {(['checkIn', 'checkOut'] as const).map(field => (
+              <View key={field} style={styles.fieldGroup}>
+                <Text style={styles.fieldLabel}>{field === 'checkIn' ? 'Check-in' : 'Check-out'} Date & Time</Text>
+                <TouchableOpacity
+                  style={[styles.inputWrapper, styles.datePickerBtn, errors[field] && styles.inputError]}
+                  onPress={() => openDatePicker(field)}
+                  activeOpacity={0.7}
+                >
+                  <Feather name="calendar" size={16} color={Colors.brand.primary} />
+                  <Text style={[styles.datePickerText, !form[field] && { color: Colors.gray[400] }]}>
+                    {form[field] || 'Tap to select date & time'}
+                  </Text>
+                </TouchableOpacity>
+                {errors[field] ? <Text style={styles.errorText}>{errors[field]}</Text> : null}
               </View>
-              <View style={styles.dateArrow}><Feather name="arrow-right" size={16} color={Colors.gray[400]} /></View>
-              <View style={{ flex: 1 }}>
-                <FormInput label="Check-out Date" placeholder="e.g. Feb 23, 2026"
-                  value={form.checkOut} onChange={(v: string) => setField('checkOut', v)} error={errors.checkOut} />
-              </View>
-            </View>
+            ))}
+
+            {pickerVisible && (
+              <DateTimePicker
+                value={pickerTempDate}
+                mode={pickerMode}
+                display="default"
+                onChange={onPickerChange}
+              />
+            )}
 
             <FormInput label="Total Amount (₱)" placeholder="e.g. 12500"
               value={form.amount} onChange={(v: string) => setField('amount', v)}
               error={errors.amount} keyboardType="numeric" />
 
-            <SelectorRow label="Booking Status" options={STATUS_OPTIONS} value={form.status} onChange={v => setField('status', v)} />
+            <SelectorRow label="Booking Status" options={STATUS_OPTIONS} value={form.status} onChange={v => setField('status', v)} colorMap={statusChipColorMap} />
 
             <FormInput label="Notes (optional)" placeholder="Any special requests or remarks..."
               value={form.notes} onChange={(v: string) => setField('notes', v)} multiline />
@@ -388,22 +465,26 @@ export default function BookingManagementScreen() {
 
       <View style={styles.filterContainer}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
-          {FILTER_TABS.map(tab => (
-            <TouchableOpacity
-              key={tab}
-              style={[styles.filterChip, activeFilter === tab && styles.filterChipActive]}
-              onPress={() => setActiveFilter(tab)}
-            >
-              <Text style={[styles.filterText, activeFilter === tab && styles.filterTextActive]}>{tab}</Text>
-              {filterCount(tab) > 0 && (
-                <View style={[styles.filterBadge, activeFilter !== tab && styles.filterBadgeInactive]}>
-                  <Text style={[styles.filterBadgeText, activeFilter !== tab && styles.filterBadgeTextInactive]}>
-                    {filterCount(tab)}
-                  </Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          ))}
+          {FILTER_TABS.map(tab => {
+            const isActive = activeFilter === tab;
+            const tc = tabColorMap[tab];
+            return (
+              <TouchableOpacity
+                key={tab}
+                style={[styles.filterChip, isActive && { backgroundColor: tc.chipBg }]}
+                onPress={() => setActiveFilter(tab)}
+              >
+                <Text style={[styles.filterText, isActive && { color: tc.text }]}>{tab}</Text>
+                {filterCount(tab) > 0 && (
+                  <View style={[styles.filterBadge, isActive ? { backgroundColor: tc.badge } : styles.filterBadgeInactive]}>
+                    <Text style={[styles.filterBadgeText, !isActive && styles.filterBadgeTextInactive]}>
+                      {filterCount(tab)}
+                    </Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            );
+          })}
         </ScrollView>
       </View>
 
@@ -478,8 +559,8 @@ export default function BookingManagementScreen() {
       <Modal visible={modalMode !== null} animationType="slide" transparent onRequestClose={closeModal}>
         <View style={styles.modalOverlay}>
           <TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={closeModal} />
-          {modalMode === 'view' && <ViewSheet />}
-          {(modalMode === 'add' || modalMode === 'edit') && <FormSheet />}
+          {modalMode === 'view' && ViewSheet()}
+          {(modalMode === 'add' || modalMode === 'edit') && FormSheet()}
         </View>
       </Modal>
     </SafeAreaView>
@@ -656,6 +737,8 @@ const styles = StyleSheet.create({
 
   dateRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
   dateArrow: { marginTop: 32, paddingHorizontal: 2 },
+  datePickerBtn: { flexDirection: 'row', alignItems: 'center', gap: 10, height: 48 },
+  datePickerText: { fontSize: 14, color: Colors.gray[900], flex: 1 },
 
   previewCard: {
     backgroundColor: Colors.brand.primarySoft, borderRadius: 14, padding: 14, gap: 10,

@@ -18,6 +18,13 @@ const INITIAL_PAYMENTS = [
 
 const FILTER_OPTIONS = ['All', 'Pending', 'Paid', 'Failed'];
 
+const filterTabColors: Record<string, { bg: string; text: string }> = {
+  All:     { bg: Colors.brand.primarySoft,  text: Colors.brand.primaryDark },
+  Pending: { bg: Colors.yellow[100],        text: '#92400E' },
+  Paid:    { bg: Colors.green[100],         text: Colors.green[500] },
+  Failed:  { bg: Colors.red[100],           text: Colors.red[500] },
+};
+
 export default function PaymentManagementScreen() {
   const [payments, setPayments] = useState(INITIAL_PAYMENTS);
   const [refreshing, setRefreshing] = useState(false);
@@ -97,15 +104,19 @@ export default function PaymentManagementScreen() {
         </ScrollView>
 
         <View style={styles.filterChips}>
-          {FILTER_OPTIONS.map(f => (
-            <TouchableOpacity
-              key={f}
-              style={[styles.chip, activeFilter === f && styles.chipActive]}
-              onPress={() => setActiveFilter(f)}
-            >
-              <Text style={[styles.chipText, activeFilter === f && styles.chipTextActive]}>{f}</Text>
-            </TouchableOpacity>
-          ))}
+          {FILTER_OPTIONS.map(f => {
+            const active = activeFilter === f;
+            const colors = filterTabColors[f];
+            return (
+              <TouchableOpacity
+                key={f}
+                style={[styles.chip, active && { backgroundColor: colors.bg }]}
+                onPress={() => setActiveFilter(f)}
+              >
+                <Text style={[styles.chipText, active && { color: colors.text }]}>{f}</Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         <View style={styles.content}>

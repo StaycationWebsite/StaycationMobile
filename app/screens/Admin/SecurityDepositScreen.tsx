@@ -18,6 +18,13 @@ const INITIAL_DEPOSITS = [
 
 const FILTERS = ['All', 'Held', 'Released', 'Deducted'];
 
+const filterTabColors: Record<string, { bg: string; text: string }> = {
+  All:      { bg: Colors.brand.primarySoft, text: Colors.brand.primaryDark },
+  Held:     { bg: Colors.yellow[100],       text: '#92400E' },
+  Released: { bg: Colors.green[100],        text: Colors.green[500] },
+  Deducted: { bg: Colors.red[100],          text: Colors.red[500] },
+};
+
 export default function SecurityDepositScreen() {
   const [deposits, setDeposits] = useState(INITIAL_DEPOSITS);
   const [refreshing, setRefreshing] = useState(false);
@@ -89,15 +96,19 @@ export default function SecurityDepositScreen() {
         </View>
 
         <View style={styles.filterChips}>
-          {FILTERS.map(f => (
-            <TouchableOpacity
-              key={f}
-              style={[styles.chip, activeFilter === f && styles.chipActive]}
-              onPress={() => setActiveFilter(f)}
-            >
-              <Text style={[styles.chipText, activeFilter === f && styles.chipTextActive]}>{f}</Text>
-            </TouchableOpacity>
-          ))}
+          {FILTERS.map(f => {
+            const active = activeFilter === f;
+            const colors = filterTabColors[f];
+            return (
+              <TouchableOpacity
+                key={f}
+                style={[styles.chip, active && { backgroundColor: colors.bg }]}
+                onPress={() => setActiveFilter(f)}
+              >
+                <Text style={[styles.chipText, active && { color: colors.text }]}>{f}</Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         <View style={styles.content}>

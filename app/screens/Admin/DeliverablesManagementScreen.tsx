@@ -31,6 +31,12 @@ const STATUS_OPTIONS: DelivStatus[]   = ['Pending', 'In Progress', 'Completed'];
 const DUE_OPTIONS     = ['Within 30 mins', 'Within 1 hour', 'Within 2 hours', 'Today'];
 const FILTER_TABS     = ['All', 'Pending', 'In Progress'];
 
+const filterTabColors: Record<string, { bg: string; text: string }> = {
+  All:          { bg: Colors.brand.primarySoft, text: Colors.brand.primaryDark },
+  Pending:      { bg: Colors.yellow[100],       text: '#92400E' },
+  'In Progress':{ bg: Colors.blue[100],         text: Colors.blue[500] },
+};
+
 const STAFF_LIST = [
   { id: 's1', name: 'Maria Santos',    role: 'Housekeeper',  available: true  },
   { id: 's2', name: 'Juan Dela Cruz',  role: 'Bellboy',      available: true  },
@@ -286,15 +292,19 @@ export default function DeliverablesManagementScreen() {
 
         {/* Filter chips */}
         <View style={styles.filterChips}>
-          {FILTER_TABS.map(tab => (
-            <TouchableOpacity
-              key={tab}
-              style={[styles.chip, activeFilter === tab && styles.chipActive]}
-              onPress={() => setActiveFilter(tab)}
-            >
-              <Text style={[styles.chipText, activeFilter === tab && styles.chipTextActive]}>{tab}</Text>
-            </TouchableOpacity>
-          ))}
+          {FILTER_TABS.map(tab => {
+            const isActive = activeFilter === tab;
+            const tc = filterTabColors[tab];
+            return (
+              <TouchableOpacity
+                key={tab}
+                style={[styles.chip, isActive && { backgroundColor: tc.bg }]}
+                onPress={() => setActiveFilter(tab)}
+              >
+                <Text style={[styles.chipText, isActive && { color: tc.text }]}>{tab}</Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         <View style={styles.content}>

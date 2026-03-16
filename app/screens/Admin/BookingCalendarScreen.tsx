@@ -244,7 +244,7 @@ export default function BookingCalendarScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <Card style={styles.calendarCard}>
 
           {/* Toggle Row */}
@@ -291,14 +291,16 @@ export default function BookingCalendarScreen() {
 
               <View style={styles.daysGrid}>
                 {[...Array(28)].map((_, i) => (
-                  <CalendarDay key={i} day={i + 1} />
+                  <React.Fragment key={i}>
+                    {CalendarDay({ day: i + 1 })}
+                  </React.Fragment>
                 ))}
               </View>
 
               {/* Selected booking range detail */}
               {selectedBooking && (
                 <View style={styles.selectedRangeWrapper}>
-                  <RangeLabel booking={selectedBooking} />
+                  {RangeLabel({ booking: selectedBooking })}
                 </View>
               )}
 
@@ -327,7 +329,9 @@ export default function BookingCalendarScreen() {
             <Text style={styles.bookingsCount}>{MOCK_SCHEDULE.length} bookings</Text>
           </View>
           {MOCK_SCHEDULE.map((booking, index) => (
-            <BookingItem key={index} {...booking} />
+            <React.Fragment key={index}>
+              {BookingItem(booking)}
+            </React.Fragment>
           ))}
           {selectedBookingId && (
             <TouchableOpacity style={styles.clearSelectionBtn} onPress={() => setSelectedBookingId(null)}>

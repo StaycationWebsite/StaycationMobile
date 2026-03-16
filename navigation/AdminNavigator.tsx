@@ -17,12 +17,21 @@ import CreateBookingScreen from '../app/screens/Admin/CreateBookingScreen';
 import AddHavenScreen from '../app/screens/Admin/AddHavenScreen';
 import GuestMessagesScreen from '../app/screens/Admin/GuestMessagesScreen';
 import ReportsManagementScreen from '../app/screens/Admin/ReportsManagementScreen';
+import MoreMenuScreen from '../app/screens/Admin/MoreMenuScreen';
+import StaffManagementScreen from '../app/screens/Admin/StaffManagementScreen';
+import ReviewsScreen from '../app/screens/Admin/ReviewsScreen';
+import UserManagementScreen from '../app/screens/Admin/UserManagementScreen';
+import PartnerManagementScreen from '../app/screens/Admin/PartnerManagementScreen';
+import AuditLogsScreen from '../app/screens/Admin/AuditLogsScreen';
+import SettingsScreen from '../app/screens/Admin/SettingsScreen';
+import BlockedDatesScreen from '../app/screens/Admin/BlockedDatesScreen';
 
 export type AdminTabParamList = {
   Dashboard: undefined;
   Bookings: undefined;
   Finance: undefined;
   Operations: undefined;
+  More: undefined;
 };
 
 export type AdminStackParamList = {
@@ -34,6 +43,13 @@ export type AdminStackParamList = {
   AddHaven: undefined;
   GuestMessages: undefined;
   Reports: undefined;
+  Staff: undefined;
+  Reviews: undefined;
+  Users: undefined;
+  Partners: undefined;
+  AuditLogs: undefined;
+  Settings: undefined;
+  BlockedDates: undefined;
 };
 
 const Tab = createBottomTabNavigator<AdminTabParamList>();
@@ -110,6 +126,16 @@ function AdminTabs() {
           ),
         }}
       />
+      <Tab.Screen
+        name="More"
+        component={MoreMenuScreen}
+        options={{
+          title: 'More',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="ellipsis-horizontal-circle-outline" size={size} color={color} />
+          ),
+        }}
+      />
     </Tab.Navigator>
   );
 }
@@ -127,6 +153,13 @@ export default function AdminNavigator() {
       <Stack.Screen name="AddHaven" component={AddHavenScreen} />
       <Stack.Screen name="GuestMessages" component={GuestMessagesScreen} />
       <Stack.Screen name="Reports" component={ReportsManagementScreen} />
+      <Stack.Screen name="Staff" component={StaffManagementScreen} />
+      <Stack.Screen name="Reviews" component={ReviewsScreen} />
+      <Stack.Screen name="Users" component={UserManagementScreen} />
+      <Stack.Screen name="Partners" component={PartnerManagementScreen} />
+      <Stack.Screen name="AuditLogs" component={AuditLogsScreen} />
+      <Stack.Screen name="Settings" component={SettingsScreen} />
+      <Stack.Screen name="BlockedDates" component={BlockedDatesScreen} />
     </Stack.Navigator>
   );
 }

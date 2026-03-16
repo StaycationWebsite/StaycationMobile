@@ -23,9 +23,68 @@ const AMENITIES_LIST = [
 const TOWERS = ['Tower A', 'Tower B', 'Tower C'];
 const FLOORS = ['1st Floor', '2nd Floor', '3rd Floor', '4th Floor', '5th Floor'];
 
+const InputField = ({ label, icon, value, onChangeText, placeholder, keyboardType = 'default', multiline = false }: any) => (
+  <View style={styles.inputGroup}>
+    <Text style={styles.inputLabel}>{label}</Text>
+    <View style={[styles.inputWrapper, multiline && { height: 80, alignItems: 'flex-start', paddingTop: 12 }]}>
+      <MaterialCommunityIcons name={icon} size={18} color={Colors.gray[400]} style={styles.inputIcon} />
+      <TextInput
+        style={[styles.input, multiline && { textAlignVertical: 'top' }]}
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor={Colors.gray[400]}
+        keyboardType={keyboardType}
+        multiline={multiline}
+      />
+    </View>
+  </View>
+);
+
+const DropdownField = ({ label, icon, value, options, open, setOpen, onSelect }: any) => (
+  <View style={styles.inputGroup}>
+    <Text style={styles.inputLabel}>{label}</Text>
+    <TouchableOpacity style={styles.dropdownBtn} onPress={() => setOpen(!open)}>
+      <MaterialCommunityIcons name={icon} size={18} color={Colors.gray[400]} />
+      <Text style={[styles.dropdownBtnText, value && { color: Colors.gray[900] }]}>
+        {value || `Select ${label}`}
+      </Text>
+      <Feather name={open ? 'chevron-up' : 'chevron-down'} size={16} color={Colors.gray[500]} />
+    </TouchableOpacity>
+    {open && (
+      <View style={styles.dropdown}>
+        {options.map((opt: string) => (
+          <TouchableOpacity
+            key={opt}
+            style={[styles.dropdownItem, value === opt && styles.dropdownItemSelected]}
+            onPress={() => { onSelect(opt); setOpen(false); }}
+          >
+            <Text style={[styles.dropdownItemText, value === opt && { color: Colors.brand.primary }]}>{opt}</Text>
+            {value === opt && <MaterialCommunityIcons name="check" size={16} color={Colors.brand.primary} />}
+          </TouchableOpacity>
+        ))}
+      </View>
+    )}
+  </View>
+);
+
+const StepperField = ({ label, value, setValue }: any) => (
+  <View style={styles.stepperRow}>
+    <Text style={styles.stepperLabel}>{label}</Text>
+    <View style={styles.stepperControls}>
+      <TouchableOpacity style={styles.stepperBtn} onPress={() => setValue(Math.max(1, value - 1))}>
+        <Feather name="minus" size={14} color={Colors.brand.primary} />
+      </TouchableOpacity>
+      <Text style={styles.stepperValue}>{value}</Text>
+      <TouchableOpacity style={styles.stepperBtn} onPress={() => setValue(value + 1)}>
+        <Feather name="plus" size={14} color={Colors.brand.primary} />
+      </TouchableOpacity>
+    </View>
+  </View>
+);
+
 export default function AddHavenScreen() {
   const navigation = useNavigation<any>();
-
   const [havenName, setHavenName] = useState('');
   const [tower, setTower] = useState('');
   const [floor, setFloor] = useState('');
@@ -41,66 +100,6 @@ export default function AddHavenScreen() {
 
   const toggleAmenity = (key: string) =>
     setAmenities(prev => ({ ...prev, [key]: !prev[key] }));
-
-  const InputField = ({ label, icon, value, onChangeText, placeholder, keyboardType = 'default', multiline = false }: any) => (
-    <View style={styles.inputGroup}>
-      <Text style={styles.inputLabel}>{label}</Text>
-      <View style={[styles.inputWrapper, multiline && { height: 80, alignItems: 'flex-start', paddingTop: 12 }]}>
-        <MaterialCommunityIcons name={icon} size={18} color={Colors.gray[400]} style={styles.inputIcon} />
-        <TextInput
-          style={[styles.input, multiline && { textAlignVertical: 'top' }]}
-          value={value}
-          onChangeText={onChangeText}
-          placeholder={placeholder}
-          placeholderTextColor={Colors.gray[400]}
-          keyboardType={keyboardType}
-          multiline={multiline}
-        />
-      </View>
-    </View>
-  );
-
-  const DropdownField = ({ label, icon, value, options, open, setOpen, onSelect }: any) => (
-    <View style={styles.inputGroup}>
-      <Text style={styles.inputLabel}>{label}</Text>
-      <TouchableOpacity style={styles.dropdownBtn} onPress={() => setOpen(!open)}>
-        <MaterialCommunityIcons name={icon} size={18} color={Colors.gray[400]} />
-        <Text style={[styles.dropdownBtnText, value && { color: Colors.gray[900] }]}>
-          {value || `Select ${label}`}
-        </Text>
-        <Feather name={open ? 'chevron-up' : 'chevron-down'} size={16} color={Colors.gray[500]} />
-      </TouchableOpacity>
-      {open && (
-        <View style={styles.dropdown}>
-          {options.map((opt: string) => (
-            <TouchableOpacity
-              key={opt}
-              style={[styles.dropdownItem, value === opt && styles.dropdownItemSelected]}
-              onPress={() => { onSelect(opt); setOpen(false); }}
-            >
-              <Text style={[styles.dropdownItemText, value === opt && { color: Colors.brand.primary }]}>{opt}</Text>
-              {value === opt && <MaterialCommunityIcons name="check" size={16} color={Colors.brand.primary} />}
-            </TouchableOpacity>
-          ))}
-        </View>
-      )}
-    </View>
-  );
-
-  const StepperField = ({ label, value, setValue }: any) => (
-    <View style={styles.stepperRow}>
-      <Text style={styles.stepperLabel}>{label}</Text>
-      <View style={styles.stepperControls}>
-        <TouchableOpacity style={styles.stepperBtn} onPress={() => setValue(Math.max(1, value - 1))}>
-          <Feather name="minus" size={14} color={Colors.brand.primary} />
-        </TouchableOpacity>
-        <Text style={styles.stepperValue}>{value}</Text>
-        <TouchableOpacity style={styles.stepperBtn} onPress={() => setValue(value + 1)}>
-          <Feather name="plus" size={14} color={Colors.brand.primary} />
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
 
   const isValid = havenName && tower && floor && weekdayRate;
 

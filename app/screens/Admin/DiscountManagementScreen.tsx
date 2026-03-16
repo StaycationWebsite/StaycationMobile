@@ -9,6 +9,13 @@ import { Colors } from '../../../constants/Styles';
 import Badge from '../../components/common/Badge';
 import Card from '../../components/common/Card';
 
+const filterTabColors: Record<string, { bg: string; text: string }> = {
+  All:      { bg: Colors.brand.primarySoft, text: Colors.brand.primaryDark },
+  Active:   { bg: Colors.green[100],        text: Colors.green[500] },
+  Inactive: { bg: Colors.yellow[100],       text: '#92400E' },
+  Expired:  { bg: Colors.red[100],          text: Colors.red[500] },
+};
+
 type Discount = {
   id: number; code: string; name: string; type: 'percentage' | 'fixed';
   value: number; minAmount: number | null; validUntil: string; status: string; usageCount: number;
@@ -109,11 +116,15 @@ export default function DiscountManagementScreen() {
         </View>
 
         <View style={styles.filterChips}>
-          {['All', 'Active', 'Inactive', 'Expired'].map(f => (
-            <TouchableOpacity key={f} style={[styles.chip, activeFilter === f && styles.chipActive]} onPress={() => setActiveFilter(f)}>
-              <Text style={[styles.chipText, activeFilter === f && styles.chipTextActive]}>{f}</Text>
-            </TouchableOpacity>
-          ))}
+          {['All', 'Active', 'Inactive', 'Expired'].map(f => {
+            const active = activeFilter === f;
+            const colors = filterTabColors[f];
+            return (
+              <TouchableOpacity key={f} style={[styles.chip, active && { backgroundColor: colors.bg }]} onPress={() => setActiveFilter(f)}>
+                <Text style={[styles.chipText, active && { color: colors.text }]}>{f}</Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         <View style={styles.content}>

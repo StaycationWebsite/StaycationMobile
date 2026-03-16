@@ -6,6 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Colors } from '../../../constants/Styles';
 
 const MOCK_HAVENS = [
@@ -15,6 +16,30 @@ const MOCK_HAVENS = [
   { id: '4', name: 'Haven 302', tower: 'Tower B', floor: '3rd Floor', rate: 5500 },
 ];
 
+const InputField = ({ label, icon, value, onChangeText, placeholder, keyboardType = 'default' }: any) => (
+  <View style={styles.inputGroup}>
+    <Text style={styles.inputLabel}>{label}</Text>
+    <View style={styles.inputWrapper}>
+      <MaterialCommunityIcons name={icon} size={18} color={Colors.gray[400]} style={styles.inputIcon} />
+      <TextInput
+        style={styles.input}
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor={Colors.gray[400]}
+        keyboardType={keyboardType}
+      />
+    </View>
+  </View>
+);
+
+function formatDateTime(d: Date) {
+  return d.toLocaleString('en-US', {
+    month: 'short', day: 'numeric', year: 'numeric',
+    hour: 'numeric', minute: '2-digit', hour12: true,
+  });
+}
+
 export default function CreateBookingScreen() {
   const navigation = useNavigation<any>();
 
@@ -22,36 +47,50 @@ export default function CreateBookingScreen() {
   const [guestEmail, setGuestEmail] = useState('');
   const [guestPhone, setGuestPhone] = useState('');
   const [selectedHaven, setSelectedHaven] = useState<any>(null);
-  const [checkIn, setCheckIn] = useState('');
-  const [checkOut, setCheckOut] = useState('');
+  const [checkIn, setCheckIn] = useState<Date | null>(null);
+  const [checkOut, setCheckOut] = useState<Date | null>(null);
   const [guestCount, setGuestCount] = useState(1);
   const [notes, setNotes] = useState('');
   const [havenDropdownOpen, setHavenDropdownOpen] = useState(false);
 
-  const InputField = ({ label, icon, value, onChangeText, placeholder, keyboardType = 'default' }: any) => (
-    <View style={styles.inputGroup}>
-      <Text style={styles.inputLabel}>{label}</Text>
-      <View style={styles.inputWrapper}>
-        <MaterialCommunityIcons name={icon} size={18} color={Colors.gray[400]} style={styles.inputIcon} />
-        <TextInput
-          style={styles.input}
-          value={value}
-          onChangeText={onChangeText}
-          placeholder={placeholder}
-          placeholderTextColor={Colors.gray[400]}
-          keyboardType={keyboardType}
-        />
-      </View>
-    </View>
-  );
+  const [pickerVisible, setPickerVisible] = useState(false);
+  const [pickerMode, setPickerMode] = useState<'date' | 'time'>('date');
+  const [pickerTarget, setPickerTarget] = useState<'checkIn' | 'checkOut'>('checkIn');
+  const [pickerTempDate, setPickerTempDate] = useState(new Date());
+
+  const openDatePicker = (target: 'checkIn' | 'checkOut') => {
+    const existing = target === 'checkIn' ? checkIn : checkOut;
+    setPickerTempDate(existing ?? new Date());
+    setPickerTarget(target);
+    setPickerMode('date');
+    setPickerVisible(true);
+  };
+
+  const onPickerChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
+    if (event.type === 'dismissed') {
+      setPickerVisible(false);
+      return;
+    }
+    const date = selectedDate ?? pickerTempDate;
+    if (pickerMode === 'date') {
+      setPickerTempDate(date);
+      setPickerVisible(false);
+      setTimeout(() => {
+        setPickerMode('time');
+        setPickerVisible(true);
+      }, 50);
+    } else {
+      setPickerVisible(false);
+      const final = new Date(pickerTempDate);
+      final.setHours(date.getHours(), date.getMinutes());
+      if (pickerTarget === 'checkIn') setCheckIn(final);
+      else setCheckOut(final);
+    }
+  };
 
   const nights = (() => {
     if (!checkIn || !checkOut) return 0;
-    const [inDay, inMon, inYear] = checkIn.split('/').map(Number);
-    const [outDay, outMon, outYear] = checkOut.split('/').map(Number);
-    const d1 = new Date(inYear, inMon - 1, inDay);
-    const d2 = new Date(outYear, outMon - 1, outDay);
-    const diff = Math.round((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24));
+    const diff = Math.round((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
     return diff > 0 ? diff : 0;
   })();
 
@@ -161,31 +200,32 @@ export default function CreateBookingScreen() {
           <View style={styles.dateRow}>
             <View style={[styles.inputGroup, { flex: 1 }]}>
               <Text style={styles.inputLabel}>Check-in</Text>
-              <View style={styles.inputWrapper}>
-                <MaterialCommunityIcons name="calendar-check" size={18} color={Colors.gray[400]} style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  value={checkIn}
-                  onChangeText={setCheckIn}
-                  placeholder="DD/MM/YYYY"
-                  placeholderTextColor={Colors.gray[400]}
-                />
-              </View>
+              <TouchableOpacity style={styles.datePickerBtn} onPress={() => openDatePicker('checkIn')}>
+                <MaterialCommunityIcons name="calendar-check" size={18} color={Colors.gray[400]} />
+                <Text style={[styles.datePickerText, checkIn && { color: Colors.gray[900] }]}>
+                  {checkIn ? formatDateTime(checkIn) : 'Select date & time'}
+                </Text>
+              </TouchableOpacity>
             </View>
             <View style={[styles.inputGroup, { flex: 1 }]}>
               <Text style={styles.inputLabel}>Check-out</Text>
-              <View style={styles.inputWrapper}>
-                <MaterialCommunityIcons name="calendar-remove" size={18} color={Colors.gray[400]} style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  value={checkOut}
-                  onChangeText={setCheckOut}
-                  placeholder="DD/MM/YYYY"
-                  placeholderTextColor={Colors.gray[400]}
-                />
-              </View>
+              <TouchableOpacity style={styles.datePickerBtn} onPress={() => openDatePicker('checkOut')}>
+                <MaterialCommunityIcons name="calendar-remove" size={18} color={Colors.gray[400]} />
+                <Text style={[styles.datePickerText, checkOut && { color: Colors.gray[900] }]}>
+                  {checkOut ? formatDateTime(checkOut) : 'Select date & time'}
+                </Text>
+              </TouchableOpacity>
             </View>
           </View>
+
+          {pickerVisible && (
+            <DateTimePicker
+              value={pickerTempDate}
+              mode={pickerMode}
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              onChange={onPickerChange}
+            />
+          )}
 
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>Number of Guests</Text>
@@ -306,6 +346,19 @@ const styles = StyleSheet.create({
   inputIcon: { marginRight: 8 },
   input: { flex: 1, fontSize: 14, color: Colors.gray[900] },
   dateRow: { flexDirection: 'row', gap: 12 },
+  datePickerBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: Colors.gray[50],
+    borderWidth: 1,
+    borderColor: Colors.gray[200],
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    minHeight: 46,
+  },
+  datePickerText: { flex: 1, fontSize: 13, color: Colors.gray[400] },
   dropdownBtn: {
     flexDirection: 'row',
     alignItems: 'center',
