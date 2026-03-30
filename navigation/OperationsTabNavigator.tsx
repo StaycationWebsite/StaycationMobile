@@ -5,13 +5,12 @@ import { Feather } from '@expo/vector-icons';
 import { Colors } from '../constants/Styles';
 import { useNavigation } from '@react-navigation/native';
 
-import DeliverablesManagementScreen from '../app/screens/Admin/DeliverablesManagementScreen';
-import CleanersManagementScreen from '../app/screens/Admin/CleanersManagementScreen';
-import InventoryManagementScreen from '../app/screens/Admin/InventoryManagementScreen';
-import MaintenanceManagementScreen from '../app/screens/Admin/MaintenanceManagementScreen';
+import DeliverablesManagementScreen from '../app/screens/Csr/Operations/DeliverablesManagementScreen';
+import CleanersManagementScreen from '../app/screens/Csr/Operations/CleanersManagementScreen';
+import InventoryManagementScreen from '../app/screens/Csr/Operations/InventoryManagementScreen';
 
 const { width } = Dimensions.get('window');
-const TABS = ['Deliverables', 'Cleaners', 'Inventory', 'Maintenance'];
+const TABS = ['Deliverables', 'Cleaners', 'Inventory'];
 const TAB_COUNT = TABS.length;
 
 export default function OperationsTabNavigator() {
@@ -65,9 +64,7 @@ export default function OperationsTabNavigator() {
           ? <DeliverablesManagementScreen />
           : activeTab === 1
           ? <CleanersManagementScreen />
-          : activeTab === 2
-          ? <InventoryManagementScreen />
-          : <MaintenanceManagementScreen />}
+          : <InventoryManagementScreen />}
       </View>
     </SafeAreaView>
   );

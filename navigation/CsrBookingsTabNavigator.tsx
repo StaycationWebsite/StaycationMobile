@@ -1,18 +1,18 @@
 import React, { useState, useRef } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { View, Text, StyleSheet, TouchableOpacity, Animated, Dimensions } from 'react-native';
-import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 import { Colors } from '../constants/Styles';
 import { useNavigation } from '@react-navigation/native';
 
-import AdminReservationsScreen from '../app/screens/Admin/Bookings/AdminReservationsScreen';
+import BookingManagementScreen from '../app/screens/Csr/Bookings/BookingManagementScreen';
 import BookingCalendarScreen from '../app/screens/Csr/Bookings/BookingCalendarScreen';
 
 const { width } = Dimensions.get('window');
-const TABS = ['Reservations', 'Calendar'];
+const TABS = ['Management', 'Calendar'];
 const TAB_COUNT = TABS.length;
 
-export default function BookingsTabNavigator() {
+export default function CsrBookingsTabNavigator() {
   const navigation = useNavigation<any>();
   const [activeTab, setActiveTab] = useState(0);
   const indicatorAnim = useRef(new Animated.Value(0)).current;
@@ -32,11 +32,11 @@ export default function BookingsTabNavigator() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <View style={styles.headerText}>
-          <Text style={styles.headerTitle}>Bookings</Text>
+          <Text style={styles.headerTitle}>Guest Management</Text>
           <Text style={styles.headerSubtitle}>Manage all reservations</Text>
         </View>
-        <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('BlockedDates')}>
-          <MaterialCommunityIcons name="calendar-remove-outline" size={20} color={Colors.red[500]} />
+        <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('CsrCreateBooking')}>
+          <Feather name="plus" size={20} color={Colors.brand.primary} />
         </TouchableOpacity>
         <TouchableOpacity style={[styles.iconButton, { marginLeft: 8 }]} onPress={() => navigation.navigate('Profile')}>
           <Feather name="user" size={20} color={Colors.gray[700]} />
@@ -57,7 +57,6 @@ export default function BookingsTabNavigator() {
             </Text>
           </TouchableOpacity>
         ))}
-        {/* Animated indicator */}
         <Animated.View
           style={[styles.tabIndicator, { width: width / TAB_COUNT, transform: [{ translateX: indicatorAnim }] }]}
         />
@@ -65,7 +64,7 @@ export default function BookingsTabNavigator() {
 
       {/* Screen container */}
       <View style={styles.screensWrapper}>
-        {activeTab === 0 ? <AdminReservationsScreen /> : <BookingCalendarScreen />}
+        {activeTab === 0 ? <BookingManagementScreen /> : <BookingCalendarScreen />}
       </View>
     </SafeAreaView>
   );
@@ -87,7 +86,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: Colors.gray[100],
   },
   tabBar: {
-    flexDirection: 'row', backgroundColor: '#FFFFFF',
+    flexDirection: 'row', backgroundColor: Colors.white,
     borderBottomWidth: 1, borderBottomColor: Colors.gray[100], height: 46,
     position: 'relative',
   },

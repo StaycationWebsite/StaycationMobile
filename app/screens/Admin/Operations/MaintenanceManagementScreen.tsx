@@ -4,7 +4,7 @@ import {
   TextInput, Alert, Modal,
 } from 'react-native';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
-import { Colors } from '../../../constants/Styles';
+import { Colors } from '../../../../constants/Styles';
 
 type Status   = 'open' | 'in-progress' | 'resolved';
 type Priority = 'low' | 'medium' | 'high' | 'urgent';

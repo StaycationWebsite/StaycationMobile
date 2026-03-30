@@ -7,42 +7,41 @@ import { Colors } from '../constants/Styles';
 
 // Screens
 import AdminDashboardScreen from '../app/screens/Admin/AdminDashboardScreen';
-import BookingsTabNavigator from './BookingsTabNavigator';
-import FinanceTabNavigator from './FinanceTabNavigator';
-import OperationsTabNavigator from './OperationsTabNavigator';
-import RoomDetailsScreen from '../app/screens/Admin/RoomDetailsScreen';
-import HavenScreen from '../app/screens/Admin/HavenScreen';
+import RoomDetailsScreen from '../app/screens/Admin/Havens/RoomDetailsScreen';
+import HavenScreen from '../app/screens/Admin/Havens/HavenScreen';
 import MeScreen from '../app/screens/MeScreen';
-import CreateBookingScreen from '../app/screens/Admin/CreateBookingScreen';
-import AddHavenScreen from '../app/screens/Admin/AddHavenScreen';
-import GuestMessagesScreen from '../app/screens/Admin/GuestMessagesScreen';
-import ReportsManagementScreen from '../app/screens/Admin/ReportsManagementScreen';
+import CreateBookingScreen from '../app/screens/Admin/Bookings/CreateBookingScreen';
+import AddHavenScreen from '../app/screens/Admin/Havens/AddHavenScreen';
+import GuestMessagesScreen from '../app/screens/Admin/Guest/GuestMessagesScreen';
+import ReportsManagementScreen from '../app/screens/Admin/Reports/ReportsManagementScreen';
 import MoreMenuScreen from '../app/screens/Admin/MoreMenuScreen';
-import StaffManagementScreen from '../app/screens/Admin/StaffManagementScreen';
-import ReviewsScreen from '../app/screens/Admin/ReviewsScreen';
-import UserManagementScreen from '../app/screens/Admin/UserManagementScreen';
-import PartnerManagementScreen from '../app/screens/Admin/PartnerManagementScreen';
-import AuditLogsScreen from '../app/screens/Admin/AuditLogsScreen';
-import SettingsScreen from '../app/screens/Admin/SettingsScreen';
-import BlockedDatesScreen from '../app/screens/Admin/BlockedDatesScreen';
+import StaffManagementScreen from '../app/screens/Admin/Staff/StaffManagementScreen';
+import ReviewsScreen from '../app/screens/Admin/Guest/ReviewsScreen';
+import UserManagementScreen from '../app/screens/Admin/Staff/UserManagementScreen';
+import PartnerManagementScreen from '../app/screens/Admin/Staff/PartnerManagementScreen';
+import AuditLogsScreen from '../app/screens/Admin/Settings/AuditLogsScreen';
+import SettingsScreen from '../app/screens/Admin/Settings/SettingsScreen';
+import BlockedDatesScreen from '../app/screens/Admin/Bookings/BlockedDatesScreen';
+import MaintenanceManagementScreen from '../app/screens/Admin/Operations/MaintenanceManagementScreen';
+
+// Tab Navigators
+import BookingsTabNavigator from './BookingsTabNavigator';
 
 export type AdminTabParamList = {
   Dashboard: undefined;
   Bookings: undefined;
-  Finance: undefined;
-  Operations: undefined;
+  ManageHavens: undefined;
+  Reports: undefined;
   More: undefined;
 };
 
 export type AdminStackParamList = {
   AdminTabs: undefined;
   RoomDetails: { haven: unknown };
-  ManageHavens: undefined;
+  AddHaven: undefined;
   Profile: undefined;
   CreateBooking: undefined;
-  AddHaven: undefined;
   GuestMessages: undefined;
-  Reports: undefined;
   Staff: undefined;
   Reviews: undefined;
   Users: undefined;
@@ -50,13 +49,15 @@ export type AdminStackParamList = {
   AuditLogs: undefined;
   Settings: undefined;
   BlockedDates: undefined;
+  Maintenance: undefined;
 };
 
 const Tab = createBottomTabNavigator<AdminTabParamList>();
+const Stack = createNativeStackNavigator<AdminStackParamList>();
 
 function AdminTabs() {
   const insets = useSafeAreaInsets();
-  
+
   return (
     <Tab.Navigator
       screenOptions={{
@@ -75,14 +76,8 @@ function AdminTabs() {
           paddingTop: 8,
           height: 60 + Math.max(insets.bottom, 8),
         },
-        tabBarItemStyle: {
-          paddingVertical: 4,
-        },
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: '600',
-          marginBottom: 4,
-        },
+        tabBarItemStyle: { paddingVertical: 4 },
+        tabBarLabelStyle: { fontSize: 11, fontWeight: '600', marginBottom: 4 },
         headerShown: false,
       }}
     >
@@ -107,22 +102,22 @@ function AdminTabs() {
         }}
       />
       <Tab.Screen
-        name="Finance"
-        component={FinanceTabNavigator}
+        name="ManageHavens"
+        component={HavenScreen}
         options={{
-          title: 'Finance',
+          title: 'Havens',
           tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="cash-multiple" size={size} color={color} />
+            <MaterialCommunityIcons name="home-city-outline" size={size} color={color} />
           ),
         }}
       />
       <Tab.Screen
-        name="Operations"
-        component={OperationsTabNavigator}
+        name="Reports"
+        component={ReportsManagementScreen}
         options={{
-          title: 'Operations',
+          title: 'Reports',
           tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="cog-outline" size={size} color={color} />
+            <MaterialCommunityIcons name="chart-bar" size={size} color={color} />
           ),
         }}
       />
@@ -140,19 +135,15 @@ function AdminTabs() {
   );
 }
 
-const Stack = createNativeStackNavigator<AdminStackParamList>();
-
 export default function AdminNavigator() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="AdminTabs" component={AdminTabs} />
       <Stack.Screen name="RoomDetails" component={RoomDetailsScreen} />
-      <Stack.Screen name="ManageHavens" component={HavenScreen} />
+      <Stack.Screen name="AddHaven" component={AddHavenScreen} />
       <Stack.Screen name="Profile" component={MeScreen} />
       <Stack.Screen name="CreateBooking" component={CreateBookingScreen} />
-      <Stack.Screen name="AddHaven" component={AddHavenScreen} />
       <Stack.Screen name="GuestMessages" component={GuestMessagesScreen} />
-      <Stack.Screen name="Reports" component={ReportsManagementScreen} />
       <Stack.Screen name="Staff" component={StaffManagementScreen} />
       <Stack.Screen name="Reviews" component={ReviewsScreen} />
       <Stack.Screen name="Users" component={UserManagementScreen} />
@@ -160,6 +151,7 @@ export default function AdminNavigator() {
       <Stack.Screen name="AuditLogs" component={AuditLogsScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
       <Stack.Screen name="BlockedDates" component={BlockedDatesScreen} />
+      <Stack.Screen name="Maintenance" component={MaintenanceManagementScreen} />
     </Stack.Navigator>
   );
 }

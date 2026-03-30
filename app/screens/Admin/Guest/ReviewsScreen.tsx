@@ -6,7 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { Colors } from '../../../constants/Styles';
+import { Colors } from '../../../../constants/Styles';
 
 const REVIEWS = [
   { id: 1, guest: 'Sarah Smith',   haven: 'Haven 205', rating: 5, date: 'Feb 20, 2026', text: 'Amazing stay! The room was spotless and the view was breathtaking. Will definitely come back.', replied: false, reply: '' },

@@ -1,30 +1,107 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Text, View, StyleSheet, TouchableOpacity, ScrollView,
-  Animated, LayoutAnimation, Platform, UIManager,
+  Animated, LayoutAnimation, Platform, UIManager, RefreshControl, Modal,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
-import { Colors } from '../../../constants/Styles';
-import Card from '../../components/common/Card';
+import { Colors } from '../../../../constants/Styles';
+import Card from '../../../components/common/Card';
+import { bookingsService } from '../../../../services/bookingsService';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-// Bookings with check-in and check-out days (for February 2026)
-const BOOKINGS = [
-  { id: '1', guest: 'John Doe',    room: 'Haven 101', checkIn: 9,  checkOut: 11, checkInTime: '10:00 AM', checkOutTime: '12:00 PM', color: Colors.brand.primary },
-  { id: '2', guest: 'Sarah Smith', room: 'Haven 205', checkIn: 14, checkOut: 18, checkInTime: '11:30 AM', checkOutTime: '11:00 AM', color: Colors.green[500] },
-  { id: '3', guest: 'Mike Ross',   room: 'Haven 103', checkIn: 20, checkOut: 24, checkInTime: '02:00 PM', checkOutTime: '12:00 PM', color: Colors.blue[500] },
-];
+const BOOKING_COLORS = [Colors.brand.primary, Colors.green[500], Colors.blue[500], Colors.yellow[500], Colors.red[500]];
+const NOW = new Date();
+const TODAY = NOW.getDate();
 
-const TODAY = 19;
+type CalendarBooking = {
+  id: string; guest: string; room: string;
+  checkIn: number; checkOut: number;
+  checkInTime: string; checkOutTime: string; color: string;
+};
+
+function mapApiToCalendar(raw: any, index: number): CalendarBooking {
+  const checkInDate = new Date(raw.check_in_date);
+  const checkOutDate = new Date(raw.check_out_date);
+  const now = new Date();
+  // Only use day-of-month for current month
+  const sameMonth = (d: Date) => d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  return {
+    id: raw.id,
+    guest: `${raw.guest_first_name ?? ''} ${raw.guest_last_name ?? ''}`.trim(),
+    room: raw.room_name ?? '',
+    checkIn: sameMonth(checkInDate) ? checkInDate.getDate() : (checkInDate < now ? 1 : 31),
+    checkOut: sameMonth(checkOutDate) ? checkOutDate.getDate() : (checkOutDate > now ? 31 : 1),
+    checkInTime: raw.check_in_time ? raw.check_in_time.slice(0, 5) : '',
+    checkOutTime: raw.check_out_time ? raw.check_out_time.slice(0, 5) : '',
+    color: BOOKING_COLORS[index % BOOKING_COLORS.length],
+  };
+}
 
 export default function BookingCalendarScreen() {
+  const [BOOKINGS, setBOOKINGS] = useState<CalendarBooking[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
   const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
   const [calendarCollapsed, setCalendarCollapsed] = useState(true);
+  const [viewDate, setViewDate] = useState(new Date(NOW.getFullYear(), NOW.getMonth(), 1));
+  const [viewMode, setViewMode] = useState<'Month' | 'Week' | 'Day'>('Month');
+  const [statusFilter, setStatusFilter] = useState<'All' | 'Check-in' | 'Check-out'>('All');
+  const [showStatusModal, setShowStatusModal] = useState(false);
   const rotateAnim = useRef(new Animated.Value(1)).current; // start collapsed (1 = rotated)
+
+  const viewMonth = viewDate.getMonth();
+  const viewYear = viewDate.getFullYear();
+  const MONTH_LONG = viewDate.toLocaleString('en-US', { month: 'long' });
+  const MONTH_SHORT = viewDate.toLocaleString('en-US', { month: 'short' });
+  const DAYS_IN_MONTH = new Date(viewYear, viewMonth + 1, 0).getDate();
+  const isCurrentMonth = viewMonth === NOW.getMonth() && viewYear === NOW.getFullYear();
+
+  const prevMonth = () => setViewDate(new Date(viewYear, viewMonth - 1, 1));
+  const nextMonth = () => setViewDate(new Date(viewYear, viewMonth + 1, 1));
+  const goToToday = () => {
+    setViewDate(new Date(NOW.getFullYear(), NOW.getMonth(), 1));
+    setViewMode('Month');
+  };
+
+  const switchViewMode = (mode: 'Month' | 'Week' | 'Day') => {
+    setViewMode(mode);
+    if (mode !== 'Month' && calendarCollapsed) {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      setCalendarCollapsed(false);
+      Animated.timing(rotateAnim, { toValue: 0, duration: 250, useNativeDriver: true }).start();
+    }
+  };
+
+  const getViewDays = (): number[] => {
+    if (viewMode === 'Month') return Array.from({ length: DAYS_IN_MONTH }, (_, i) => i + 1);
+    const refDay = isCurrentMonth ? TODAY : 1;
+    const refDate = new Date(viewYear, viewMonth, refDay);
+    if (viewMode === 'Week') {
+      const startDay = refDay - refDate.getDay();
+      return Array.from({ length: 7 }, (_, i) => startDay + i);
+    }
+    // Day
+    return [refDay];
+  };
+
+  const viewDays = getViewDays();
+
+  const fetchBookings = useCallback(async () => {
+    try {
+      const data = await bookingsService.getBookings();
+      setBOOKINGS(data.map(mapApiToCalendar));
+    } catch (_) {}
+  }, []);
+
+  useEffect(() => { fetchBookings(); }, [fetchBookings]);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchBookings();
+    setRefreshing(false);
+  };
 
   const toggleCalendar = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -83,7 +160,7 @@ export default function BookingCalendarScreen() {
     const checkIn = isCheckIn(day);
     const checkOut = isCheckOut(day);
     const inRange = isInRange(day);
-    const isToday = day === TODAY;
+    const isToday = isCurrentMonth && day === TODAY;
     const highlighted = isHighlightedDay(day);
 
     // Dim days that belong to other bookings when one is selected
@@ -151,7 +228,7 @@ export default function BookingCalendarScreen() {
         <View style={styles.rangeLabelDates}>
           <View style={styles.rangeLabelDateItem}>
             <MaterialCommunityIcons name="login-variant" size={13} color={Colors.green[500]} />
-            <Text style={styles.rangeLabelDateText}>Feb {booking.checkIn}</Text>
+            <Text style={styles.rangeLabelDateText}>{MONTH_SHORT} {booking.checkIn}</Text>
           </View>
           <View style={styles.rangeLabelArrow}>
             <Feather name="arrow-right" size={13} color={Colors.gray[400]} />
@@ -159,7 +236,7 @@ export default function BookingCalendarScreen() {
           </View>
           <View style={styles.rangeLabelDateItem}>
             <MaterialCommunityIcons name="logout-variant" size={13} color={Colors.red[500]} />
-            <Text style={styles.rangeLabelDateText}>Feb {booking.checkOut}</Text>
+            <Text style={styles.rangeLabelDateText}>{MONTH_SHORT} {booking.checkOut}</Text>
           </View>
         </View>
       </View>
@@ -188,12 +265,10 @@ export default function BookingCalendarScreen() {
     return toMins(a.time) - toMins(b.time);
   });
 
-  // Fallback: if no today schedule from bookings, use mock (remove in production)
-  const MOCK_SCHEDULE = todaySchedule.length > 0 ? todaySchedule : [
-    { bookingId: '1', time: '10:00 AM', guest: 'John Doe',    room: 'Haven 101', status: 'Check-in'  as const, color: Colors.brand.primary },
-    { bookingId: '2', time: '11:30 AM', guest: 'Sarah Smith', room: 'Haven 205', status: 'Check-out' as const, color: Colors.green[500] },
-    { bookingId: '3', time: '02:00 PM', guest: 'Mike Johnson', room: 'Haven 103', status: 'Check-in' as const, color: Colors.blue[500] },
-  ];
+  const MOCK_SCHEDULE = todaySchedule;
+  const filteredSchedule = statusFilter === 'All'
+    ? MOCK_SCHEDULE
+    : MOCK_SCHEDULE.filter(item => item.status === statusFilter);
 
   const BookingItem = ({ bookingId, time, guest, room, status, color }: any) => {
     const isSelected = selectedBookingId === bookingId;
@@ -236,18 +311,44 @@ export default function BookingCalendarScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={[]}>
-      <View style={styles.header}>
-        <Text style={styles.monthText}>February 2026</Text>
-        <TouchableOpacity style={styles.todayButton}>
-          <Text style={styles.todayButtonText}>Today</Text>
-        </TouchableOpacity>
+    <View style={styles.container}>
+      {/* ── Nav Bar ─────────────────────────────────────────── */}
+      <View style={styles.calendarNav}>
+        {/* Row 1: < Today > … March 2026 */}
+        <View style={styles.navRow}>
+          <TouchableOpacity style={styles.navBtn} onPress={prevMonth}>
+            <Feather name="chevron-left" size={14} color={Colors.gray[500]} />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.todayButton} onPress={goToToday}>
+            <Text style={styles.todayButtonText}>Today</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.navBtn} onPress={nextMonth}>
+            <Feather name="chevron-right" size={14} color={Colors.gray[500]} />
+          </TouchableOpacity>
+          <Text style={styles.monthText} numberOfLines={1}>{MONTH_LONG} {viewYear}</Text>
+        </View>
+
+        {/* Row 2: Month Week Day | filter | All Statuses */}
+        <View style={styles.navRowControls}>
+          <View style={styles.viewSegment}>
+            {(['Month', 'Week', 'Day'] as const).map(mode => (
+              <TouchableOpacity key={mode} style={[styles.segmentBtn, viewMode === mode && styles.segmentBtnActive]} onPress={() => switchViewMode(mode)}>
+                <Text style={[styles.segmentText, viewMode === mode && styles.segmentTextActive]}>{mode}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <Feather name="filter" size={13} color={Colors.gray[400]} />
+          <TouchableOpacity style={styles.statusPill} onPress={() => setShowStatusModal(true)}>
+            <Text style={styles.statusPillText}>{statusFilter === 'All' ? 'All Statuses' : statusFilter}</Text>
+            <Feather name="chevron-down" size={11} color={Colors.gray[400]} />
+          </TouchableOpacity>
+        </View>
       </View>
 
-      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.brand.primary} />}>
         <Card style={styles.calendarCard}>
 
-          {/* Toggle Row */}
+          {/* ── Toggle Row ──────────────────────────────────── */}
           <TouchableOpacity style={styles.calendarToggle} onPress={toggleCalendar} activeOpacity={0.7}>
             <View style={styles.calendarToggleLeft}>
               <MaterialCommunityIcons name="calendar-month" size={18} color={Colors.brand.primary} />
@@ -265,15 +366,15 @@ export default function BookingCalendarScreen() {
             <View style={styles.collapsedSummary}>
               <View style={styles.summaryPill}>
                 <MaterialCommunityIcons name="login-variant" size={13} color={Colors.green[500]} />
-                <Text style={styles.summaryPillText}>5 Check-ins</Text>
+                <Text style={styles.summaryPillText}>{BOOKINGS.filter(b => b.checkIn >= 1 && b.checkIn <= DAYS_IN_MONTH).length} Check-ins</Text>
               </View>
               <View style={styles.summaryPill}>
                 <MaterialCommunityIcons name="logout-variant" size={13} color={Colors.blue[500]} />
-                <Text style={styles.summaryPillText}>3 Check-outs</Text>
+                <Text style={styles.summaryPillText}>{BOOKINGS.filter(b => b.checkOut >= 1 && b.checkOut <= DAYS_IN_MONTH).length} Check-outs</Text>
               </View>
               <View style={styles.summaryPill}>
                 <MaterialCommunityIcons name="clock-outline" size={13} color={Colors.yellow[500]} />
-                <Text style={styles.summaryPillText}>2 Pending</Text>
+                <Text style={styles.summaryPillText}>{MOCK_SCHEDULE.length} Today</Text>
               </View>
             </View>
           )}
@@ -290,9 +391,11 @@ export default function BookingCalendarScreen() {
               </View>
 
               <View style={styles.daysGrid}>
-                {[...Array(28)].map((_, i) => (
+                {viewDays.map((day, i) => (
                   <React.Fragment key={i}>
-                    {CalendarDay({ day: i + 1 })}
+                    {day >= 1 && day <= DAYS_IN_MONTH
+                      ? CalendarDay({ day })
+                      : <View key={i} style={styles.dayCell} />}
                   </React.Fragment>
                 ))}
               </View>
@@ -326,9 +429,9 @@ export default function BookingCalendarScreen() {
         <View style={styles.bookingsSection}>
           <View style={styles.bookingsHeader}>
             <Text style={styles.bookingsTitle}>Today's Schedule</Text>
-            <Text style={styles.bookingsCount}>{MOCK_SCHEDULE.length} bookings</Text>
+            <Text style={styles.bookingsCount}>{filteredSchedule.length} bookings</Text>
           </View>
-          {MOCK_SCHEDULE.map((booking, index) => (
+          {filteredSchedule.map((booking, index) => (
             <React.Fragment key={index}>
               {BookingItem(booking)}
             </React.Fragment>
@@ -342,30 +445,74 @@ export default function BookingCalendarScreen() {
 
         <View style={{ height: 32 }} />
       </ScrollView>
-    </SafeAreaView>
+
+      {/* ── Status Filter Modal ─────────────────────────────── */}
+      <Modal visible={showStatusModal} transparent animationType="fade" onRequestClose={() => setShowStatusModal(false)}>
+        <TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={() => setShowStatusModal(false)}>
+          <View style={styles.statusModal}>
+            <Text style={styles.statusModalTitle}>Filter by Status</Text>
+            {(['All', 'Check-in', 'Check-out'] as const).map(option => (
+              <TouchableOpacity
+                key={option}
+                style={[styles.statusOption, statusFilter === option && styles.statusOptionActive]}
+                onPress={() => { setStatusFilter(option); setShowStatusModal(false); }}
+              >
+                <View style={[styles.statusOptionDot, {
+                  backgroundColor: option === 'All' ? Colors.brand.primary : option === 'Check-in' ? Colors.green[500] : Colors.blue[500],
+                }]} />
+                <Text style={[styles.statusOptionText, statusFilter === option && styles.statusOptionTextActive]}>
+                  {option === 'All' ? 'All Statuses' : option}
+                </Text>
+                {statusFilter === option && <Feather name="check" size={16} color={Colors.brand.primary} />}
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+    </View>
+
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.gray[50] },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 12,
+
+  // Nav bar
+  calendarNav: {
     backgroundColor: Colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.gray[100],
+    borderBottomWidth: 1, borderBottomColor: Colors.gray[100],
+    paddingHorizontal: 14, paddingTop: 8, paddingBottom: 8, gap: 6,
   },
-  monthText: { fontSize: 20, fontWeight: '700', color: Colors.gray[900] },
+  navRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+  },
+  navRowControls: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+  },
+  monthText: { fontSize: 14, fontWeight: '700', color: Colors.gray[900], flex: 1 },
+  navBtn: {
+    width: 30, height: 30, borderRadius: 7,
+    backgroundColor: Colors.gray[100], justifyContent: 'center', alignItems: 'center',
+  },
   todayButton: {
-    paddingHorizontal: 16, paddingVertical: 8,
-    borderRadius: 8, backgroundColor: Colors.brand.primarySoft,
+    paddingHorizontal: 12, paddingVertical: 6,
+    borderRadius: 7, backgroundColor: Colors.brand.primary,
   },
-  todayButtonText: { fontSize: 13, fontWeight: '600', color: Colors.brand.primaryDark },
-  calendarCard: { margin: 20, marginBottom: 16, padding: 16 },
+  todayButtonText: { fontSize: 12, fontWeight: '700', color: Colors.white },
+  viewSegment: {
+    flexDirection: 'row', backgroundColor: Colors.gray[100], borderRadius: 7, padding: 2,
+  },
+  segmentBtn: { paddingHorizontal: 8, paddingVertical: 5, borderRadius: 5 },
+  segmentBtnActive: { backgroundColor: Colors.white },
+  segmentText: { fontSize: 11, fontWeight: '600', color: Colors.gray[400] },
+  segmentTextActive: { color: Colors.gray[800], fontWeight: '700' },
+  statusPill: {
+    flexDirection: 'row', alignItems: 'center', gap: 3,
+    backgroundColor: Colors.gray[100], borderRadius: 6,
+    paddingHorizontal: 8, paddingVertical: 5,
+  },
+  statusPillText: { fontSize: 11, fontWeight: '600', color: Colors.gray[600] },
+  calendarCard: { marginHorizontal: 12, marginTop: 8, marginBottom: 12, padding: 12 },
   calendarToggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   calendarToggleLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   calendarToggleText: { fontSize: 14, fontWeight: '600', color: Colors.gray[700] },
@@ -379,38 +526,38 @@ const styles = StyleSheet.create({
   },
   summaryPillText: { fontSize: 11, fontWeight: '600', color: Colors.gray[600] },
 
-  weekDays: { flexDirection: 'row', marginBottom: 8 },
-  weekDayText: { flex: 1, fontSize: 11, fontWeight: '600', color: Colors.gray[400], textAlign: 'center' },
+  weekDays: { flexDirection: 'row', marginBottom: 4 },
+  weekDayText: { flex: 1, fontSize: 10, fontWeight: '600', color: Colors.gray[400], textAlign: 'center' },
   daysGrid: { flexDirection: 'row', flexWrap: 'wrap' },
 
   dayCell: {
     width: '14.28%',
-    height: 52,
+    height: 44,
     justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'column',
-    gap: 2,
+    gap: 1,
   },
-  dayCellCheckIn: { borderTopLeftRadius: 10, borderBottomLeftRadius: 10 },
-  dayCellCheckOut: { borderTopRightRadius: 10, borderBottomRightRadius: 10 },
+  dayCellCheckIn: { borderTopLeftRadius: 8, borderBottomLeftRadius: 8 },
+  dayCellCheckOut: { borderTopRightRadius: 8, borderBottomRightRadius: 8 },
   dayInner: {
-    width: 30, height: 30, borderRadius: 8,
+    width: 26, height: 26, borderRadius: 6,
     justifyContent: 'center', alignItems: 'center',
   },
   dayInnerToday: { borderWidth: 2, borderColor: Colors.brand.primary },
-  dayText: { fontSize: 13, fontWeight: '500', color: Colors.gray[700] },
+  dayText: { fontSize: 11, fontWeight: '500', color: Colors.gray[700] },
   dayTextEndpoint: { color: Colors.white, fontWeight: '700' },
   dayTextToday: { color: Colors.brand.primary, fontWeight: '700' },
   dayBadge: {
     backgroundColor: Colors.green[500],
-    paddingHorizontal: 4,
-    paddingVertical: 1,
-    borderRadius: 4,
-    minWidth: 24,
+    paddingHorizontal: 2,
+    paddingVertical: 0,
+    borderRadius: 3,
+    minWidth: 18,
     alignItems: 'center',
   },
   dayBadgeOut: { backgroundColor: Colors.red[500] },
-  dayBadgeText: { fontSize: 7, fontWeight: '800', color: Colors.white, letterSpacing: 0.3 },
+  dayBadgeText: { fontSize: 6, fontWeight: '800', color: Colors.white, letterSpacing: 0.2 },
 
   selectedRangeWrapper: { marginTop: 12 },
   rangeLabel: {
@@ -473,4 +620,24 @@ const styles = StyleSheet.create({
     alignSelf: 'center', marginTop: 4, paddingVertical: 8, paddingHorizontal: 16,
   },
   clearSelectionText: { fontSize: 12, color: Colors.gray[400], fontWeight: '600' },
+
+  // Status filter modal
+  modalBackdrop: {
+    flex: 1, backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'flex-end', paddingHorizontal: 16, paddingBottom: 32,
+  },
+  statusModal: {
+    backgroundColor: Colors.white, borderRadius: 16,
+    padding: 20, gap: 4,
+  },
+  statusModalTitle: { fontSize: 14, fontWeight: '700', color: Colors.gray[800], marginBottom: 8 },
+  statusOption: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    paddingVertical: 12, paddingHorizontal: 8,
+    borderRadius: 10,
+  },
+  statusOptionActive: { backgroundColor: Colors.brand.primarySoft },
+  statusOptionDot: { width: 10, height: 10, borderRadius: 5 },
+  statusOptionText: { flex: 1, fontSize: 14, fontWeight: '500', color: Colors.gray[700] },
+  statusOptionTextActive: { fontWeight: '700', color: Colors.brand.primaryDark },
 });

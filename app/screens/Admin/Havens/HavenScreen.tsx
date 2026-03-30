@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Text, View, StyleSheet, TouchableOpacity, Image, ScrollView, ActivityIndicator } from 'react-native';
-import { Colors } from '../../../constants/Styles';
+import { Colors } from '../../../../constants/Styles';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import SearchModal from '../../components/SearchModal';  // Changed ../ to ../../
-import ImageCarouselModal from '../../components/ImageCarouselModal';  // Changed ../ to ../../
-import { API_CONFIG } from '../../../constants/config';
-import { useRoomDiscounts } from '../../hooks/useRoomDiscounts';  // Changed ../ to ../../
+import SearchModal from '../../../components/SearchModal';  // Changed ../ to ../../
+import ImageCarouselModal from '../../../components/ImageCarouselModal';  // Changed ../ to ../../
+import { API_CONFIG } from '../../../../constants/config';
+import { useRoomDiscounts } from '../../../hooks/useRoomDiscounts';  // Changed ../ to ../../
 
 interface HavenImage {
   id: number;
@@ -202,7 +202,7 @@ export default function HavenScreen() {
       {/* Header */}
       <View style={styles.topSection}>
         <View style={styles.logoSection}>
-          <Image source={require('../../../assets/haven_logo.png')} style={styles.logo} />
+          <Image source={require('../../../../assets/haven_logo.png')} style={styles.logo} />
           <Text style={styles.appName}>Staycation Haven</Text>
         </View>
         <TouchableOpacity style={styles.findRoomsButton} onPress={() => setModalVisible(true)}>

@@ -5,9 +5,9 @@ import { Feather } from '@expo/vector-icons';
 import { Colors } from '../constants/Styles';
 import { useNavigation } from '@react-navigation/native';
 
-import PaymentManagementScreen from '../app/screens/Admin/PaymentManagementScreen';
-import SecurityDepositScreen from '../app/screens/Admin/SecurityDepositScreen';
-import DiscountManagementScreen from '../app/screens/Admin/DiscountManagementScreen';
+import PaymentManagementScreen from '../app/screens/Csr/Finance/PaymentManagementScreen';
+import SecurityDepositScreen from '../app/screens/Csr/Finance/SecurityDepositScreen';
+import DiscountManagementScreen from '../app/screens/Csr/Finance/DiscountManagementScreen';
 
 const { width } = Dimensions.get('window');
 const TABS = ['Payments', 'Deposits', 'Discounts'];

@@ -1,15 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import {
   Text, View, StyleSheet, TouchableOpacity, ScrollView,
   RefreshControl, Modal, TextInput, KeyboardAvoidingView,
-  Platform, Alert,
+  Platform, Alert, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
-import { Colors } from '../../../constants/Styles';
-import Badge from '../../components/common/Badge';
-import Card from '../../components/common/Card';
+import { Colors } from '../../../../constants/Styles';
+import Badge from '../../../components/common/Badge';
+import Card from '../../../components/common/Card';
+import { bookingsService } from '../../../../services/bookingsService';
 
 type BookingStatus = 'Confirmed' | 'Pending' | 'Cancelled' | 'Checked-in';
 
@@ -24,12 +25,27 @@ interface Booking {
   notes?: string;
 }
 
-const INITIAL_BOOKINGS: Booking[] = [
-  { id: 1, guest: 'John Doe',    room: 'Haven 101', checkIn: 'Feb 20, 2026', checkOut: 'Feb 23, 2026', status: 'Confirmed',  amount: 12500, notes: 'Early check-in requested.' },
-  { id: 2, guest: 'Sarah Smith', room: 'Haven 205', checkIn: 'Feb 21, 2026', checkOut: 'Feb 24, 2026', status: 'Pending',    amount: 15000, notes: '' },
-  { id: 3, guest: 'Mike Johnson',room: 'Haven 103', checkIn: 'Feb 22, 2026', checkOut: 'Feb 25, 2026', status: 'Confirmed',  amount: 10800, notes: 'Allergic to feather pillows.' },
-  { id: 4, guest: 'Emily Davis', room: 'Haven 302', checkIn: 'Feb 23, 2026', checkOut: 'Feb 26, 2026', status: 'Checked-in', amount: 18000, notes: '' },
-];
+function mapBookingStatus(apiStatus: string): BookingStatus {
+  switch (apiStatus) {
+    case 'confirmed': return 'Confirmed';
+    case 'checked_in': return 'Checked-in';
+    case 'cancelled': return 'Cancelled';
+    default: return 'Pending';
+  }
+}
+
+function mapApiBooking(raw: any): Booking {
+  return {
+    id: raw.id,
+    guest: `${raw.guest_first_name ?? ''} ${raw.guest_last_name ?? ''}`.trim(),
+    room: raw.room_name ?? '',
+    checkIn: raw.check_in_date ? new Date(raw.check_in_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '',
+    checkOut: raw.check_out_date ? new Date(raw.check_out_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '',
+    status: mapBookingStatus(raw.status ?? ''),
+    amount: parseFloat(raw.total_amount ?? '0'),
+    notes: raw.rejection_reason ?? '',
+  };
+}
 
 const HAVEN_OPTIONS = ['Haven 101', 'Haven 103', 'Haven 205', 'Haven 302'];
 const STATUS_OPTIONS: BookingStatus[] = ['Confirmed', 'Pending', 'Checked-in', 'Cancelled'];
@@ -119,7 +135,8 @@ const SelectorRow = ({ label, options, value, onChange, colorMap }: {
 // ─── Main screen ──────────────────────────────────────────────────────────────
 
 export default function BookingManagementScreen() {
-  const [bookings, setBookings] = useState<Booking[]>(INITIAL_BOOKINGS);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('All');
   const [refreshing, setRefreshing] = useState(false);
 
@@ -166,10 +183,22 @@ export default function BookingManagementScreen() {
     }
   };
 
+  // ── Data fetching ────────────────────────────────────────────
+  const fetchBookings = useCallback(async () => {
+    try {
+      const data = await bookingsService.getBookings();
+      setBookings(data.map(mapApiBooking));
+    } catch (error) {
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to load bookings');
+    }
+  }, []);
+
+  useEffect(() => { fetchBookings().finally(() => setLoading(false)); }, [fetchBookings]);
+
   // ── Helpers ──────────────────────────────────────────────────
   const onRefresh = async () => {
     setRefreshing(true);
-    await new Promise(r => setTimeout(r, 1000));
+    await fetchBookings();
     setRefreshing(false);
   };
 
@@ -451,47 +480,97 @@ export default function BookingManagementScreen() {
   };
 
   // ── Render ────────────────────────────────────────────────────
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container} edges={[]}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={Colors.brand.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container} edges={[]}>
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.headerTitle}>Booking Management</Text>
-          <Text style={styles.headerSubtitle}>{bookings.length} active bookings</Text>
-        </View>
-        <TouchableOpacity style={styles.addButton} onPress={openAdd}>
-          <Feather name="plus" size={20} color={Colors.white} />
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.filterContainer}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
-          {FILTER_TABS.map(tab => {
-            const isActive = activeFilter === tab;
-            const tc = tabColorMap[tab];
-            return (
-              <TouchableOpacity
-                key={tab}
-                style={[styles.filterChip, isActive && { backgroundColor: tc.chipBg }]}
-                onPress={() => setActiveFilter(tab)}
-              >
-                <Text style={[styles.filterText, isActive && { color: tc.text }]}>{tab}</Text>
-                {filterCount(tab) > 0 && (
-                  <View style={[styles.filterBadge, isActive ? { backgroundColor: tc.badge } : styles.filterBadgeInactive]}>
-                    <Text style={[styles.filterBadgeText, !isActive && styles.filterBadgeTextInactive]}>
-                      {filterCount(tab)}
-                    </Text>
-                  </View>
-                )}
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
+      {/* ── Dark Hero Banner ──────────────────────────────────────── */}
+      <View style={styles.heroBanner}>
+        <Text style={styles.heroTitle}>Guest Management</Text>
+        <Text style={styles.heroSubtitle}>Manage all customer bookings and reservations</Text>
       </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.brand.primary} />}
       >
+        {/* ── Stats Grid ────────────────────────────────────────────── */}
+        <View style={styles.statsGrid}>
+          {([
+            { label: 'Total Bookings', value: bookings.length,                                    cardStyle: styles.statCardBlue,   icon: 'calendar-month' },
+            { label: 'Confirmed',      value: bookings.filter(b => b.status === 'Confirmed').length,  cardStyle: styles.statCardGreen,  icon: 'check-circle-outline' },
+            { label: 'Pending',        value: bookings.filter(b => b.status === 'Pending').length,    cardStyle: styles.statCardYellow, icon: 'clock-outline' },
+            { label: 'Checked-In',     value: bookings.filter(b => b.status === 'Checked-in').length, cardStyle: styles.statCardPurple, icon: 'login-variant' },
+          ] as const).map(item => (
+            <View key={item.label} style={[styles.statCard, item.cardStyle]}>
+              <Text style={styles.statCardLabel}>{item.label}</Text>
+              <View style={styles.statCardRow}>
+                <Text style={styles.statCardValue}>{item.value}</Text>
+                <MaterialCommunityIcons name={item.icon as any} size={26} color="rgba(255,255,255,0.3)" />
+              </View>
+            </View>
+          ))}
+        </View>
+
+        {/* ── Booking Status Guide ──────────────────────────────────── */}
+        <View style={styles.statusGuideCard}>
+          <Text style={styles.statusGuideTitle}>Booking Status Guide</Text>
+          <View style={styles.statusGuideGrid}>
+            {[
+              { name: 'Pending',     color: Colors.yellow[500] },
+              { name: 'Confirmed',   color: Colors.green[500]  },
+              { name: 'Checked-In',  color: Colors.blue[500]   },
+              { name: 'Checked-Out', color: Colors.red[500]    },
+            ].map(item => (
+              <View key={item.name} style={styles.statusGuideItem}>
+                <View style={[styles.statusGuideDot, { backgroundColor: item.color }]} />
+                <Text style={styles.statusGuideName}>{item.name}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* ── New Booking Button ────────────────────────────────────── */}
+        <TouchableOpacity style={styles.newBookingBtn} onPress={openAdd}>
+          <Feather name="plus" size={18} color={Colors.white} />
+          <Text style={styles.newBookingBtnText}>New Booking</Text>
+        </TouchableOpacity>
+
+        {/* ── Filter Tabs ───────────────────────────────────────────── */}
+        <View style={styles.filterContainer}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
+            {FILTER_TABS.map(tab => {
+              const isActive = activeFilter === tab;
+              const tc = tabColorMap[tab];
+              return (
+                <TouchableOpacity
+                  key={tab}
+                  style={[styles.filterChip, isActive && { backgroundColor: tc.chipBg }]}
+                  onPress={() => setActiveFilter(tab)}
+                >
+                  <Text style={[styles.filterText, isActive && { color: tc.text }]}>{tab}</Text>
+                  {filterCount(tab) > 0 && (
+                    <View style={[styles.filterBadge, isActive ? { backgroundColor: tc.badge } : styles.filterBadgeInactive]}>
+                      <Text style={[styles.filterBadgeText, !isActive && styles.filterBadgeTextInactive]}>
+                        {filterCount(tab)}
+                      </Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
+
+        {/* ── Booking List ──────────────────────────────────────────── */}
         <View style={styles.content}>
           {filteredBookings.length === 0 ? (
             <View style={styles.emptyState}>
@@ -571,22 +650,59 @@ export default function BookingManagementScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.gray[50] },
 
-  header: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12,
-    backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.gray[100],
+  // Hero Banner
+  heroBanner: {
+    backgroundColor: Colors.gray[800],
+    paddingHorizontal: 16, paddingTop: 10, paddingBottom: 10,
   },
-  headerTitle: { fontSize: 20, fontWeight: '700', color: Colors.gray[900] },
-  headerSubtitle: { fontSize: 13, color: Colors.gray[500], marginTop: 2 },
-  addButton: {
-    width: 44, height: 44, borderRadius: 14, backgroundColor: Colors.brand.primary,
-    justifyContent: 'center', alignItems: 'center',
-    shadowColor: Colors.brand.primary, shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3, shadowRadius: 8, elevation: 4,
+  heroTitle: { fontSize: 17, fontWeight: '700', color: Colors.white },
+  heroSubtitle: { fontSize: 11, color: Colors.gray[400], marginTop: 2 },
+
+  // Stats Grid
+  statsGrid: {
+    flexDirection: 'row', flexWrap: 'wrap', gap: 8,
+    paddingHorizontal: 16, paddingTop: 12,
   },
+  statCard: {
+    width: '47%', borderRadius: 12, padding: 10,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1, shadowRadius: 4, elevation: 2,
+  },
+  statCardBlue:   { backgroundColor: '#3B82F6' },
+  statCardGreen:  { backgroundColor: '#10B981' },
+  statCardYellow: { backgroundColor: '#F59E0B' },
+  statCardPurple: { backgroundColor: '#8B5CF6' },
+  statCardLabel: { fontSize: 11, fontWeight: '600', color: 'rgba(255,255,255,0.85)', marginBottom: 4 },
+  statCardRow:   { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' },
+  statCardValue: { fontSize: 26, fontWeight: '800', color: Colors.white, lineHeight: 30 },
+
+  // Status Guide
+  statusGuideCard: {
+    backgroundColor: Colors.white, borderRadius: 12, marginHorizontal: 16, marginTop: 10,
+    paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1, borderColor: Colors.gray[100],
+    shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05, shadowRadius: 3, elevation: 1,
+  },
+  statusGuideTitle: { fontSize: 12, fontWeight: '700', color: Colors.gray[700], marginBottom: 8 },
+  statusGuideGrid:  { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  statusGuideItem:  { flexDirection: 'row', alignItems: 'center', gap: 6, width: '47%' },
+  statusGuideDot:   { width: 8, height: 8, borderRadius: 4 },
+  statusGuideName:  { fontSize: 12, fontWeight: '600', color: Colors.gray[700] },
+  statusGuideDesc:  { fontSize: 11, color: Colors.gray[500], marginTop: 1 },
+
+  // New Booking Button
+  newBookingBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 6, marginHorizontal: 16, marginTop: 10, paddingVertical: 11,
+    borderRadius: 12, backgroundColor: Colors.brand.primary,
+    shadowColor: Colors.brand.primary, shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25, shadowRadius: 6, elevation: 3,
+  },
+  newBookingBtnText: { fontSize: 14, fontWeight: '700', color: Colors.white },
 
   filterContainer: {
-    backgroundColor: Colors.white, paddingVertical: 12,
+    backgroundColor: Colors.white, paddingVertical: 12, marginTop: 16,
+    borderTopWidth: 1, borderTopColor: Colors.gray[100],
     borderBottomWidth: 1, borderBottomColor: Colors.gray[100],
   },
   filterScroll: { paddingHorizontal: 20, gap: 8 },

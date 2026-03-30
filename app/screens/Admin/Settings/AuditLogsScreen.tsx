@@ -3,7 +3,7 @@ import { Text, View, StyleSheet, TouchableOpacity, ScrollView } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { Colors } from '../../../constants/Styles';
+import { Colors } from '../../../../constants/Styles';
 
 const LOGS = [
   { id: 1,  action: 'Booking Created',    user: 'Juan dela Cruz',  target: 'Booking #B-2026-045',     time: 'Today, 10:32 AM', type: 'booking',  icon: 'calendar-plus' },

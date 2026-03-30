@@ -33,15 +33,51 @@ StaycationMobile/
 │   │   │   └── themeSlice.ts
 │   │   └── store.ts              ← Single Redux store
 │   ├── screens/
-│   │   ├── Admin/
-│   │   │   ├── AdminBookingCalender.tsx
-│   │   │   └── AdminDashboardScreen.tsx
-│   │   ├── Csr/
-│   │   │   └── DashboardScreen.tsx
-│   │   ├── HavenScreen.tsx
+│   │   ├── Admin/                    ← Owner/Admin-only screens
+│   │   │   ├── AdminDashboardScreen.tsx
+│   │   │   ├── MoreMenuScreen.tsx
+│   │   │   ├── Bookings/
+│   │   │   │   ├── AdminBookingCalender.tsx
+│   │   │   │   ├── AdminReservationsScreen.tsx
+│   │   │   │   ├── BlockedDatesScreen.tsx
+│   │   │   │   └── CreateBookingScreen.tsx
+│   │   │   ├── Havens/
+│   │   │   │   ├── HavenScreen.tsx
+│   │   │   │   ├── AddHavenScreen.tsx
+│   │   │   │   └── RoomDetailsScreen.tsx
+│   │   │   ├── Operations/
+│   │   │   │   └── MaintenanceManagementScreen.tsx
+│   │   │   ├── Reports/
+│   │   │   │   └── ReportsManagementScreen.tsx
+│   │   │   ├── Guest/
+│   │   │   │   ├── GuestMessagesScreen.tsx
+│   │   │   │   └── ReviewsScreen.tsx
+│   │   │   ├── Staff/
+│   │   │   │   ├── StaffManagementScreen.tsx
+│   │   │   │   ├── UserManagementScreen.tsx
+│   │   │   │   └── PartnerManagementScreen.tsx
+│   │   │   └── Settings/
+│   │   │       ├── SettingsScreen.tsx
+│   │   │       └── AuditLogsScreen.tsx
+│   │   ├── Csr/                      ← CSR-only screens
+│   │   │   ├── DashboardScreen.tsx
+│   │   │   ├── Bookings/
+│   │   │   │   ├── BookingManagementScreen.tsx
+│   │   │   │   └── BookingCalendarScreen.tsx
+│   │   │   ├── Finance/
+│   │   │   │   ├── PaymentManagementScreen.tsx
+│   │   │   │   ├── SecurityDepositScreen.tsx
+│   │   │   │   └── DiscountManagementScreen.tsx
+│   │   │   └── Operations/
+│   │   │       ├── DeliverablesManagementScreen.tsx
+│   │   │       ├── CleanersManagementScreen.tsx
+│   │   │       └── InventoryManagementScreen.tsx
+│   │   ├── User/                     ← Guest/User-facing screens
+│   │   │   ├── HavenScreen.tsx
+│   │   │   ├── MeScreen.tsx
+│   │   │   └── RoomDetailsScreen.tsx
 │   │   ├── LoginScreen.tsx
-│   │   ├── MeScreen.tsx
-│   │   └── RoomDetailsScreen.tsx
+│   │   └── MeScreen.tsx
 │   ├── services/
 │   │   └── api.ts                ← ApiService class
 │   ├── theme/
@@ -72,9 +108,12 @@ StaycationMobile/
 │   └── Styles.ts                 ← Colors + Fonts (brand gold tokens)
 │
 ├── navigation/                   ← ROOT navigation directory
-│   ├── AdminNavigator.tsx        ← Admin: bottom tabs + stack wrapper
+│   ├── AdminNavigator.tsx        ← Owner: bottom tabs + stack wrapper
 │   ├── AuthNavigator.tsx         ← Unauthenticated stack
+│   ├── BookingsTabNavigator.tsx  ← Bookings tab (Management, Reservations, Calendar)
 │   ├── CsrNavigator.tsx          ← CSR bottom tabs
+│   ├── FinanceTabNavigator.tsx   ← Finance tab (Payments, Deposits, Discounts)
+│   ├── OperationsTabNavigator.tsx← Operations tab (Deliverables, Cleaners, Inventory, Maintenance)
 │   └── RootNavigator.tsx         ← Entry: routes by auth state + role
 │
 ├── app.json
@@ -157,14 +196,27 @@ App Launch
               ├── isLoading=true  → ActivityIndicator
               ├── !isAuthenticated → AuthNavigator → LoginScreen
               └── isAuthenticated
-                    ├── role=admin/manager → AdminNavigator
-                    │     ├── Tab: AdminDashboard
-                    │     ├── Tab: AdminBookings (Calendar)
-                    │     ├── Tab: ManageHavens (HavenScreen)
-                    │     ├── Tab: AdminProfile (MeScreen)
-                    │     └── Stack: RoomDetails (modal push)
+                    ├── role=admin/owner → AdminNavigator
+                    │     ├── Tab: Dashboard (AdminDashboardScreen)
+                    │     ├── Tab: Bookings → BookingsTabNavigator
+                    │     │     ├── Management (BookingManagementScreen)
+                    │     │     ├── Reservations (AdminReservationsScreen)
+                    │     │     └── Calendar (BookingCalendarScreen)
+                    │     ├── Tab: Finance → FinanceTabNavigator
+                    │     │     ├── Payments (PaymentManagementScreen)
+                    │     │     ├── Deposits (SecurityDepositScreen)
+                    │     │     └── Discounts (DiscountManagementScreen)
+                    │     ├── Tab: Operations → OperationsTabNavigator
+                    │     │     ├── Deliverables (DeliverablesManagementScreen)
+                    │     │     ├── Cleaners (CleanersManagementScreen)
+                    │     │     ├── Inventory (InventoryManagementScreen)
+                    │     │     └── Maintenance (MaintenanceManagementScreen)
+                    │     ├── Tab: More (MoreMenuScreen)
+                    │     └── Stack screens: RoomDetails, ManageHavens, CreateBooking,
+                    │           AddHaven, GuestMessages, Reports, Staff, Reviews,
+                    │           Users, Partners, AuditLogs, Settings, BlockedDates
                     └── role=csr → CsrNavigator
-                          ├── Tab: CsrDashboard
+                          ├── Tab: CsrDashboard (DashboardScreen)
                           └── Tab: CsrProfile (MeScreen)
 ```
 

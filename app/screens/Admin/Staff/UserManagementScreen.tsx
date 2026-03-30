@@ -5,7 +5,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { Colors } from '../../../constants/Styles';
+import { Colors } from '../../../../constants/Styles';
 
 const USERS = [
   { id: 1, name: 'John Doe',      email: 'john@email.com',   phone: '+63 912 111 1111', bookings: 3, totalSpent: 37500, status: 'Active',   joined: 'Jan 5, 2026' },

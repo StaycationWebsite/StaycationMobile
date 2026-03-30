@@ -5,7 +5,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { Colors } from '../../../constants/Styles';
+import { Colors } from '../../../../constants/Styles';
 
 type Partner = { id: number; name: string; type: string; contact: string; email: string; contractEnd: string; status: string; };
 

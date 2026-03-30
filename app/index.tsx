@@ -9,6 +9,7 @@ import { useAuth } from './hooks/useAuth';
 import { useTheme } from './hooks/useTheme';
 import AuthNavigator from '../navigation/AuthNavigator';
 import AdminNavigator from '../navigation/AdminNavigator';
+import CsrNavigator from '../navigation/CsrNavigator';
 import WelcomeBackScreen from './components/WelcomeBackScreen';
 import '../utils/ignoreWarnings';
 
@@ -75,8 +76,10 @@ function AppContent() {
       <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
       {isAuthenticated && showWelcomeBack ? (
         <WelcomeBackScreen adminName={user?.name} />
-      ) : isAuthenticated ? (
+      ) : isAuthenticated && (user?.role === 'admin' || user?.role === 'manager') ? (
         <AdminNavigator />
+      ) : isAuthenticated ? (
+        <CsrNavigator />
       ) : (
         <AuthNavigator />
       )}

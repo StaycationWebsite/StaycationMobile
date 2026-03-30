@@ -1,14 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Text, View, StyleSheet, TouchableOpacity, ScrollView,
   RefreshControl, Modal, TextInput, KeyboardAvoidingView,
-  Platform, Alert,
+  Platform, Alert, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
-import { Colors } from '../../../constants/Styles';
-import Badge from '../../components/common/Badge';
-import Card from '../../components/common/Card';
+import { Colors } from '../../../../constants/Styles';
+import Badge from '../../../components/common/Badge';
+import Card from '../../../components/common/Card';
+import { inventoryService, InventoryItem as ApiInventoryItem } from '../../../../services/inventoryService';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type StockStatus = 'In Stock' | 'Low Stock' | 'Out of Stock';
@@ -30,12 +31,20 @@ const CATEGORY_OPTIONS: Category[] = ['Linens', 'Toiletries', 'Amenities', 'Main
 const UNIT_OPTIONS = ['pcs', 'sets', 'boxes', 'bottles', 'rolls', 'bags'];
 const FILTER_TABS = ['All', 'Linens', 'Toiletries', 'Amenities', 'Maintenance'];
 
-const INITIAL_INVENTORY: InventoryItem[] = [
-  { id: 1, name: 'Bath Towels', category: 'Linens', quantity: 15, minQuantity: 20, unit: 'pcs', lastRestocked: '2 days ago', status: 'Low Stock' },
-  { id: 2, name: 'Shampoo Bottles', category: 'Toiletries', quantity: 45, minQuantity: 30, unit: 'pcs', lastRestocked: '1 week ago', status: 'In Stock' },
-  { id: 3, name: 'Coffee Sachets', category: 'Amenities', quantity: 5, minQuantity: 20, unit: 'boxes', lastRestocked: '3 days ago', status: 'Low Stock' },
-  { id: 4, name: 'Bed Sheets', category: 'Linens', quantity: 0, minQuantity: 15, unit: 'sets', lastRestocked: '1 month ago', status: 'Out of Stock' },
-];
+function mapApiInventory(raw: ApiInventoryItem, index: number): InventoryItem {
+  return {
+    id: index + 1,
+    name: raw.item_name,
+    category: raw.category as Category,
+    quantity: raw.current_stock,
+    minQuantity: raw.minimum_stock,
+    unit: raw.unit_type,
+    lastRestocked: raw.last_restocked
+      ? new Date(raw.last_restocked).toLocaleDateString()
+      : '—',
+    status: computeStatus(raw.current_stock, raw.minimum_stock),
+  };
+}
 
 const computeStatus = (quantity: number, minQuantity: number): StockStatus => {
   if (quantity === 0) return 'Out of Stock';
@@ -96,7 +105,8 @@ const BottomSheet = ({ visible, onClose, title, subtitle, children }: {
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function InventoryManagementScreen() {
-  const [inventory, setInventory] = useState<InventoryItem[]>(INITIAL_INVENTORY);
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('All');
   const [refreshing, setRefreshing] = useState(false);
 
@@ -119,10 +129,22 @@ export default function InventoryManagementScreen() {
   const [restockNote, setRestockNote] = useState('');
   const [restockError, setRestockError] = useState('');
 
+  // ── Data fetching ──
+  const fetchInventory = useCallback(async () => {
+    try {
+      const data = await inventoryService.getInventory();
+      setInventory(data.map(mapApiInventory));
+    } catch (error) {
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to load inventory');
+    }
+  }, []);
+
+  useEffect(() => { fetchInventory().finally(() => setLoading(false)); }, [fetchInventory]);
+
   // ── Helpers ──
   const onRefresh = async () => {
     setRefreshing(true);
-    await new Promise(r => setTimeout(r, 1000));
+    await fetchInventory();
     setRefreshing(false);
   };
 
@@ -319,6 +341,16 @@ export default function InventoryManagementScreen() {
       </Card>
     );
   };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container} edges={[]}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={Colors.brand.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={[]}>

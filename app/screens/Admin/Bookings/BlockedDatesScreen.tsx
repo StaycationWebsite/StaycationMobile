@@ -1,37 +1,43 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  TextInput, Alert, Modal,
+  TextInput, Alert, Modal, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { Colors } from '../../../constants/Styles';
+import { Colors } from '../../../../constants/Styles';
+import { API_CONFIG } from '../../../../constants/config';
 
 interface BlockedDate {
   id: string;
   havenId: string;
   havenName: string;
+  tower: string;
+  floor: string;
   fromDate: Date;
   toDate: Date;
   reason: string;
   status: 'active' | 'inactive';
 }
 
-const MOCK_HAVENS = [
-  { id: 'h1', name: 'Haven 101' },
-  { id: 'h2', name: 'Haven 205' },
-  { id: 'h3', name: 'Haven 302' },
-  { id: 'h4', name: 'Haven 404' },
-  { id: 'h5', name: 'Haven 305' },
-];
+interface Haven {
+  id: string;
+  name: string;
+}
 
-const INITIAL_DATA: BlockedDate[] = [
-  { id: '1', havenId: 'h1', havenName: 'Haven 101', fromDate: new Date('2026-03-15'), toDate: new Date('2026-03-18'), reason: 'Maintenance', status: 'active' },
-  { id: '2', havenId: 'h2', havenName: 'Haven 205', fromDate: new Date('2026-03-20'), toDate: new Date('2026-03-22'), reason: 'Private event', status: 'active' },
-  { id: '3', havenId: 'h3', havenName: 'Haven 302', fromDate: new Date('2026-04-01'), toDate: new Date('2026-04-05'), reason: 'Renovation', status: 'inactive' },
-];
+interface ApiBlockedDate {
+  id: string;
+  haven_id: string;
+  from_date: string;
+  to_date: string;
+  reason: string | null;
+  status: string;
+  haven_name: string;
+  tower: string;
+  floor: string;
+}
 
 function fmtDate(d: Date) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -43,7 +49,9 @@ function diffDays(from: Date, to: Date) {
 
 export default function BlockedDatesScreen() {
   const navigation = useNavigation<any>();
-  const [entries, setEntries]         = useState<BlockedDate[]>(INITIAL_DATA);
+  const [entries, setEntries]           = useState<BlockedDate[]>([]);
+  const [havens, setHavens]             = useState<Haven[]>([]);
+  const [loading, setLoading]           = useState(true);
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
 
   // Modal state
@@ -61,6 +69,54 @@ export default function BlockedDatesScreen() {
   const [havenOpen, setHavenOpen]     = useState(false);
   const [showFrom, setShowFrom]       = useState(false);
   const [showTo, setShowTo]           = useState(false);
+
+  useEffect(() => {
+    fetchBlockedDates();
+    fetchHavens();
+  }, []);
+
+  const fetchBlockedDates = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(API_CONFIG.BLOCKED_DATES_API, { credentials: 'include' });
+      const json = await response.json();
+      if (json.success && Array.isArray(json.data)) {
+        const mapped: BlockedDate[] = json.data.map((item: ApiBlockedDate) => ({
+          id: item.id,
+          havenId: item.haven_id,
+          havenName: item.haven_name,
+          tower: item.tower,
+          floor: item.floor,
+          fromDate: new Date(item.from_date),
+          toDate: new Date(item.to_date),
+          reason: item.reason ?? '',
+          status: item.status === 'active' ? 'active' : 'inactive',
+        }));
+        setEntries(mapped);
+      }
+    } catch (error) {
+      console.error('Error fetching blocked dates:', error);
+      Alert.alert('Error', 'Failed to load blocked dates.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchHavens = async () => {
+    try {
+      const response = await fetch(API_CONFIG.HAVEN_API);
+      const json = await response.json();
+      if (json.data && Array.isArray(json.data)) {
+        const mapped: Haven[] = json.data.map((h: any) => ({
+          id: h.uuid_id,
+          name: h.haven_name,
+        }));
+        setHavens(mapped);
+      }
+    } catch (error) {
+      console.error('Error fetching havens:', error);
+    }
+  };
 
   const filtered = entries.filter(e => statusFilter === 'all' || e.status === statusFilter);
 
@@ -89,28 +145,68 @@ export default function BlockedDatesScreen() {
   const handleDelete = (id: string) => {
     Alert.alert('Delete Blocked Date', 'Remove this blocked period?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => setEntries(prev => prev.filter(e => e.id !== id)) },
+      {
+        text: 'Delete', style: 'destructive', onPress: async () => {
+          try {
+            await fetch(`${API_CONFIG.BLOCKED_DATES_API}/${id}`, {
+              method: 'DELETE',
+              credentials: 'include',
+            });
+            setEntries(prev => prev.filter(e => e.id !== id));
+          } catch {
+            Alert.alert('Error', 'Failed to delete. Please try again.');
+          }
+        },
+      },
     ]);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!havenId) { Alert.alert('Error', 'Please select a haven.'); return; }
     if (fromDate >= toDate) { Alert.alert('Error', 'From date must be before to date.'); return; }
 
-    const haven = MOCK_HAVENS.find(h => h.id === havenId)!;
-    if (editing) {
-      setEntries(prev => prev.map(e =>
-        e.id === editing.id
-          ? { ...e, havenId, havenName: haven.name, fromDate, toDate, reason, status: formStatus }
-          : e
-      ));
-    } else {
-      setEntries(prev => [...prev, {
-        id: Date.now().toString(),
-        havenId, havenName: haven.name, fromDate, toDate, reason, status: formStatus,
-      }]);
+    const haven = havens.find(h => h.id === havenId)!;
+    const body = {
+      haven_id: havenId,
+      from_date: fromDate.toISOString().split('T')[0],
+      to_date: toDate.toISOString().split('T')[0],
+      reason: reason || null,
+      status: formStatus,
+    };
+
+    try {
+      if (editing) {
+        await fetch(`${API_CONFIG.BLOCKED_DATES_API}/${editing.id}`, {
+          method: 'PUT',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        setEntries(prev => prev.map(e =>
+          e.id === editing.id
+            ? { ...e, havenId, havenName: haven.name, fromDate, toDate, reason, status: formStatus }
+            : e
+        ));
+      } else {
+        const res = await fetch(API_CONFIG.BLOCKED_DATES_API, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        const json = await res.json();
+        const newId = json.data?.id ?? Date.now().toString();
+        setEntries(prev => [...prev, {
+          id: newId,
+          havenId, havenName: haven.name, tower: '', floor: '',
+          fromDate, toDate, reason, status: formStatus,
+        }]);
+      }
+      setModalOpen(false);
+      fetchBlockedDates();
+    } catch {
+      Alert.alert('Error', 'Failed to save. Please try again.');
     }
-    setModalOpen(false);
   };
 
   return (
@@ -147,14 +243,17 @@ export default function BlockedDatesScreen() {
 
       {/* List */}
       <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={styles.listContent}>
-        {filtered.length === 0 ? (
+        {loading ? (
+          <View style={styles.emptyState}>
+            <ActivityIndicator size="large" color={Colors.brand.primary} />
+          </View>
+        ) : filtered.length === 0 ? (
           <View style={styles.emptyState}>
             <MaterialCommunityIcons name="calendar-remove-outline" size={52} color={Colors.gray[300]} />
             <Text style={styles.emptyTitle}>No Blocked Dates</Text>
             <Text style={styles.emptyText}>Tap + to block a date range for a haven.</Text>
           </View>
-        ) : (
-          filtered.map(item => {
+        ) : filtered.map(item => {
             const days = diffDays(item.fromDate, item.toDate);
             const isActive = item.status === 'active';
             return (
@@ -197,7 +296,7 @@ export default function BlockedDatesScreen() {
               </View>
             );
           })
-        )}
+        }
       </ScrollView>
 
       {/* Add / Edit Modal */}
@@ -224,13 +323,13 @@ export default function BlockedDatesScreen() {
               <Text style={styles.fieldLabel}>Haven <Text style={{ color: Colors.red[500] }}>*</Text></Text>
               <TouchableOpacity style={styles.selectRow} onPress={() => setHavenOpen(v => !v)}>
                 <Text style={[styles.selectText, !havenId && { color: Colors.gray[400] }]}>
-                  {havenId ? MOCK_HAVENS.find(h => h.id === havenId)?.name : 'Select a haven'}
+                  {havenId ? havens.find(h => h.id === havenId)?.name : 'Select a haven'}
                 </Text>
                 <Feather name={havenOpen ? 'chevron-up' : 'chevron-down'} size={16} color={Colors.gray[500]} />
               </TouchableOpacity>
               {havenOpen && (
                 <View style={styles.optionList}>
-                  {MOCK_HAVENS.map(h => (
+                  {havens.map(h => (
                     <TouchableOpacity
                       key={h.id}
                       style={[styles.optionItem, havenId === h.id && styles.optionItemActive]}
