@@ -13,12 +13,12 @@ import { inventoryService, InventoryItem as ApiInventoryItem } from '../../../..
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type StockStatus = 'In Stock' | 'Low Stock' | 'Out of Stock';
-type Category = 'Linens' | 'Toiletries' | 'Amenities' | 'Maintenance';
 
 interface InventoryItem {
   id: number;
+  apiId: string;
   name: string;
-  category: Category;
+  category: string;
   quantity: number;
   minQuantity: number;
   unit: string;
@@ -27,15 +27,14 @@ interface InventoryItem {
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const CATEGORY_OPTIONS: Category[] = ['Linens', 'Toiletries', 'Amenities', 'Maintenance'];
 const UNIT_OPTIONS = ['pcs', 'sets', 'boxes', 'bottles', 'rolls', 'bags'];
-const FILTER_TABS = ['All', 'Linens', 'Toiletries', 'Amenities', 'Maintenance'];
 
 function mapApiInventory(raw: ApiInventoryItem, index: number): InventoryItem {
   return {
     id: index + 1,
+    apiId: raw.item_id,
     name: raw.item_name,
-    category: raw.category as Category,
+    category: raw.category,
     quantity: raw.current_stock,
     minQuantity: raw.minimum_stock,
     unit: raw.unit_type,
@@ -52,12 +51,19 @@ const computeStatus = (quantity: number, minQuantity: number): StockStatus => {
   return 'In Stock';
 };
 
-const categoryConfig: Record<Category, { icon: string; bgColor: string; iconColor: string }> = {
-  Linens:      { icon: 'bed',           bgColor: Colors.blue[100],           iconColor: Colors.blue[500] },
-  Toiletries:  { icon: 'spray-bottle',  bgColor: Colors.purple[500] + '20',  iconColor: Colors.purple[500] },
-  Amenities:   { icon: 'coffee',        bgColor: Colors.green[100],           iconColor: Colors.green[500] },
-  Maintenance: { icon: 'tools',         bgColor: Colors.yellow[100],          iconColor: Colors.yellow[500] },
+const CATEGORY_ICON_MAP: Record<string, { icon: string; bgColor: string; iconColor: string }> = {
+  Linens:      { icon: 'bed',             bgColor: Colors.blue[100],           iconColor: Colors.blue[500] },
+  Toiletries:  { icon: 'spray-bottle',    bgColor: Colors.purple[500] + '20',  iconColor: Colors.purple[500] },
+  Amenities:   { icon: 'coffee',          bgColor: Colors.green[100],          iconColor: Colors.green[500] },
+  Maintenance: { icon: 'tools',           bgColor: Colors.yellow[100],         iconColor: Colors.yellow[500] },
+  'Add ons':   { icon: 'plus-box-outline',bgColor: Colors.blue[100],           iconColor: Colors.blue[500] },
 };
+
+const DEFAULT_CATEGORY_ICON = { icon: 'package-variant', bgColor: Colors.gray[100], iconColor: Colors.gray[500] };
+
+function getCategoryConfig(category: string) {
+  return CATEGORY_ICON_MAP[category] ?? DEFAULT_CATEGORY_ICON;
+}
 
 // ─── Selector Row Component ────────────────────────────────────────────────────
 const SelectorRow = ({ label, options, value, onChange }: {
@@ -106,6 +112,7 @@ const BottomSheet = ({ visible, onClose, title, subtitle, children }: {
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function InventoryManagementScreen() {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('All');
   const [refreshing, setRefreshing] = useState(false);
@@ -116,7 +123,7 @@ export default function InventoryManagementScreen() {
   const [restockTarget, setRestockTarget]           = useState<InventoryItem | null>(null);
 
   // Add form state
-  const emptyAddForm = { name: '', category: 'Linens' as Category, quantity: '', minQuantity: '', unit: 'pcs' };
+  const emptyAddForm = { name: '', category: '', quantity: '', minQuantity: '', unit: 'pcs' };
   const [addForm, setAddForm] = useState(emptyAddForm);
   const [addErrors, setAddErrors] = useState<Record<string, string>>({});
 
@@ -133,7 +140,11 @@ export default function InventoryManagementScreen() {
   const fetchInventory = useCallback(async () => {
     try {
       const data = await inventoryService.getInventory();
-      setInventory(data.map(mapApiInventory));
+      const mapped = data.map(mapApiInventory);
+      setInventory(mapped);
+      const unique = Array.from(new Set(mapped.map(i => i.category).filter(Boolean)));
+      setCategories(unique);
+      setAddForm(prev => ({ ...prev, category: prev.category || unique[0] || '' }));
     } catch (error) {
       Alert.alert('Error', error instanceof Error ? error.message : 'Failed to load inventory');
     }
@@ -173,21 +184,23 @@ export default function InventoryManagementScreen() {
     return Object.keys(e).length === 0;
   };
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!validateAdd()) return;
     const qty = Number(addForm.quantity);
     const minQty = Number(addForm.minQuantity);
-    const newItem: InventoryItem = {
-      id: Date.now(),
-      name: addForm.name.trim(),
-      category: addForm.category,
-      quantity: qty,
-      minQuantity: minQty,
-      unit: addForm.unit,
-      lastRestocked: 'Just now',
-      status: computeStatus(qty, minQty),
-    };
-    setInventory(prev => [newItem, ...prev]);
+    try {
+      const created = await inventoryService.addItem({
+        item_name: addForm.name.trim(),
+        category: addForm.category,
+        current_stock: qty,
+        minimum_stock: minQty,
+        unit_type: addForm.unit,
+      });
+      setInventory(prev => [mapApiInventory(created, 0), ...prev.map((i, idx) => ({ ...i, id: idx + 2 }))]);
+    } catch (error) {
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to add item');
+      return;
+    }
     setAddModalVisible(false);
     setAddForm(emptyAddForm);
     setAddErrors({});
@@ -229,15 +242,26 @@ export default function InventoryManagementScreen() {
     return Object.keys(e).length === 0;
   };
 
-  const handleUpdate = () => {
+  const handleUpdate = async () => {
     if (!validateUpdate() || !updateTarget) return;
     const qty = Number(updateForm.quantity);
     const minQty = Number(updateForm.minQuantity);
-    setInventory(prev => prev.map(i =>
-      i.id === updateTarget.id
-        ? { ...i, name: updateForm.name.trim(), quantity: qty, minQuantity: minQty, unit: updateForm.unit, status: computeStatus(qty, minQty) }
-        : i
-    ));
+    try {
+      await inventoryService.updateItem(updateTarget.apiId, {
+        item_name: updateForm.name.trim(),
+        current_stock: qty,
+        minimum_stock: minQty,
+        unit_type: updateForm.unit,
+      });
+      setInventory(prev => prev.map(i =>
+        i.id === updateTarget.id
+          ? { ...i, name: updateForm.name.trim(), quantity: qty, minQuantity: minQty, unit: updateForm.unit, status: computeStatus(qty, minQty) }
+          : i
+      ));
+    } catch (error) {
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to update item');
+      return;
+    }
     setUpdateTarget(null);
     setUpdateErrors({});
   };
@@ -255,18 +279,24 @@ export default function InventoryManagementScreen() {
     setRestockError('');
   };
 
-  const handleRestock = () => {
+  const handleRestock = async () => {
     if (!restockQty.trim() || isNaN(Number(restockQty)) || Number(restockQty) <= 0) {
       setRestockError('Enter a valid quantity to add');
       return;
     }
     if (!restockTarget) return;
     const addQty = Number(restockQty);
-    setInventory(prev => prev.map(i => {
-      if (i.id !== restockTarget.id) return i;
-      const newQty = i.quantity + addQty;
-      return { ...i, quantity: newQty, lastRestocked: 'Just now', status: computeStatus(newQty, i.minQuantity) };
-    }));
+    try {
+      await inventoryService.restockItem(restockTarget.apiId, addQty, restockNote || undefined);
+      setInventory(prev => prev.map(i => {
+        if (i.id !== restockTarget.id) return i;
+        const newQty = i.quantity + addQty;
+        return { ...i, quantity: newQty, lastRestocked: new Date().toLocaleDateString(), status: computeStatus(newQty, i.minQuantity) };
+      }));
+    } catch (error) {
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to restock item');
+      return;
+    }
     setRestockTarget(null);
     setRestockQty('');
     setRestockNote('');
@@ -282,7 +312,7 @@ export default function InventoryManagementScreen() {
 
   // ── Inventory Card ──
   const InventoryCard = ({ item }: { item: InventoryItem }) => {
-    const cfg = categoryConfig[item.category];
+    const cfg = getCategoryConfig(item.category);
     return (
       <Card style={styles.inventoryCard} variant="elevated">
         <View style={styles.cardHeader}>
@@ -400,7 +430,7 @@ export default function InventoryManagementScreen() {
 
         {/* Filter Chips */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterChips}>
-          {FILTER_TABS.map(tab => (
+          {['All', ...categories].map(tab => (
             <TouchableOpacity
               key={tab}
               style={[styles.chip, activeFilter === tab && styles.chipActive]}
@@ -447,7 +477,7 @@ export default function InventoryManagementScreen() {
           </View>
 
           {/* Category */}
-          <SelectorRow label="Category" options={CATEGORY_OPTIONS} value={addForm.category} onChange={v => setAddField('category', v)} />
+          <SelectorRow label="Category" options={categories} value={addForm.category} onChange={v => setAddField('category', v)} />
 
           {/* Unit */}
           <SelectorRow label="Unit" options={UNIT_OPTIONS} value={addForm.unit} onChange={v => setAddField('unit', v)} />
@@ -489,8 +519,8 @@ export default function InventoryManagementScreen() {
             <View style={styles.previewCard}>
               <Text style={styles.previewLabel}>PREVIEW</Text>
               <View style={styles.previewRow}>
-                <View style={[styles.previewIconBox, { backgroundColor: categoryConfig[addForm.category].bgColor }]}>
-                  <MaterialCommunityIcons name={categoryConfig[addForm.category].icon as any} size={18} color={categoryConfig[addForm.category].iconColor} />
+                <View style={[styles.previewIconBox, { backgroundColor: getCategoryConfig(addForm.category).bgColor }]}>
+                  <MaterialCommunityIcons name={getCategoryConfig(addForm.category).icon as any} size={18} color={getCategoryConfig(addForm.category).iconColor} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.previewName}>{addForm.name}</Text>
@@ -611,8 +641,8 @@ export default function InventoryManagementScreen() {
           {restockTarget && (
             <View style={styles.restockInfoCard}>
               <View style={styles.restockInfoRow}>
-                <View style={[styles.restockInfoIconBox, { backgroundColor: categoryConfig[restockTarget.category].bgColor }]}>
-                  <MaterialCommunityIcons name={categoryConfig[restockTarget.category].icon as any} size={20} color={categoryConfig[restockTarget.category].iconColor} />
+                <View style={[styles.restockInfoIconBox, { backgroundColor: getCategoryConfig(restockTarget.category).bgColor }]}>
+                  <MaterialCommunityIcons name={getCategoryConfig(restockTarget.category).icon as any} size={20} color={getCategoryConfig(restockTarget.category).iconColor} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.restockInfoName}>{restockTarget.name}</Text>

@@ -31,6 +31,53 @@ export const inventoryService = {
     if (!data) return [];
     return Array.isArray(data) ? data : (Array.isArray(data.data) ? data.data : []);
   },
+
+  async addItem(payload: {
+    item_name: string;
+    category: string;
+    current_stock: number;
+    minimum_stock: number;
+    unit_type: string;
+  }): Promise<InventoryItem> {
+    const response = await fetch(`${BASE_URL}/inventory`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await parseJsonSafely(response);
+    if (!response.ok) throw new Error((data?.error || data?.message) ?? `Failed to add item (${response.status})`);
+    return data?.data ?? data;
+  },
+
+  async updateItem(itemId: string, payload: {
+    item_name?: string;
+    current_stock?: number;
+    minimum_stock?: number;
+    unit_type?: string;
+  }): Promise<InventoryItem> {
+    const response = await fetch(`${BASE_URL}/inventory/${itemId}`, {
+      method: 'PUT',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await parseJsonSafely(response);
+    if (!response.ok) throw new Error((data?.error || data?.message) ?? `Failed to update item (${response.status})`);
+    return data?.data ?? data;
+  },
+
+  async restockItem(itemId: string, quantity: number, note?: string): Promise<InventoryItem> {
+    const response = await fetch(`${BASE_URL}/inventory/${itemId}/restock`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ quantity, note }),
+    });
+    const data = await parseJsonSafely(response);
+    if (!response.ok) throw new Error((data?.error || data?.message) ?? `Failed to restock item (${response.status})`);
+    return data?.data ?? data;
+  },
 };
 
 export default inventoryService;
