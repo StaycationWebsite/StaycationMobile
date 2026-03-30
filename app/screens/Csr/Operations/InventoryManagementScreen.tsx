@@ -28,6 +28,14 @@ interface InventoryItem {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const UNIT_OPTIONS = ['pcs', 'sets', 'boxes', 'bottles', 'rolls', 'bags'];
+const PREDEFINED_CATEGORIES = [
+  'Guest Amenities',
+  'Bathroom Supplies',
+  'Cleaning Supplies',
+  'Linens & Bedding',
+  'Kitchen Supplies',
+  'Add ons',
+];
 
 function mapApiInventory(raw: ApiInventoryItem, index: number): InventoryItem {
   return {
@@ -52,11 +60,17 @@ const computeStatus = (quantity: number, minQuantity: number): StockStatus => {
 };
 
 const CATEGORY_ICON_MAP: Record<string, { icon: string; bgColor: string; iconColor: string }> = {
+  'Guest Amenities':   { icon: 'coffee',          bgColor: Colors.green[100],          iconColor: Colors.green[500] },
+  'Bathroom Supplies': { icon: 'spray-bottle',    bgColor: Colors.purple[500] + '20',  iconColor: Colors.purple[500] },
+  'Cleaning Supplies': { icon: 'broom',           bgColor: Colors.blue[100],           iconColor: Colors.blue[500] },
+  'Linens & Bedding':  { icon: 'bed',             bgColor: Colors.blue[100],           iconColor: Colors.blue[500] },
+  'Kitchen Supplies':  { icon: 'silverware-fork-knife', bgColor: Colors.yellow[100],   iconColor: Colors.yellow[500] },
+  'Add ons':           { icon: 'plus-box-outline',bgColor: Colors.blue[100],           iconColor: Colors.blue[500] },
+  // legacy
   Linens:      { icon: 'bed',             bgColor: Colors.blue[100],           iconColor: Colors.blue[500] },
   Toiletries:  { icon: 'spray-bottle',    bgColor: Colors.purple[500] + '20',  iconColor: Colors.purple[500] },
   Amenities:   { icon: 'coffee',          bgColor: Colors.green[100],          iconColor: Colors.green[500] },
   Maintenance: { icon: 'tools',           bgColor: Colors.yellow[100],         iconColor: Colors.yellow[500] },
-  'Add ons':   { icon: 'plus-box-outline',bgColor: Colors.blue[100],           iconColor: Colors.blue[500] },
 };
 
 const DEFAULT_CATEGORY_ICON = { icon: 'package-variant', bgColor: Colors.gray[100], iconColor: Colors.gray[500] };
@@ -115,6 +129,8 @@ export default function InventoryManagementScreen() {
   const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('All');
+  const [activeStatus, setActiveStatus] = useState('All Status');
+  const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
 
   // Modal visibility
@@ -123,7 +139,7 @@ export default function InventoryManagementScreen() {
   const [restockTarget, setRestockTarget]           = useState<InventoryItem | null>(null);
 
   // Add form state
-  const emptyAddForm = { name: '', category: '', quantity: '', minQuantity: '', unit: 'pcs' };
+  const emptyAddForm = { name: '', category: PREDEFINED_CATEGORIES[0], quantity: '', minQuantity: '', unit: '', price: '' };
   const [addForm, setAddForm] = useState(emptyAddForm);
   const [addErrors, setAddErrors] = useState<Record<string, string>>({});
 
@@ -159,9 +175,13 @@ export default function InventoryManagementScreen() {
     setRefreshing(false);
   };
 
-  const filtered = activeFilter === 'All'
-    ? inventory
-    : inventory.filter(i => i.category === activeFilter);
+  const filtered = inventory.filter(i => {
+    const matchCategory = activeFilter === 'All' || i.category === activeFilter;
+    const matchStatus   = activeStatus === 'All Status' || i.status === activeStatus;
+    const q = searchQuery.trim().toLowerCase();
+    const matchSearch   = !q || i.name.toLowerCase().includes(q) || i.apiId.toLowerCase().includes(q);
+    return matchCategory && matchStatus && matchSearch;
+  });
 
   const lowStockCount = inventory.filter(i => i.status === 'Low Stock' || i.status === 'Out of Stock').length;
 
@@ -194,7 +214,8 @@ export default function InventoryManagementScreen() {
         category: addForm.category,
         current_stock: qty,
         minimum_stock: minQty,
-        unit_type: addForm.unit,
+        unit_type: addForm.unit.trim(),
+        price_per_unit: addForm.price.trim() || '0',
       });
       setInventory(prev => [mapApiInventory(created, 0), ...prev.map((i, idx) => ({ ...i, id: idx + 2 }))]);
     } catch (error) {
@@ -409,27 +430,60 @@ export default function InventoryManagementScreen() {
           </View>
         )}
 
-        {/* Quick Stats */}
-        <View style={styles.statsRow}>
-          <View style={styles.statBox}>
-            <MaterialCommunityIcons name="package-variant" size={20} color={Colors.green[500]} />
-            <Text style={styles.statValue}>{inventory.filter(i => i.status === 'In Stock').length}</Text>
-            <Text style={styles.statLabel}>In Stock</Text>
+        {/* KPI Cards */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.kpiRow}>
+          <View style={[styles.kpiCard, { backgroundColor: '#E91E8C' }]}>
+            <MaterialCommunityIcons name="package-variant-closed" size={22} color="rgba(255,255,255,0.5)" />
+            <Text style={styles.kpiValue}>{inventory.length}</Text>
+            <Text style={styles.kpiLabel}>Total Items</Text>
           </View>
-          <View style={styles.statBox}>
-            <MaterialCommunityIcons name="alert-circle" size={20} color={Colors.yellow[500]} />
-            <Text style={styles.statValue}>{inventory.filter(i => i.status === 'Low Stock').length}</Text>
-            <Text style={styles.statLabel}>Low Stock</Text>
+          <View style={[styles.kpiCard, { backgroundColor: '#22C55E' }]}>
+            <MaterialCommunityIcons name="trending-up" size={22} color="rgba(255,255,255,0.5)" />
+            <Text style={styles.kpiValue}>{inventory.filter(i => i.status === 'In Stock').length}</Text>
+            <Text style={styles.kpiLabel}>In Stock</Text>
           </View>
-          <View style={styles.statBox}>
-            <MaterialCommunityIcons name="close-circle" size={20} color={Colors.red[500]} />
-            <Text style={styles.statValue}>{inventory.filter(i => i.status === 'Out of Stock').length}</Text>
-            <Text style={styles.statLabel}>Out of Stock</Text>
+          <View style={[styles.kpiCard, { backgroundColor: '#F59E0B' }]}>
+            <MaterialCommunityIcons name="pulse" size={22} color="rgba(255,255,255,0.5)" />
+            <Text style={styles.kpiValue}>{inventory.filter(i => i.status === 'Low Stock').length}</Text>
+            <Text style={styles.kpiLabel}>Low Stock</Text>
           </View>
+          <View style={[styles.kpiCard, { backgroundColor: '#EF4444' }]}>
+            <MaterialCommunityIcons name="trending-down" size={22} color="rgba(255,255,255,0.5)" />
+            <Text style={styles.kpiValue}>{inventory.filter(i => i.status === 'Out of Stock').length}</Text>
+            <Text style={styles.kpiLabel}>Out of Stock</Text>
+          </View>
+        </ScrollView>
+
+        {/* Search Bar */}
+        <View style={styles.searchBox}>
+          <Feather name="search" size={14} color={Colors.gray[400]} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search by name or ID..."
+            placeholderTextColor={Colors.gray[400]}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            returnKeyType="search"
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <Feather name="x" size={14} color={Colors.gray[400]} />
+            </TouchableOpacity>
+          )}
         </View>
 
-        {/* Filter Chips */}
+        {/* Status + Category Filters */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterChips}>
+          {['All Status', 'In Stock', 'Low Stock', 'Out of Stock'].map(s => (
+            <TouchableOpacity
+              key={s}
+              style={[styles.chip, activeStatus === s && styles.chipActive]}
+              onPress={() => setActiveStatus(s)}
+            >
+              <Text style={[styles.chipText, activeStatus === s && styles.chipTextActive]}>{s}</Text>
+            </TouchableOpacity>
+          ))}
+          <View style={styles.chipDivider} />
           {['All', ...categories].map(tab => (
             <TouchableOpacity
               key={tab}
@@ -467,7 +521,7 @@ export default function InventoryManagementScreen() {
             <View style={[styles.inputWrapper, addErrors.name && styles.inputError]}>
               <TextInput
                 style={styles.input}
-                placeholder="e.g. Bath Towels, Shampoo..."
+                placeholder="e.g. Bath Towel"
                 placeholderTextColor={Colors.gray[400]}
                 value={addForm.name}
                 onChangeText={v => setAddField('name', v)}
@@ -477,15 +531,26 @@ export default function InventoryManagementScreen() {
           </View>
 
           {/* Category */}
-          <SelectorRow label="Category" options={categories} value={addForm.category} onChange={v => setAddField('category', v)} />
+          <View style={styles.fieldGroup}>
+            <Text style={styles.fieldLabel}>Category</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.selectorRow}>
+              {PREDEFINED_CATEGORIES.map(opt => (
+                <TouchableOpacity
+                  key={opt}
+                  style={[styles.selectorChip, addForm.category === opt && styles.selectorChipActive]}
+                  onPress={() => setAddField('category', opt)}
+                >
+                  <Text style={[styles.selectorChipText, addForm.category === opt && styles.selectorChipTextActive]}>{opt}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+            {addErrors.category ? <Text style={styles.errorText}>{addErrors.category}</Text> : null}
+          </View>
 
-          {/* Unit */}
-          <SelectorRow label="Unit" options={UNIT_OPTIONS} value={addForm.unit} onChange={v => setAddField('unit', v)} />
-
-          {/* Quantity & Min Qty */}
+          {/* Current Stock & Minimum Stock */}
           <View style={styles.twoColRow}>
             <View style={[styles.fieldGroup, { flex: 1 }]}>
-              <Text style={styles.fieldLabel}>Current Quantity</Text>
+              <Text style={styles.fieldLabel}>Current Stock</Text>
               <View style={[styles.inputWrapper, addErrors.quantity && styles.inputError]}>
                 <TextInput
                   style={styles.input}
@@ -499,7 +564,7 @@ export default function InventoryManagementScreen() {
               {addErrors.quantity ? <Text style={styles.errorText}>{addErrors.quantity}</Text> : null}
             </View>
             <View style={[styles.fieldGroup, { flex: 1 }]}>
-              <Text style={styles.fieldLabel}>Min. Quantity</Text>
+              <Text style={styles.fieldLabel}>Minimum Stock</Text>
               <View style={[styles.inputWrapper, addErrors.minQuantity && styles.inputError]}>
                 <TextInput
                   style={styles.input}
@@ -514,34 +579,34 @@ export default function InventoryManagementScreen() {
             </View>
           </View>
 
-          {/* Preview */}
-          {addForm.name.trim() && addForm.quantity && addForm.minQuantity ? (
-            <View style={styles.previewCard}>
-              <Text style={styles.previewLabel}>PREVIEW</Text>
-              <View style={styles.previewRow}>
-                <View style={[styles.previewIconBox, { backgroundColor: getCategoryConfig(addForm.category).bgColor }]}>
-                  <MaterialCommunityIcons name={getCategoryConfig(addForm.category).icon as any} size={18} color={getCategoryConfig(addForm.category).iconColor} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.previewName}>{addForm.name}</Text>
-                  <Text style={styles.previewMeta}>{addForm.category} · Min {addForm.minQuantity} {addForm.unit}</Text>
-                </View>
-                <View style={[styles.previewStatusBadge, {
-                  backgroundColor: computeStatus(Number(addForm.quantity), Number(addForm.minQuantity)) === 'In Stock'
-                    ? Colors.green[100] : computeStatus(Number(addForm.quantity), Number(addForm.minQuantity)) === 'Low Stock'
-                    ? Colors.yellow[100] : Colors.red[100],
-                }]}>
-                  <Text style={[styles.previewStatusText, {
-                    color: computeStatus(Number(addForm.quantity), Number(addForm.minQuantity)) === 'In Stock'
-                      ? Colors.green[500] : computeStatus(Number(addForm.quantity), Number(addForm.minQuantity)) === 'Low Stock'
-                      ? '#92400E' : Colors.red[500],
-                  }]}>
-                    {computeStatus(Number(addForm.quantity), Number(addForm.minQuantity))}
-                  </Text>
-                </View>
-              </View>
+          {/* Unit Type */}
+          <View style={styles.fieldGroup}>
+            <Text style={styles.fieldLabel}>Unit Type</Text>
+            <View style={styles.inputWrapper}>
+              <TextInput
+                style={styles.input}
+                placeholder="e.g. pcs, bottles, sets"
+                placeholderTextColor={Colors.gray[400]}
+                value={addForm.unit}
+                onChangeText={v => setAddField('unit', v)}
+              />
             </View>
-          ) : null}
+          </View>
+
+          {/* Price Per Unit (Optional) */}
+          <View style={styles.fieldGroup}>
+            <Text style={styles.fieldLabel}>Price Per Unit <Text style={styles.optionalLabel}>(Optional)</Text></Text>
+            <View style={styles.inputWrapper}>
+              <TextInput
+                style={styles.input}
+                placeholder="0"
+                placeholderTextColor={Colors.gray[400]}
+                keyboardType="numeric"
+                value={addForm.price}
+                onChangeText={v => setAddField('price', v)}
+              />
+            </View>
+          </View>
 
           <View style={{ height: 16 }} />
         </ScrollView>
@@ -580,13 +645,24 @@ export default function InventoryManagementScreen() {
             {updateErrors.name ? <Text style={styles.errorText}>{updateErrors.name}</Text> : null}
           </View>
 
-          {/* Unit */}
-          <SelectorRow label="Unit" options={UNIT_OPTIONS} value={updateForm.unit} onChange={v => setUpdateField('unit', v)} />
+          {/* Unit Type */}
+          <View style={styles.fieldGroup}>
+            <Text style={styles.fieldLabel}>Unit Type</Text>
+            <View style={styles.inputWrapper}>
+              <TextInput
+                style={styles.input}
+                placeholder="e.g. pcs, bottles, sets"
+                placeholderTextColor={Colors.gray[400]}
+                value={updateForm.unit}
+                onChangeText={v => setUpdateField('unit', v)}
+              />
+            </View>
+          </View>
 
-          {/* Quantity & Min Qty */}
+          {/* Stock & Min Stock */}
           <View style={styles.twoColRow}>
             <View style={[styles.fieldGroup, { flex: 1 }]}>
-              <Text style={styles.fieldLabel}>Current Quantity</Text>
+              <Text style={styles.fieldLabel}>Current Stock</Text>
               <View style={[styles.inputWrapper, updateErrors.quantity && styles.inputError]}>
                 <TextInput
                   style={styles.input}
@@ -600,7 +676,7 @@ export default function InventoryManagementScreen() {
               {updateErrors.quantity ? <Text style={styles.errorText}>{updateErrors.quantity}</Text> : null}
             </View>
             <View style={[styles.fieldGroup, { flex: 1 }]}>
-              <Text style={styles.fieldLabel}>Min. Quantity</Text>
+              <Text style={styles.fieldLabel}>Minimum Stock</Text>
               <View style={[styles.inputWrapper, updateErrors.minQuantity && styles.inputError]}>
                 <TextInput
                   style={styles.input}
@@ -763,21 +839,38 @@ const styles = StyleSheet.create({
   },
   alertText: { fontSize: 13, fontWeight: '600', color: Colors.red[500], flex: 1 },
 
-  // Stats
-  statsRow: { flexDirection: 'row', paddingHorizontal: 20, paddingVertical: 16, gap: 10 },
-  statBox: {
-    flex: 1, backgroundColor: Colors.white, borderRadius: 14, padding: 12,
-    alignItems: 'center', borderWidth: 1, borderColor: Colors.gray[100],
+  // KPI Cards
+  kpiRow: {
+    paddingHorizontal: 16, paddingVertical: 14, gap: 10,
+    flexDirection: 'row',
   },
-  statValue: { fontSize: 18, fontWeight: '700', color: Colors.gray[900], marginTop: 6 },
-  statLabel: { fontSize: 10, color: Colors.gray[500], marginTop: 2, textAlign: 'center' },
+  kpiCard: {
+    width: 90, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 10,
+    alignItems: 'center', gap: 4,
+  },
+  kpiValue: { fontSize: 22, fontWeight: '800', color: Colors.white },
+  kpiLabel: { fontSize: 10, fontWeight: '600', color: 'rgba(255,255,255,0.85)', textAlign: 'center' },
 
   // Filters
-  filterChips: { paddingHorizontal: 20, gap: 8, marginBottom: 8 },
-  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: Colors.gray[100] },
-  chipActive: { backgroundColor: Colors.brand.primarySoft },
-  chipText: { fontSize: 13, fontWeight: '600', color: Colors.gray[600] },
-  chipTextActive: { color: Colors.brand.primaryDark },
+  // Search
+  searchBox: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    marginHorizontal: 16, marginTop: 10, marginBottom: 6,
+    backgroundColor: Colors.white, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9,
+    borderWidth: 1, borderColor: Colors.gray[200],
+  },
+  searchInput: { flex: 1, fontSize: 13, color: Colors.gray[900], paddingVertical: 0 },
+
+  // Filters
+  filterChips: { paddingHorizontal: 16, paddingBottom: 10, gap: 6, alignItems: 'center' },
+  chip: {
+    paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20,
+    backgroundColor: Colors.gray[100], borderWidth: 1, borderColor: Colors.gray[200],
+  },
+  chipDivider: { width: 1, height: 20, backgroundColor: Colors.gray[300], marginHorizontal: 2 },
+  chipActive: { backgroundColor: Colors.brand.primary, borderColor: Colors.brand.primary },
+  chipText: { fontSize: 12, fontWeight: '600', color: Colors.gray[600] },
+  chipTextActive: { color: Colors.white },
 
   // Content
   content: { padding: 20, gap: 14 },
@@ -838,7 +931,8 @@ const styles = StyleSheet.create({
 
   // Form fields
   fieldGroup: { gap: 6, marginBottom: 16 },
-  fieldLabel: { fontSize: 13, fontWeight: '600', color: Colors.gray[700] },
+  fieldLabel: { fontSize: 13, fontWeight: '600', color: Colors.gray[700], marginBottom: 6 },
+  optionalLabel: { fontSize: 12, fontWeight: '400', color: Colors.gray[400] },
   inputWrapper: {
     borderWidth: 1, borderColor: Colors.gray[200], borderRadius: 12,
     backgroundColor: Colors.gray[50], paddingHorizontal: 14, height: 48, justifyContent: 'center',

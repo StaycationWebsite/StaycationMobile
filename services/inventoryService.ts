@@ -38,6 +38,7 @@ export const inventoryService = {
     current_stock: number;
     minimum_stock: number;
     unit_type: string;
+    price_per_unit?: string;
   }): Promise<InventoryItem> {
     const response = await fetch(`${BASE_URL}/inventory`, {
       method: 'POST',
