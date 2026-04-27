@@ -14,7 +14,7 @@ export default function AdminDashboardScreen() {
   const navigation = useNavigation<any>();
   const { user } = useAuth();
 
-  const MetricCard = ({ title, value, icon, color, trend }: any) => (
+  const MetricCard = ({ title, value, icon, color, trend, subtitle }: any) => (
     <View style={[styles.metricCard, { width: METRIC_CARD_W }]}>
       <View style={styles.metricHeader}>
         <View style={[styles.metricIconBox, { backgroundColor: color + '20' }]}>
@@ -28,6 +28,7 @@ export default function AdminDashboardScreen() {
       </View>
       <Text style={styles.metricValue} numberOfLines={1} adjustsFontSizeToFit>{value}</Text>
       <Text style={styles.metricTitle} numberOfLines={2}>{title}</Text>
+      {subtitle && <Text style={styles.metricSubtitle}>{subtitle}</Text>}
     </View>
   );
 
@@ -41,27 +42,34 @@ export default function AdminDashboardScreen() {
     </View>
   );
 
-  const BookingRow = ({ name, property, date, status }: any) => (
-    <View style={styles.tableRow}>
-      <View style={styles.guestCell}>
-        <View style={styles.miniAvatar}>
-          <Text style={styles.avatarInitial}>{name[0]}</Text>
-        </View>
-        <View style={{ flex: 1 }}>
+  const statusStyle: Record<string, { bg: string; text: string }> = {
+    confirmed: { bg: Colors.green[100], text: Colors.green[500] },
+    approved:  { bg: Colors.green[100], text: Colors.green[500] },
+    pending:   { bg: Colors.yellow[100], text: '#854D0E' },
+    completed: { bg: '#DBEAFE', text: '#1D4ED8' },
+    rejected:  { bg: '#FEE2E2', text: Colors.red[500] },
+  };
+
+  const BookingRow = ({ time, name, details, haven, status }: any) => {
+    const key = status?.toLowerCase() ?? 'pending';
+    const s = statusStyle[key] ?? statusStyle.pending;
+    return (
+      <View style={styles.tableRow}>
+        <Text style={styles.timeText}>{time}</Text>
+        <View style={styles.guestCell}>
+          <View style={styles.miniAvatar}>
+            <Text style={styles.avatarInitial}>{name[0]}</Text>
+          </View>
           <Text style={styles.guestName} numberOfLines={1}>{name}</Text>
-          <Text style={styles.propertySub}>{property}</Text>
+        </View>
+        <Text style={styles.detailsText} numberOfLines={1}>{details}</Text>
+        <Text style={styles.havenText} numberOfLines={1}>{haven}</Text>
+        <View style={[styles.statusBadge, { backgroundColor: s.bg }]}>
+          <Text style={[styles.statusBadgeText, { color: s.text }]}>{status}</Text>
         </View>
       </View>
-      <Text style={styles.dateText} numberOfLines={1}>{date}</Text>
-      <View style={[styles.statusBadge, {
-        backgroundColor: status === 'Confirmed' ? Colors.green[100] : Colors.yellow[100],
-      }]}>
-        <Text style={[styles.statusBadgeText, {
-          color: status === 'Confirmed' ? Colors.green[500] : '#854D0E',
-        }]}>{status}</Text>
-      </View>
-    </View>
-  );
+    );
+  };
 
   const QuickActionCard = ({ title, icon, iconColor, onPress }: any) => (
     <TouchableOpacity
@@ -140,10 +148,10 @@ export default function AdminDashboardScreen() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.metricsScroll}
           >
-            <MetricCard title="Total Revenue" value="₱124,500" icon="currency-php" color={Colors.brand.primary} trend />
+            <MetricCard title="Total Revenue" value="₱124,500" icon="currency-php" color={Colors.brand.primary} trend subtitle="Last 30 days" />
             <MetricCard title="Active Bookings" value="12" icon="calendar-check" color={Colors.purple[500]} />
             <MetricCard title="Avg Rating" value="4.8" icon="star" color={Colors.yellow[500]} />
-            <MetricCard title="Occupancy" value="85%" icon="home-city" color="#0D9488" />
+            <MetricCard title="Occupancy" value="85%" icon="home-city" color="#0D9488" subtitle="Last 30 days" />
           </ScrollView>
         </View>
 
@@ -286,6 +294,7 @@ const styles = StyleSheet.create({
   trendBadge: { padding: 4 },
   metricValue: { fontSize: 17, fontWeight: '700', color: Colors.gray[900] },
   metricTitle: { fontSize: 11, color: Colors.gray[500], marginTop: 2 },
+  metricSubtitle: { fontSize: 10, color: Colors.gray[400], marginTop: 3 },
   card: {
     backgroundColor: Colors.white, borderRadius: 20, padding: 18,
     shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
@@ -316,6 +325,9 @@ const styles = StyleSheet.create({
   guestName: { fontSize: 13, fontWeight: '600', color: Colors.gray[900] },
   propertySub: { fontSize: 11, color: Colors.gray[500] },
   dateText: { flex: 1, fontSize: 11, color: Colors.gray[600] },
+  timeText: { width: 54, fontSize: 10, color: Colors.gray[500] },
+  detailsText: { flex: 1, fontSize: 10, color: Colors.gray[600] },
+  havenText: { flex: 1, fontSize: 10, color: Colors.gray[700], fontWeight: '600' },
   statusBadge: { paddingHorizontal: 7, paddingVertical: 3, borderRadius: 6 },
   statusBadgeText: { fontSize: 10, fontWeight: '700' },
   statPill: {

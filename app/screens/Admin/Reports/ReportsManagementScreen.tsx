@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  Text, View, StyleSheet, TouchableOpacity, ScrollView,
+  Text, View, StyleSheet, TouchableOpacity, ScrollView, Modal, FlatList,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
@@ -8,9 +8,16 @@ import { useNavigation } from '@react-navigation/native';
 import { Colors } from '../../../../constants/Styles';
 
 const PERIODS = ['This Week', 'This Month', 'This Year'];
+const HAVEN_OPTIONS = ['All Havens', 'Haven 1', 'Haven 2', 'Haven 3', 'Haven 4'];
+const YEAR_OPTIONS = ['2024', '2025', '2026'];
+const MONTH_OPTIONS = [
+  'All Months', 'January', 'February', 'March', 'April',
+  'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December',
+];
 
-const REVENUE_BY_WEEK = [45, 72, 58, 90, 85, 63, 78];
-const REVENUE_DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+const REVENUE_BY_MONTH = [12000, 18000, 22000, 30000, 38500, 28000, 15000, 10000, 8000, 5000, 3000, 2000];
+const REVENUE_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
 
 const TOP_HAVENS = [
   { name: 'Haven 302', revenue: 55000, bookings: 14, occupancy: 92, rating: 4.9 },
@@ -26,9 +33,84 @@ const PAYMENT_METHODS = [
   { label: 'PayMaya', percentage: 12, color: Colors.yellow[500] },
 ];
 
+const BOOKING_STATUS_DATA = [
+  { label: 'Confirmed', count: 14, color: Colors.blue[500] },
+  { label: 'Rescheduled', count: 6, color: Colors.purple[500] },
+  { label: 'Pending', count: 5, color: Colors.green[500] },
+  { label: 'Rejected', count: 4, color: Colors.red[500] },
+];
+const BOOKING_STATUS_TOTAL = BOOKING_STATUS_DATA.reduce((s, d) => s + d.count, 0);
+
+const RESERVATION_STATUS_DATA = [
+  { label: 'Pending', count: 28, color: Colors.yellow[500] },
+  { label: 'Confirmed', count: 12, color: Colors.green[500] },
+  { label: 'Approved', count: 8, color: Colors.blue[500] },
+];
+const RESERVATION_STATUS_TOTAL = RESERVATION_STATUS_DATA.reduce((s, d) => s + d.count, 0);
+
 export default function ReportsScreen() {
   const navigation = useNavigation<any>();
   const [activePeriod, setActivePeriod] = useState('This Month');
+  const [selectedHaven, setSelectedHaven] = useState('All Havens');
+  const [selectedYear, setSelectedYear] = useState('2026');
+  const [selectedMonth, setSelectedMonth] = useState('All Months');
+  const [dropdownOpen, setDropdownOpen] = useState<'haven' | 'year' | 'month' | null>(null);
+
+  const DropdownPicker = ({ value, options, onSelect, type }: { value: string; options: string[]; onSelect: (v: string) => void; type: 'haven' | 'year' | 'month' }) => (
+    <View style={{ flex: 1 }}>
+      <TouchableOpacity
+        style={styles.filterPill}
+        onPress={() => setDropdownOpen(dropdownOpen === type ? null : type)}
+      >
+        <Text style={styles.filterPillText} numberOfLines={1}>{value}</Text>
+        <Feather name={dropdownOpen === type ? 'chevron-up' : 'chevron-down'} size={12} color={Colors.gray[500]} />
+      </TouchableOpacity>
+      {dropdownOpen === type && (
+        <View style={styles.dropdownMenu}>
+          {options.map(opt => (
+            <TouchableOpacity
+              key={opt}
+              style={[styles.dropdownItem, opt === value && styles.dropdownItemActive]}
+              onPress={() => { onSelect(opt); setDropdownOpen(null); }}
+            >
+              <Text style={[styles.dropdownItemText, opt === value && styles.dropdownItemTextActive]}>{opt}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+
+  const StatusChartCard = ({ title, total, data }: { title: string; total: number; data: typeof BOOKING_STATUS_DATA }) => (
+    <View style={styles.card}>
+      <View style={styles.cardTitleRow}>
+        <Text style={styles.cardTitle}>{title}</Text>
+        <Text style={styles.cardSubtitle}>{total} total</Text>
+      </View>
+      <View style={styles.stackedBarRow}>
+        {data.map((d, i) => (
+          <View
+            key={i}
+            style={[
+              styles.stackedSegment,
+              { flex: d.count, backgroundColor: d.color },
+              i === 0 && { borderTopLeftRadius: 6, borderBottomLeftRadius: 6 },
+              i === data.length - 1 && { borderTopRightRadius: 6, borderBottomRightRadius: 6 },
+            ]}
+          />
+        ))}
+      </View>
+      <View style={styles.chartLegend}>
+        {data.map((d, i) => (
+          <View key={i} style={styles.legendItem}>
+            <View style={[styles.legendDot, { backgroundColor: d.color }]} />
+            <Text style={styles.legendLabel}>{d.label}</Text>
+            <Text style={styles.legendCount}>{d.count}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
 
   const MetricCard = ({ title, value, subtitle, icon, color, trend, trendValue }: any) => (
     <View style={styles.metricCard}>
@@ -67,6 +149,13 @@ export default function ReportsScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* Filter Dropdowns */}
+      <View style={styles.filterRow}>
+        <DropdownPicker value={selectedHaven} options={HAVEN_OPTIONS} onSelect={setSelectedHaven} type="haven" />
+        <DropdownPicker value={selectedYear} options={YEAR_OPTIONS} onSelect={setSelectedYear} type="year" />
+        <DropdownPicker value={selectedMonth} options={MONTH_OPTIONS} onSelect={setSelectedMonth} type="month" />
+      </View>
+
       {/* Period Filter */}
       <View style={styles.periodRow}>
         {PERIODS.map(p => (
@@ -84,43 +173,48 @@ export default function ReportsScreen() {
 
         {/* KPI Cards */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.metricsScroll}>
-          <MetricCard title="Total Revenue" value="₱124,500" icon="currency-php" color={Colors.brand.primary} trend="up" trendValue="12%" />
-          <MetricCard title="Total Bookings" value="38" subtitle="This month" icon="calendar-check" color={Colors.blue[500]} trend="up" trendValue="8%" />
-          <MetricCard title="Avg Occupancy" value="85%" icon="home-percent" color="#0D9488" trend="up" trendValue="5%" />
-          <MetricCard title="Avg Rating" value="4.8" subtitle="128 reviews" icon="star" color={Colors.yellow[500]} />
-          <MetricCard title="Cancelled" value="3" icon="calendar-remove" color={Colors.red[500]} trend="down" trendValue="2%" />
+          <MetricCard title="Total Revenue" value="₱38,500" icon="currency-php" color={Colors.green[500]} trend="up" trendValue="+100.0%" />
+          <MetricCard title="Total Bookings" value="77" subtitle="This month" icon="calendar-check" color={Colors.blue[500]} trend="up" trendValue="+100.0%" />
+          <MetricCard title="Occupancy Rate" value="6.7%" icon="home-percent" color={Colors.purple[500]} trend="up" trendValue="+100.0%" />
+          <MetricCard title="New Guests" value="30" icon="account-plus-outline" color={Colors.yellow[500]} trend="up" trendValue="+100.0%" />
         </ScrollView>
 
-        {/* Revenue Chart */}
+        {/* Revenue Chart - monthly line-style */}
         <View style={styles.card}>
           <View style={styles.cardTitleRow}>
-            <Text style={styles.cardTitle}>Revenue Trend</Text>
-            <Text style={styles.cardSubtitle}>Weekly</Text>
+            <Text style={styles.cardTitle}>Revenue</Text>
+            <Text style={styles.cardSubtitle}>Monthly</Text>
           </View>
-          <Text style={styles.chartTotal}>₱124,500</Text>
-          <Text style={styles.chartTotalLabel}>Total for {activePeriod.toLowerCase()}</Text>
+          <Text style={styles.chartTotal}>₱38,500</Text>
+          <Text style={styles.chartTotalLabel}>Total for {selectedYear}</Text>
           <View style={styles.barChart}>
-            {REVENUE_BY_WEEK.map((h, i) => (
-              <View key={i} style={styles.barWrapper}>
-                <Text style={styles.barLabel}>
-                  {i === 3 ? `₱${(h * 900).toLocaleString()}` : ''}
-                </Text>
-                <View style={[
-                  styles.bar,
-                  {
-                    height: h * 0.7,
-                    backgroundColor: i === 3 ? Colors.brand.primary : Colors.brand.primary + '35',
-                  },
-                ]} />
-              </View>
-            ))}
+            {REVENUE_BY_MONTH.map((h, i) => {
+              const maxH = Math.max(...REVENUE_BY_MONTH);
+              return (
+                <View key={i} style={styles.barWrapper}>
+                  <View style={[
+                    styles.bar,
+                    {
+                      height: (h / maxH) * 70,
+                      backgroundColor: i === 4 ? Colors.green[500] : Colors.green[500] + '40',
+                    },
+                  ]} />
+                </View>
+              );
+            })}
           </View>
           <View style={styles.dayLabels}>
-            {REVENUE_DAYS.map((d, i) => (
-              <Text key={i} style={[styles.dayLabel, i === 3 && { color: Colors.brand.primary, fontWeight: '700' }]}>{d}</Text>
+            {REVENUE_MONTHS.map((m, i) => (
+              <Text key={i} style={[styles.dayLabel, i === 4 && { color: Colors.green[500], fontWeight: '700' }]}>{m}</Text>
             ))}
           </View>
         </View>
+
+        {/* Booking Status */}
+        <StatusChartCard title="Booking Status" total={BOOKING_STATUS_TOTAL} data={BOOKING_STATUS_DATA} />
+
+        {/* Reservations Status */}
+        <StatusChartCard title="Reservations Status" total={RESERVATION_STATUS_TOTAL} data={RESERVATION_STATUS_DATA} />
 
         {/* Payment Methods */}
         <View style={styles.card}>
@@ -305,4 +399,34 @@ const styles = StyleSheet.create({
   },
   summaryValue: { fontSize: 16, fontWeight: '700', color: Colors.gray[900] },
   summaryLabel: { fontSize: 11, color: Colors.gray[500], textAlign: 'center' },
+  filterRow: {
+    flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingVertical: 10,
+    backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.gray[100],
+    zIndex: 10,
+  },
+  filterPill: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    backgroundColor: Colors.gray[100], borderRadius: 8,
+    paddingHorizontal: 8, paddingVertical: 7, gap: 4,
+  },
+  filterPillText: { fontSize: 11, fontWeight: '600', color: Colors.gray[700], flex: 1 },
+  dropdownMenu: {
+    position: 'absolute', top: 38, left: 0, right: 0,
+    backgroundColor: Colors.white, borderRadius: 10, borderWidth: 1,
+    borderColor: Colors.gray[200], zIndex: 100,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08, shadowRadius: 8, elevation: 8,
+    maxHeight: 180, overflow: 'hidden',
+  },
+  dropdownItem: { paddingHorizontal: 12, paddingVertical: 9 },
+  dropdownItemActive: { backgroundColor: Colors.brand.primarySoft },
+  dropdownItemText: { fontSize: 12, color: Colors.gray[700] },
+  dropdownItemTextActive: { color: Colors.brand.primaryDark, fontWeight: '700' },
+  stackedBarRow: { flexDirection: 'row', height: 14, borderRadius: 6, overflow: 'hidden' },
+  stackedSegment: { height: '100%' },
+  chartLegend: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 4 },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  legendDot: { width: 10, height: 10, borderRadius: 5 },
+  legendLabel: { fontSize: 12, color: Colors.gray[600] },
+  legendCount: { fontSize: 12, fontWeight: '700', color: Colors.gray[900] },
 });

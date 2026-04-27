@@ -8,9 +8,10 @@ import { useNavigation } from '@react-navigation/native';
 import DeliverablesManagementScreen from '../app/screens/Csr/Operations/DeliverablesManagementScreen';
 import CleanersManagementScreen from '../app/screens/Csr/Operations/CleanersManagementScreen';
 import InventoryManagementScreen from '../app/screens/Csr/Operations/InventoryManagementScreen';
+import CleaningManagementScreen from '../app/screens/Admin/Operations/CleaningManagementScreen';
 
 const { width } = Dimensions.get('window');
-const TABS = ['Deliverables', 'Cleaners', 'Inventory'];
+const TABS = ['Deliverables', 'Cleaners', 'Cleaning', 'Inventory'];
 const TAB_COUNT = TABS.length;
 
 export default function OperationsTabNavigator() {
@@ -27,6 +28,16 @@ export default function OperationsTabNavigator() {
       friction: 12,
     }).start();
     setActiveTab(index);
+  };
+
+  const renderScreen = () => {
+    switch (activeTab) {
+      case 0: return <DeliverablesManagementScreen />;
+      case 1: return <CleanersManagementScreen />;
+      case 2: return <CleaningManagementScreen />;
+      case 3: return <InventoryManagementScreen />;
+      default: return <DeliverablesManagementScreen />;
+    }
   };
 
   return (
@@ -60,11 +71,7 @@ export default function OperationsTabNavigator() {
       </View>
 
       <View style={styles.screensWrapper}>
-        {activeTab === 0
-          ? <DeliverablesManagementScreen />
-          : activeTab === 1
-          ? <CleanersManagementScreen />
-          : <InventoryManagementScreen />}
+        {renderScreen()}
       </View>
     </SafeAreaView>
   );
@@ -91,12 +98,10 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   tabItem: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  tabLabel: { fontSize: 13, fontWeight: '600' },
+  tabLabel: { fontSize: 12, fontWeight: '600' },
   tabIndicator: {
     position: 'absolute', bottom: 0, left: 0,
     height: 3, backgroundColor: Colors.brand.primary, borderRadius: 2,
   },
-  screensWrapper: { flex: 1},
-  screensRow: { flexDirection: 'row', flex: 1 },
-  screenItem: { width, flex: 1 },
+  screensWrapper: { flex: 1 },
 });

@@ -4,7 +4,8 @@ import {
   TextInput, Alert, Modal,
 } from 'react-native';
 import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../../../constants/Styles';
 
 type BookingStatus = 'pending' | 'approved' | 'confirmed' | 'checked-in' | 'completed' | 'rejected' | 'cancelled';
@@ -152,6 +153,10 @@ const BookingCard = ({
 // ─── Main Screen ──────────────────────────────────────────────────────────
 export default function AdminReservationsScreen() {
   const navigation = useNavigation<any>();
+  const route = useRoute();
+  const insets = useSafeAreaInsets();
+  const isStandalone = route.name === 'Reservations';
+
   const [bookings, setBookings] = useState<Booking[]>(MOCK_BOOKINGS);
   const [filter, setFilter]   = useState<FilterStatus>('all');
   const [search, setSearch]   = useState('');
@@ -178,7 +183,19 @@ export default function AdminReservationsScreen() {
   const handleCheckOut = (id: string) => Alert.alert('Check Out Guest', 'Mark guest as completed?',   [{ text: 'Cancel', style: 'cancel' }, { text: 'Check Out', onPress: () => updateStatus(id, 'completed') }]);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, isStandalone && { paddingTop: insets.top }]}>
+      {/* Back header — only when opened as a standalone stack screen */}
+      {isStandalone && (
+        <View style={styles.standaloneHeader}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+            <Feather name="arrow-left" size={20} color={Colors.gray[700]} />
+          </TouchableOpacity>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.standaloneTitle}>Reservations</Text>
+            <Text style={styles.standaloneSub}>Manage all reservations</Text>
+          </View>
+        </View>
+      )}
       {/* Summary Cards */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.summaryScroll} contentContainerStyle={styles.summaryContent}>
         <TouchableOpacity
@@ -369,6 +386,14 @@ export default function AdminReservationsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.gray[50] },
+  standaloneHeader: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    paddingHorizontal: 16, paddingTop: 12, paddingBottom: 16,
+    backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.gray[100],
+  },
+  backBtn: { width: 40, height: 40, borderRadius: 12, backgroundColor: Colors.gray[50], justifyContent: 'center', alignItems: 'center' },
+  standaloneTitle: { fontSize: 18, fontWeight: '700', color: Colors.gray[900] },
+  standaloneSub: { fontSize: 12, color: Colors.gray[500], marginTop: 1 },
   // Summary
   summaryScroll: { backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.gray[100], maxHeight: 88 },
   summaryContent: { paddingHorizontal: 16, paddingVertical: 10, gap: 8, alignItems: 'center' },

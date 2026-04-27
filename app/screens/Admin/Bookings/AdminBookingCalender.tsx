@@ -161,6 +161,11 @@ export default function AdminBookingCalender() {
     currentDate.getMonth() === today.getMonth() &&
     currentDate.getFullYear() === today.getFullYear();
 
+  const getBookingForDay = (day: number | null) => {
+    if (day === null) return null;
+    return MOCK_BOOKINGS.find(b => day >= b.start && day <= b.end) ?? null;
+  };
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <View style={styles.screen}>
@@ -280,40 +285,56 @@ export default function AdminBookingCalender() {
 
               return (
                 <View key={rowIdx} style={styles.weekRow}>
-                  {/* Booking bars (rendered behind day cells) */}
-                  {MOCK_BOOKINGS.map((booking, bIdx) => {
-                    if (!firstDayInWeek || !lastDayInWeek) return null;
-                    if (booking.end < firstDayInWeek || booking.start > lastDayInWeek) return null;
-                    const start = Math.max(booking.start, firstDayInWeek);
-                    const end = Math.min(booking.end, lastDayInWeek);
-                    const startCol = week.indexOf(start);
-                    const endCol = week.indexOf(end);
-                    if (startCol < 0 || endCol < 0) return null;
-                    const leftPct = (startCol / 7) * 100;
-                    const widthPct = ((endCol - startCol + 1) / 7) * 100;
-                    return (
-                      <View
-                        key={bIdx}
-                        style={[
-                          styles.bookingBar,
-                          { left: `${leftPct}%` as any, width: `${widthPct}%` as any, backgroundColor: booking.color },
-                        ]}
-                      >
-                        {booking.title ? <Text style={styles.bookingLabel} numberOfLines={1}>{booking.title}</Text> : null}
-                      </View>
-                    );
-                  })}
-
-                  {/* Day cells */}
-                  {week.map((day, colIdx) => (
-                    <View key={colIdx} style={styles.dayCell}>
-                      {day !== null && (
-                        <View style={[styles.dayPill, isToday(day) && styles.todayPill]}>
-                          <Text style={[styles.dayText, isToday(day) && styles.todayText]}>{day}</Text>
+                  {/* Day numbers — always on top */}
+                  <View style={styles.dayNumbersRow}>
+                    {week.map((day, colIdx) => {
+                      const booking = getBookingForDay(day);
+                      const today_ = isToday(day);
+                      return (
+                        <View key={colIdx} style={styles.dayCell}>
+                          {day !== null && (
+                            <View style={[
+                              styles.dayPill,
+                              today_ && styles.todayPill,
+                              !today_ && booking && { backgroundColor: booking.color + '22' },
+                            ]}>
+                              <Text style={[
+                                styles.dayText,
+                                today_ && styles.todayText,
+                                !today_ && booking && { color: booking.color, fontWeight: '700' },
+                              ]}>{day}</Text>
+                            </View>
+                          )}
                         </View>
-                      )}
-                    </View>
-                  ))}
+                      );
+                    })}
+                  </View>
+
+                  {/* Booking bars — below the numbers */}
+                  <View style={styles.barsArea}>
+                    {MOCK_BOOKINGS.map((booking, bIdx) => {
+                      if (!firstDayInWeek || !lastDayInWeek) return null;
+                      if (booking.end < firstDayInWeek || booking.start > lastDayInWeek) return null;
+                      const start = Math.max(booking.start, firstDayInWeek);
+                      const end   = Math.min(booking.end, lastDayInWeek);
+                      const startCol = week.indexOf(start);
+                      const endCol   = week.indexOf(end);
+                      if (startCol < 0 || endCol < 0) return null;
+                      const leftPct  = (startCol / 7) * 100;
+                      const widthPct = ((endCol - startCol + 1) / 7) * 100;
+                      return (
+                        <View
+                          key={bIdx}
+                          style={[
+                            styles.bookingBar,
+                            { left: `${leftPct}%` as any, width: `${widthPct}%` as any, backgroundColor: booking.color },
+                          ]}
+                        >
+                          {booking.title ? <Text style={styles.bookingLabel} numberOfLines={1}>{booking.title}</Text> : null}
+                        </View>
+                      );
+                    })}
+                  </View>
                 </View>
               );
             })}
@@ -552,15 +573,17 @@ const styles = StyleSheet.create({
   calendarCard: { backgroundColor: Colors.white, borderRadius: 20, padding: 12, borderWidth: 1, borderColor: Colors.gray[100] },
   weekHeader: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 2, marginBottom: 4 },
   weekHeaderText: { flex: 1, textAlign: 'center', fontSize: 11, color: Colors.gray[500], fontWeight: '600' },
-  weekRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4, paddingHorizontal: 2, position: 'relative', minHeight: 44 },
-  dayCell: { flex: 1, height: 36, alignItems: 'center', justifyContent: 'center' },
+  weekRow: { paddingHorizontal: 2, paddingBottom: 2 },
+  dayNumbersRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  barsArea: { position: 'relative', height: 24, marginTop: 2, marginBottom: 2 },
+  dayCell: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 3 },
   dayPill: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
   dayText: { fontSize: 12, color: Colors.gray[900], fontWeight: '500' },
   todayPill: { backgroundColor: Colors.brand.primary },
   todayText: { color: Colors.white, fontWeight: '700' },
   bookingBar: {
-    position: 'absolute', top: 8, height: 20, borderRadius: 10,
-    justifyContent: 'center', paddingLeft: 8, zIndex: 1,
+    position: 'absolute', top: 2, height: 20, borderRadius: 10,
+    justifyContent: 'center', paddingLeft: 8,
   },
   bookingLabel: { fontSize: 9, color: Colors.white, fontWeight: '700' },
   reservationSection: { marginTop: 20 },

@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  Text, View, StyleSheet, TouchableOpacity, ScrollView, Image,
+  Text, View, StyleSheet, TouchableOpacity, ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
@@ -9,33 +9,56 @@ import { Colors } from '../../../constants/Styles';
 
 const MENU_SECTIONS = [
   {
-    title: 'Management',
+    title: 'Overview',
     items: [
-      { label: 'Staff Management',      icon: 'account-group-outline',    screen: 'Staff',       color: Colors.blue[500] },
-      { label: 'User Management',        icon: 'account-multiple-outline', screen: 'Users',       color: Colors.green[500] },
-      { label: 'Partner Management',     icon: 'handshake-outline',        screen: 'Partners',    color: Colors.brand.primary },
-      { label: 'Haven Management',       icon: 'home-city-outline',        screen: 'ManageHavens',color: Colors.purple[500] },
+      { label: 'Dashboard',          icon: 'view-dashboard-outline',   screen: 'Dashboard',         color: Colors.blue[500] },
+      { label: 'Analytics & Reports',icon: 'chart-line',               screen: 'AnalyticsReports',  color: Colors.purple[500] },
+    ],
+  },
+  {
+    title: 'Bookings',
+    items: [
+      { label: 'Booking Calendar',   icon: 'calendar-month-outline',   screen: 'BookingCalendar',   color: Colors.blue[500] },
+      { label: 'Reservations',       icon: 'calendar-check-outline',   screen: 'Reservations',      color: Colors.green[500] },
+      { label: 'Blocked Dates',      icon: 'calendar-remove-outline',  screen: 'BlockedDates',      color: Colors.red[500] },
+    ],
+  },
+  {
+    title: 'Property',
+    items: [
+      { label: 'Haven Management',   icon: 'home-city-outline',        screen: 'ManageHavens',      color: Colors.purple[500] },
+      { label: 'Maintenance',        icon: 'wrench-outline',           screen: 'Maintenance',       color: Colors.yellow[500] },
+      { label: 'Cleaning Management',icon: 'broom',                    screen: 'CleaningManagement',color: Colors.brand.primary },
+    ],
+  },
+  {
+    title: 'Finance',
+    items: [
+      { label: 'Revenue Management', icon: 'cash-multiple',            screen: 'RevenueManagement', color: Colors.green[500] },
+      { label: 'Payment Methods',    icon: 'credit-card-outline',      screen: 'PaymentMethods',    color: Colors.blue[500] },
     ],
   },
   {
     title: 'Communication',
     items: [
-      { label: 'Guest Messages',  icon: 'message-text-outline',  screen: 'GuestMessages', color: Colors.blue[500] },
-      { label: 'Reviews',         icon: 'star-outline',          screen: 'Reviews',        color: Colors.yellow[500] },
+      { label: 'Guest Assistance',   icon: 'headset',                  screen: 'GuestAssistance',   color: Colors.blue[500] },
+      { label: 'Messages',           icon: 'message-text-outline',     screen: 'GuestMessages',     color: Colors.green[500] },
+      { label: 'Reviews & Feedback', icon: 'star-outline',             screen: 'Reviews',           color: Colors.yellow[500] },
     ],
   },
   {
-    title: 'Reports & Logs',
+    title: 'Team',
     items: [
-      { label: 'Reports',     icon: 'chart-bar',          screen: 'Reports',    color: Colors.green[500] },
-      { label: 'Audit Logs',  icon: 'clipboard-list-outline', screen: 'AuditLogs', color: Colors.red[500] },
+      { label: 'Staff Management',   icon: 'account-group-outline',    screen: 'Staff',             color: Colors.blue[500] },
+      { label: 'User Management',    icon: 'account-multiple-outline', screen: 'Users',             color: Colors.green[500] },
+      { label: 'Partner Management', icon: 'handshake-outline',        screen: 'Partners',          color: Colors.brand.primary },
     ],
   },
   {
     title: 'System',
     items: [
-      { label: 'Settings',  icon: 'cog-outline',    screen: 'Settings', color: Colors.gray[700] },
-      { label: 'Profile',   icon: 'account-circle-outline', screen: 'Profile', color: Colors.brand.primary },
+      { label: 'Settings',           icon: 'cog-outline',              screen: 'Settings',          color: Colors.gray[700] },
+      { label: 'Audit Logs',         icon: 'clipboard-list-outline',   screen: 'AuditLogs',         color: Colors.red[500] },
     ],
   },
 ];
@@ -112,7 +135,10 @@ const styles = StyleSheet.create({
   adminRole: { fontSize: 12, color: Colors.gray[500], marginTop: 2 },
   content: { padding: 20, gap: 20 },
   section: { gap: 8 },
-  sectionTitle: { fontSize: 12, fontWeight: '700', color: Colors.gray[500], textTransform: 'uppercase', letterSpacing: 0.8, paddingHorizontal: 4 },
+  sectionTitle: {
+    fontSize: 12, fontWeight: '700', color: Colors.gray[500],
+    textTransform: 'uppercase', letterSpacing: 0.8, paddingHorizontal: 4,
+  },
   sectionCard: {
     backgroundColor: Colors.white,
     borderRadius: 16,

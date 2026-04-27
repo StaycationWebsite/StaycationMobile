@@ -7,6 +7,7 @@ import SearchModal from '../../../components/SearchModal';  // Changed ../ to ..
 import ImageCarouselModal from '../../../components/ImageCarouselModal';  // Changed ../ to ../../
 import { API_CONFIG } from '../../../../constants/config';
 import { useRoomDiscounts } from '../../../hooks/useRoomDiscounts';  // Changed ../ to ../../
+import EditHavenModal from './EditHavenModal';
 
 interface HavenImage {
   id: number;
@@ -33,9 +34,11 @@ interface Haven {
 const RoomCard = ({
   item,
   onImagePress,
+  onEditPress,
 }: {
   item: Haven;
   onImagePress: (images: HavenImage[] | undefined) => void;
+  onEditPress?: (haven: Haven) => void;
 }) => {
   const navigation = useNavigation<any>();
   const { calculateBestDiscount } = useRoomDiscounts(item.uuid_id);
@@ -74,6 +77,12 @@ const RoomCard = ({
         <TouchableOpacity style={styles.favoriteButton}>
           <Ionicons name="heart-outline" size={20} color={Colors.white} />
         </TouchableOpacity>
+
+        {onEditPress && (
+          <TouchableOpacity style={styles.editButton} onPress={() => onEditPress(item)}>
+            <Feather name="edit-2" size={14} color={Colors.white} />
+          </TouchableOpacity>
+        )}
 
         {/* Discount badge */}
         <View style={styles.overlappingBadge}>
@@ -138,6 +147,8 @@ export default function HavenScreen() {
   const [loading, setLoading] = useState(true);
   const [carouselVisible, setCarouselVisible] = useState(false);
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editingHaven, setEditingHaven] = useState<Haven | null>(null);
   const [sortOpen, setSortOpen] = useState(false);
   const [selectedSort, setSelectedSort] = useState('Recommended');
   const sortOptions = ['Recommended', 'Price: Low to High', 'Price: High to Low', 'Rating', 'Capacity'];
@@ -197,6 +208,15 @@ export default function HavenScreen() {
         images={selectedImages}
         initialIndex={0}
         onClose={() => setCarouselVisible(false)}
+      />
+      <EditHavenModal
+        visible={editModalVisible}
+        haven={editingHaven}
+        onClose={() => setEditModalVisible(false)}
+        onSaved={(updated) => {
+          setHavens(prev => prev.map(h => h.uuid_id === updated.uuid_id ? { ...h, ...updated } : h));
+          setEditModalVisible(false);
+        }}
       />
 
       {/* Header */}
@@ -270,7 +290,12 @@ export default function HavenScreen() {
         ) : (
           <View style={styles.roomsGrid}>
             {sortedHavens.map((haven) => (
-              <RoomCard key={haven.uuid_id} item={haven} onImagePress={handleImagePress} />
+              <RoomCard
+                key={haven.uuid_id}
+                item={haven}
+                onImagePress={handleImagePress}
+                onEditPress={(h) => { setEditingHaven(h); setEditModalVisible(true); }}
+              />
             ))}
           </View>
         )}
@@ -382,6 +407,17 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     backgroundColor: Colors.gray[100],
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  editButton: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: 'rgba(0,0,0,0.35)',
     justifyContent: 'center',
     alignItems: 'center',
   },
