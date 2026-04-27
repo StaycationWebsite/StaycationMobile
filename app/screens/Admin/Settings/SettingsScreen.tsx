@@ -8,7 +8,6 @@ import { Colors } from '../../../../constants/Styles';
 export default function SettingsScreen() {
   const navigation = useNavigation<any>();
 
-  const [darkMode, setDarkMode] = useState(false);
   const [pushNotif, setPushNotif] = useState(true);
   const [emailNotif, setEmailNotif] = useState(true);
   const [smsNotif, setSmsNotif] = useState(false);
@@ -17,23 +16,6 @@ export default function SettingsScreen() {
   const [checkInTime, setCheckInTime] = useState('2:00 PM');
   const [checkOutTime, setCheckOutTime] = useState('12:00 PM');
 
-  const ToggleRow = ({ label, sublabel, value, onChange, icon, color = Colors.brand.primary }: any) => (
-    <View style={styles.toggleRow}>
-      <View style={[styles.rowIcon, { backgroundColor: color + '18' }]}>
-        <MaterialCommunityIcons name={icon} size={18} color={color} />
-      </View>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.rowLabel}>{label}</Text>
-        {sublabel && <Text style={styles.rowSublabel}>{sublabel}</Text>}
-      </View>
-      <Switch
-        value={value}
-        onValueChange={onChange}
-        trackColor={{ false: Colors.gray[200], true: Colors.brand.primary + '60' }}
-        thumbColor={value ? Colors.brand.primary : Colors.gray[400]}
-      />
-    </View>
-  );
 
   const InfoRow = ({ label, value, icon, color = Colors.brand.primary }: any) => (
     <TouchableOpacity style={styles.toggleRow} onPress={() => Alert.alert('Coming Soon', 'Time picker coming in next update.')}>
@@ -48,13 +30,26 @@ export default function SettingsScreen() {
     </TouchableOpacity>
   );
 
+  const ToggleRow = ({ label, sublabel, value, onChange, icon, color = Colors.blue[500] }: any) => (
+    <View style={styles.toggleRow}>
+      <View style={[styles.rowIcon, { backgroundColor: color + '18' }]}>
+        <MaterialCommunityIcons name={icon} size={18} color={color} />
+      </View>
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text style={styles.rowLabel}>{label}</Text>
+        <Text style={styles.rowSublabel}>{sublabel}</Text>
+      </View>
+      <Switch 
+        value={value} 
+        onValueChange={onChange}
+        trackColor={{ false: Colors.gray[200], true: color + '20' }}
+        thumbColor={value ? color : Colors.gray[300]} 
+        ios_backgroundColor={Colors.gray[100]}
+      />
+    </View>
+  );
+
   const SECTIONS = [
-    {
-      title: 'Appearance',
-      items: [
-        <ToggleRow key="dark" label="Dark Mode" sublabel="Switch to dark theme" value={darkMode} onChange={setDarkMode} icon="theme-light-dark" />,
-      ],
-    },
     {
       title: 'Notifications',
       items: [

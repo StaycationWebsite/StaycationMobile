@@ -3,7 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors } from '../constants/Styles';
+// Colors replaced with theme in screens
 
 // Screens
 import AdminDashboardScreen from '../app/screens/Admin/AdminDashboardScreen';
@@ -74,12 +74,13 @@ function AdminTabs() {
   return (
     <Tab.Navigator
       screenOptions={{
-        tabBarActiveTintColor: Colors.brand.primary,
-        tabBarInactiveTintColor: Colors.gray[500],
+        tabBarActiveTintColor: '#3B82F6',
+        tabBarInactiveTintColor: '#6B7280',
         tabBarStyle: {
-          backgroundColor: Colors.white,
+          backgroundColor: '#FFFFFF',
           borderTopWidth: 1,
-          borderTopColor: Colors.gray[100],
+          borderTopColor: '#F1F5F9',
+
           elevation: 10,
           shadowColor: '#000',
           shadowOffset: { width: 0, height: -2 },
