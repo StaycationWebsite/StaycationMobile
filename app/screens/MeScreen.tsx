@@ -12,10 +12,10 @@ import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useAuth } from '../hooks/useAuth';
-import { useTheme } from '../hooks/useTheme';
-import { AppDispatch, RootState } from '../redux/store';
-import { setThemeMode } from '../redux/slices/themeSlice';
+import { useAuth } from '@/lib/hooks/useAuth';
+import { useTheme } from '@/lib/hooks/useTheme';
+import { AppDispatch, RootState } from '@/lib/redux/store';
+import { setThemeMode } from '@/lib/redux/slices/themeSlice';
 import type { AdminStackParamList } from '../../navigation/AdminNavigator';
 
 export default function MeScreen() {

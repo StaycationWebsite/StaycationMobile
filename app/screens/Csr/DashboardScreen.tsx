@@ -6,7 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Colors } from '../../../constants/Styles';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '@/lib/hooks/useAuth';
 import { bookingsService, Booking } from '../../../services/bookingsService';
 import { paymentsService } from '../../../services/paymentsService';
 import { inventoryService } from '../../../services/inventoryService';

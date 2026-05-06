@@ -1,10 +1,11 @@
 import React from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
-import { useAuth } from '../app/hooks/useAuth';
+import { useAuth } from '@/lib/hooks/useAuth';
 import { Colors } from '../constants/Styles';
 import AuthNavigator from './AuthNavigator';
 import AdminNavigator from './AdminNavigator';
 import CsrNavigator from './CsrNavigator';
+import UserNavigator from './UserNavigator';
 
 export default function RootNavigator() {
   const { isAuthenticated, isLoading, user } = useAuth();
@@ -26,7 +27,10 @@ export default function RootNavigator() {
     return <AdminNavigator />;
   }
 
-  // Default to CSR navigator
+  if (user?.role === 'guest') {
+    return <UserNavigator />;
+  }
+
   return <CsrNavigator />;
 }
 

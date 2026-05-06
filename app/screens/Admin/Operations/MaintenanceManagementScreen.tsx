@@ -3,7 +3,9 @@ import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   TextInput, Alert, Modal,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { Colors } from '../../../../constants/Styles';
 
 type Status   = 'open' | 'in-progress' | 'resolved';
@@ -129,6 +131,7 @@ const RequestCard = ({
 
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 export default function MaintenanceManagementScreen() {
+  const navigation = useNavigation<any>();
   const [requests, setRequests] = useState<MaintenanceRequest[]>(MOCK_DATA);
   const [search, setSearch]     = useState('');
   const [statusFilter, setStatusFilter]     = useState<'all' | Status>('all');
@@ -182,7 +185,17 @@ export default function MaintenanceManagementScreen() {
   ];
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+          <Feather name="arrow-left" size={20} color={Colors.gray[700]} />
+        </TouchableOpacity>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.headerTitle}>Maintenance</Text>
+          <Text style={styles.headerSub}>Manage maintenance requests</Text>
+        </View>
+      </View>
       {/* Stat Cards */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.statsScroll} contentContainerStyle={styles.statsContent}>
         {STAT_CARDS.map(c => (
@@ -382,12 +395,20 @@ export default function MaintenanceManagementScreen() {
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.gray[50] },
+  header: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    paddingHorizontal: 16, paddingTop: 12, paddingBottom: 16,
+    backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.gray[100],
+  },
+  backBtn: { width: 40, height: 40, borderRadius: 12, backgroundColor: Colors.gray[50], justifyContent: 'center', alignItems: 'center' },
+  headerTitle: { fontSize: 18, fontWeight: '700', color: Colors.gray[900] },
+  headerSub: { fontSize: 12, color: Colors.gray[500], marginTop: 1 },
   // Stats
   statsScroll: { backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.gray[100], maxHeight: 90 },
   statsContent: { paddingHorizontal: 16, paddingVertical: 10, gap: 10, alignItems: 'center' },

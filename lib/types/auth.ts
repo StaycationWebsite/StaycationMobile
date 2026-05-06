@@ -3,7 +3,7 @@
 // Use this file everywhere in the project
 // ============================================================
 
-export type UserRole = 'admin' | 'csr' | 'manager';
+export type UserRole = 'admin' | 'csr' | 'manager' | 'guest';
 
 export interface User {
   id: string;

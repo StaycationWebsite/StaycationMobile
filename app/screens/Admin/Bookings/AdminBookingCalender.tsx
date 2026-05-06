@@ -1,12 +1,12 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
   ScrollView, Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
-import { Colors } from '../../../../constants/Styles';
 import { useNavigation } from '@react-navigation/native';
+import { useTheme } from '@/lib/hooks/useTheme';
 
 const WEEK_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTH_NAMES = [
@@ -52,7 +52,7 @@ const PROPERTIES = [
 ];
 
 const STATUS_FILTERS = [
-  { key: 'All', color: Colors.brand.primary, bg: Colors.brand.primarySoft },
+  { key: 'All', color: '#B8860B', bg: '#DAA520' },
   { key: 'Pending', color: '#D97706', bg: '#FFFBEB' },
   { key: 'Approved', color: '#22C55E', bg: '#F0FDF4' },
   { key: 'Checked-in', color: '#3B82F6', bg: '#EFF6FF' },
@@ -78,6 +78,7 @@ function getWeeksForMonth(year: number, month: number): (number | null)[][] {
 
 export default function AdminBookingCalender() {
   const navigation = useNavigation<any>();
+  const { theme } = useTheme();
   const today = new Date();
   const [currentDate, setCurrentDate] = React.useState(new Date(today.getFullYear(), today.getMonth(), 1));
   const [propertyOpen, setPropertyOpen] = React.useState(false);
@@ -161,6 +162,168 @@ export default function AdminBookingCalender() {
     currentDate.getMonth() === today.getMonth() &&
     currentDate.getFullYear() === today.getFullYear();
 
+  const styles = useMemo(() => StyleSheet.create({
+    safeArea: { flex: 1, backgroundColor: theme.colors.surface },
+    screen: { flex: 1, backgroundColor: theme.colors.background },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      paddingTop: 8,
+      paddingBottom: 16,
+      backgroundColor: theme.colors.surface,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.border,
+    },
+    headerTitle: {
+      fontSize: 22,
+      fontWeight: '700',
+      color: theme.colors.text,
+    },
+    headerSubtitle: {
+      fontSize: 13,
+      color: theme.colors.textSecondary,
+      marginTop: 2,
+    },
+    profileButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 12,
+      backgroundColor: theme.colors.surfaceSecondary,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    content: { padding: 16, paddingBottom: 60 },
+    propertyCard: {
+      backgroundColor: theme.colors.surface, borderRadius: 18, padding: 16,
+      borderWidth: 1, borderColor: theme.colors.border,
+      shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 10, elevation: 2,
+      marginBottom: 16,
+    },
+    propertyLabel: { fontSize: 11, color: theme.colors.textTertiary, marginBottom: 8, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
+    propertyRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    propertyValue: { flex: 1, fontSize: 14, fontWeight: '600', color: theme.colors.text },
+    propertyDropdown: { overflow: 'hidden', marginTop: 10, borderRadius: 12, borderWidth: 1, borderColor: theme.colors.borderLight },
+    propertyOption: { paddingVertical: 12, paddingHorizontal: 14, borderBottomWidth: 1, borderBottomColor: theme.colors.surfaceSecondary },
+    propertyOptionActive: { backgroundColor: theme.colors.primaryLight },
+    propertyOptionText: { fontSize: 13, color: theme.colors.text, fontWeight: '600' },
+    controlsRow: { gap: 12, marginBottom: 16 },
+    monthNavRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+    monthNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16, flex: 1 },
+    monthButton: { width: 34, height: 34, borderRadius: 10, backgroundColor: theme.colors.surfaceSecondary, alignItems: 'center', justifyContent: 'center' },
+    monthText: { fontSize: 16, fontWeight: '700', color: theme.colors.text, minWidth: 180, textAlign: 'center' },
+    infoWrapper: { position: 'relative', marginLeft: 8 },
+    infoButton: {
+      width: 34, height: 34, borderRadius: 10, backgroundColor: theme.colors.surfaceSecondary,
+      alignItems: 'center', justifyContent: 'center',
+    },
+    legendPopover: {
+      position: 'absolute', top: 42, right: 0,
+      backgroundColor: theme.colors.surface, borderRadius: 16, padding: 14,
+      minWidth: 170, zIndex: 100,
+      shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.12, shadowRadius: 20, elevation: 16,
+      borderWidth: 1, borderColor: theme.colors.border,
+      transformOrigin: 'top right',
+    },
+    popoverCaret: {
+      position: 'absolute', top: -7, right: 10,
+      width: 14, height: 14, backgroundColor: theme.colors.surface,
+      borderTopWidth: 1, borderLeftWidth: 1, borderColor: theme.colors.border,
+      transform: [{ rotate: '45deg' }],
+    },
+    legendPopoverTitle: {
+      fontSize: 11, fontWeight: '700', color: theme.colors.textTertiary,
+      textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10,
+    },
+    legendPopoverItem: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 4 },
+    legendPopoverDot: { width: 10, height: 10, borderRadius: 5 },
+    legendPopoverText: { fontSize: 13, fontWeight: '600', color: theme.colors.text },
+    segmented: { flexDirection: 'row', backgroundColor: theme.colors.surfaceSecondary, borderRadius: 14, padding: 4 },
+    segment: { flex: 1, paddingVertical: 9, alignItems: 'center', borderRadius: 10 },
+    segmentText: { fontSize: 12, color: theme.colors.textTertiary, fontWeight: '600' },
+    segmentActive: { flex: 1, paddingVertical: 9, alignItems: 'center', borderRadius: 10, backgroundColor: theme.colors.primary },
+    segmentActiveText: { fontSize: 12, color: theme.colors.surface, fontWeight: '700' },
+    calendarCard: { backgroundColor: theme.colors.surface, borderRadius: 20, padding: 12, borderWidth: 1, borderColor: theme.colors.border },
+    weekHeader: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 2, marginBottom: 4 },
+    weekHeaderText: { flex: 1, textAlign: 'center', fontSize: 11, color: theme.colors.textTertiary, fontWeight: '600' },
+    weekRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4, paddingHorizontal: 2, position: 'relative', minHeight: 44 },
+    dayCell: { flex: 1, height: 36, alignItems: 'center', justifyContent: 'center' },
+    dayPill: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
+    dayText: { fontSize: 12, color: theme.colors.text, fontWeight: '500' },
+    todayPill: { backgroundColor: theme.colors.primary },
+    todayText: { color: theme.colors.surface, fontWeight: '700' },
+    bookingBar: {
+      position: 'absolute', top: 8, height: 20, borderRadius: 10,
+      justifyContent: 'center', paddingLeft: 8, zIndex: 1,
+    },
+    bookingLabel: { fontSize: 9, color: theme.colors.surface, fontWeight: '700' },
+    reservationSection: { marginTop: 20 },
+    reservationHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
+    reservationTitle: { fontSize: 16, fontWeight: '800', color: theme.colors.text },
+    reservationBadge: {
+      backgroundColor: theme.colors.primary, borderRadius: 20, minWidth: 22,
+      height: 22, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6,
+    },
+    reservationBadgeText: { fontSize: 11, fontWeight: '700', color: theme.colors.surface },
+    filterScroll: { marginBottom: 16 },
+    filterRow: { flexDirection: 'row', gap: 8, paddingRight: 4 },
+    filterPill: {
+      flexDirection: 'row', alignItems: 'center', gap: 5,
+      paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20,
+      borderWidth: 1.5,
+    },
+    filterDot: { width: 7, height: 7, borderRadius: 4 },
+    filterPillText: { fontSize: 12, fontWeight: '700' },
+    filterCount: {
+      minWidth: 18, height: 18, borderRadius: 9,
+      alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5,
+    },
+    filterCountText: { fontSize: 10, fontWeight: '800' },
+    emptyState: {
+      alignItems: 'center', justifyContent: 'center',
+      paddingVertical: 40, gap: 10,
+    },
+    emptyStateText: { fontSize: 14, color: theme.colors.textTertiary, fontWeight: '600' },
+    reservationCard: {
+      backgroundColor: theme.colors.surface, borderRadius: 18, marginBottom: 14,
+      borderWidth: 1, borderColor: theme.colors.border, flexDirection: 'row', overflow: 'hidden',
+      shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 3,
+    },
+    reservationAccent: { width: 5, borderTopLeftRadius: 18, borderBottomLeftRadius: 18 },
+    reservationCardInner: { flex: 1, padding: 14 },
+    reservationCardTop: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
+    guestAvatarWrap: {
+      width: 40, height: 40, borderRadius: 20,
+      backgroundColor: theme.colors.primaryLight, alignItems: 'center', justifyContent: 'center',
+    },
+    guestAvatarText: { fontSize: 13, fontWeight: '800', color: theme.colors.primary },
+    guestName: { fontSize: 14, fontWeight: '700', color: theme.colors.text },
+    bookingId: { fontSize: 11, color: theme.colors.textTertiary, fontWeight: '600', marginTop: 1 },
+    statusBadge: {
+      flexDirection: 'row', alignItems: 'center', gap: 5,
+      paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20,
+    },
+    statusDot: { width: 7, height: 7, borderRadius: 4 },
+    statusText: { fontSize: 11, fontWeight: '700' },
+    reservationDivider: { height: 1, backgroundColor: theme.colors.surfaceSecondary, marginBottom: 12 },
+    dateRangeRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+    dateBlock: { flex: 1 },
+    dateBlockLabel: { fontSize: 9, fontWeight: '700', color: theme.colors.textTertiary, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 3 },
+    dateBlockValue: { fontSize: 13, fontWeight: '700', color: theme.colors.text },
+    dateArrowWrap: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8 },
+    dateArrowLine: { width: 20, height: 1.5, marginRight: 2 },
+    reservationMeta: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
+    metaChip: {
+      flexDirection: 'row', alignItems: 'center', gap: 5,
+      backgroundColor: theme.colors.surfaceSecondary, borderRadius: 20,
+      paddingHorizontal: 10, paddingVertical: 5,
+    },
+    metaChipText: { fontSize: 11, fontWeight: '600', color: theme.colors.textSecondary },
+    metaChipAmount: { backgroundColor: theme.colors.primaryLight, marginLeft: 'auto' },
+    metaChipAmountText: { fontSize: 12, fontWeight: '800', color: theme.colors.primary },
+  }), [theme.colors]);
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <View style={styles.screen}>
@@ -174,7 +337,7 @@ export default function AdminBookingCalender() {
             style={styles.profileButton}
             onPress={() => navigation.navigate('Profile')}
           >
-            <Feather name="user" size={20} color={Colors.gray[700]} />
+            <Feather name="user" size={20} color={theme.colors.textTertiary} />
           </TouchableOpacity>
         </View>
 
@@ -183,9 +346,9 @@ export default function AdminBookingCalender() {
           <View style={styles.propertyCard}>
             <Text style={styles.propertyLabel}>Selected Property</Text>
             <TouchableOpacity style={styles.propertyRow} onPress={toggleProperty}>
-              <MaterialCommunityIcons name="office-building" size={18} color={Colors.brand.primary} />
+              <MaterialCommunityIcons name="office-building" size={18} color={theme.colors.primary} />
               <Text style={styles.propertyValue} numberOfLines={1}>{selectedProperty}</Text>
-              <Feather name={propertyOpen ? 'chevron-up' : 'chevron-down'} size={18} color={Colors.gray[500]} />
+              <Feather name={propertyOpen ? 'chevron-up' : 'chevron-down'} size={18} color={theme.colors.textSecondary} />
             </TouchableOpacity>
             <Animated.View style={[styles.propertyDropdown, { height: propertyHeight, opacity: propertyAnim }]}>
               {PROPERTIES.map(item => (
@@ -194,7 +357,7 @@ export default function AdminBookingCalender() {
                   style={[styles.propertyOption, item === selectedProperty && styles.propertyOptionActive]}
                   onPress={() => { setSelectedProperty(item); toggleProperty(); }}
                 >
-                  <Text style={[styles.propertyOptionText, item === selectedProperty && { color: Colors.brand.primary }]}>
+                  <Text style={[styles.propertyOptionText, item === selectedProperty && { color: theme.colors.primary }]}>
                     {item}
                   </Text>
                 </TouchableOpacity>
@@ -207,20 +370,20 @@ export default function AdminBookingCalender() {
             <View style={styles.monthNavRow}>
               <View style={styles.monthNav}>
                 <TouchableOpacity style={styles.monthButton} onPress={() => changeMonth(-1)}>
-                  <Feather name="chevron-left" size={18} color={Colors.gray[700]} />
+                  <Feather name="chevron-left" size={18} color={theme.colors.textTertiary} />
                 </TouchableOpacity>
                 <Text style={styles.monthText}>
                   {MONTH_NAMES[currentDate.getMonth()]} {currentDate.getFullYear()}
                 </Text>
                 <TouchableOpacity style={styles.monthButton} onPress={() => changeMonth(1)}>
-                  <Feather name="chevron-right" size={18} color={Colors.gray[700]} />
+                  <Feather name="chevron-right" size={18} color={theme.colors.textTertiary} />
                 </TouchableOpacity>
               </View>
 
               {/* Info icon + popover */}
               <View style={styles.infoWrapper}>
                 <TouchableOpacity style={styles.infoButton} onPress={toggleLegend} activeOpacity={0.7}>
-                  <Feather name="info" size={17} color={legendVisible ? Colors.brand.primary : Colors.gray[400]} />
+                  <Feather name="info" size={17} color={legendVisible ? theme.colors.primary : theme.colors.textTertiary} />
                 </TouchableOpacity>
 
                 {legendVisible && (
@@ -247,7 +410,6 @@ export default function AdminBookingCalender() {
                         <Text style={styles.legendPopoverText}>{label}</Text>
                       </View>
                     ))}
-                    {/* Caret pointing up-right */}
                     <View style={styles.popoverCaret} />
                   </Animated.View>
                 )}
@@ -267,7 +429,6 @@ export default function AdminBookingCalender() {
             opacity: fadeAnim,
             transform: [{ translateY: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) }],
           }]}>
-            {/* Day headers */}
             <View style={styles.weekHeader}>
               {WEEK_DAYS.map(d => (
                 <Text key={d} style={styles.weekHeaderText}>{d}</Text>
@@ -280,7 +441,6 @@ export default function AdminBookingCalender() {
 
               return (
                 <View key={rowIdx} style={styles.weekRow}>
-                  {/* Booking bars (rendered behind day cells) */}
                   {MOCK_BOOKINGS.map((booking, bIdx) => {
                     if (!firstDayInWeek || !lastDayInWeek) return null;
                     if (booking.end < firstDayInWeek || booking.start > lastDayInWeek) return null;
@@ -296,7 +456,7 @@ export default function AdminBookingCalender() {
                         key={bIdx}
                         style={[
                           styles.bookingBar,
-                          { left: `${leftPct}%` as any, width: `${widthPct}%` as any, backgroundColor: booking.color },
+                          { left: `${leftPct}%`, width: `${widthPct}%`, backgroundColor: booking.color },
                         ]}
                       >
                         {booking.title ? <Text style={styles.bookingLabel} numberOfLines={1}>{booking.title}</Text> : null}
@@ -304,7 +464,6 @@ export default function AdminBookingCalender() {
                     );
                   })}
 
-                  {/* Day cells */}
                   {week.map((day, colIdx) => (
                     <View key={colIdx} style={styles.dayCell}>
                       {day !== null && (
@@ -319,9 +478,7 @@ export default function AdminBookingCalender() {
             })}
           </Animated.View>
 
-          {/* Reservation Details */}
           <View style={styles.reservationSection}>
-            {/* Header row */}
             <View style={styles.reservationHeader}>
               <Text style={styles.reservationTitle}>Reservations</Text>
               <View style={styles.reservationBadge}>
@@ -329,7 +486,6 @@ export default function AdminBookingCalender() {
               </View>
             </View>
 
-            {/* Status filter pills */}
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -348,7 +504,7 @@ export default function AdminBookingCalender() {
                       styles.filterPill,
                       isActive
                         ? { backgroundColor: filter.color, borderColor: filter.color }
-                        : { backgroundColor: Colors.white, borderColor: Colors.gray[200] },
+                        : { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
                     ]}
                   >
                     {!isActive && (
@@ -356,7 +512,7 @@ export default function AdminBookingCalender() {
                     )}
                     <Text style={[
                       styles.filterPillText,
-                      { color: isActive ? Colors.white : Colors.gray[600] },
+                      { color: isActive ? theme.colors.surface : theme.colors.textSecondary },
                     ]}>
                       {filter.key}
                     </Text>
@@ -367,7 +523,7 @@ export default function AdminBookingCalender() {
                       ]}>
                         <Text style={[
                           styles.filterCountText,
-                          { color: isActive ? Colors.white : filter.color },
+                          { color: isActive ? theme.colors.surface : filter.color },
                         ]}>
                           {count}
                         </Text>
@@ -378,15 +534,13 @@ export default function AdminBookingCalender() {
               })}
             </ScrollView>
 
-            {/* Empty state */}
             {filteredBookings.length === 0 && (
               <View style={styles.emptyState}>
-                <Feather name="calendar" size={32} color={Colors.gray[300]} />
+                <Feather name="calendar" size={32} color={theme.colors.textTertiary} />
                 <Text style={styles.emptyStateText}>No {activeFilter} reservations</Text>
               </View>
             )}
 
-            {/* Reservation cards */}
             {filteredBookings.map((booking, idx) => (
               <Animated.View
                 key={booking.id}
@@ -402,11 +556,8 @@ export default function AdminBookingCalender() {
                   },
                 ]}
               >
-                {/* Color accent bar */}
                 <View style={[styles.reservationAccent, { backgroundColor: booking.color }]} />
-
                 <View style={styles.reservationCardInner}>
-                  {/* Top row: guest + status */}
                   <View style={styles.reservationCardTop}>
                     <View style={styles.guestAvatarWrap}>
                       <Text style={styles.guestAvatarText}>
@@ -423,10 +574,8 @@ export default function AdminBookingCalender() {
                     </View>
                   </View>
 
-                  {/* Divider */}
                   <View style={styles.reservationDivider} />
 
-                  {/* Date range */}
                   <View style={styles.dateRangeRow}>
                     <View style={styles.dateBlock}>
                       <Text style={styles.dateBlockLabel}>CHECK-IN</Text>
@@ -442,14 +591,13 @@ export default function AdminBookingCalender() {
                     </View>
                   </View>
 
-                  {/* Bottom row: nights, guests, amount */}
                   <View style={styles.reservationMeta}>
                     <View style={styles.metaChip}>
-                      <Feather name="moon" size={11} color={Colors.gray[500]} />
+                      <Feather name="moon" size={11} color={theme.colors.textTertiary} />
                       <Text style={styles.metaChipText}>{booking.nights} nights</Text>
                     </View>
                     <View style={styles.metaChip}>
-                      <Feather name="users" size={11} color={Colors.gray[500]} />
+                      <Feather name="users" size={11} color={theme.colors.textTertiary} />
                       <Text style={styles.metaChipText}>{booking.guests} guests</Text>
                     </View>
                     <View style={[styles.metaChip, styles.metaChipAmount]}>
@@ -467,164 +615,3 @@ export default function AdminBookingCalender() {
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: Colors.white },
-  screen: { flex: 1, backgroundColor: Colors.gray[50] },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 16,
-    backgroundColor: Colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.gray[100],
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: Colors.gray[900],
-  },
-  headerSubtitle: {
-    fontSize: 13,
-    color: Colors.gray[500],
-    marginTop: 2,
-  },
-  profileButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: Colors.gray[50],
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  content: { padding: 16, paddingBottom: 60 },
-  propertyCard: {
-    backgroundColor: Colors.white, borderRadius: 18, padding: 16,
-    borderWidth: 1, borderColor: Colors.gray[100],
-    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 10, elevation: 2,
-    marginBottom: 16,
-  },
-  propertyLabel: { fontSize: 11, color: Colors.gray[500], marginBottom: 8, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
-  propertyRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  propertyValue: { flex: 1, fontSize: 14, fontWeight: '600', color: Colors.gray[900] },
-  propertyDropdown: { overflow: 'hidden', marginTop: 10, borderRadius: 12, borderWidth: 1, borderColor: Colors.gray[100] },
-  propertyOption: { paddingVertical: 12, paddingHorizontal: 14, borderBottomWidth: 1, borderBottomColor: Colors.gray[50] },
-  propertyOptionActive: { backgroundColor: Colors.brand.primarySoft },
-  propertyOptionText: { fontSize: 13, color: Colors.gray[700], fontWeight: '600' },
-  controlsRow: { gap: 12, marginBottom: 16 },
-  monthNavRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
-  monthNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16, flex: 1 },
-  monthButton: { width: 34, height: 34, borderRadius: 10, backgroundColor: Colors.gray[100], alignItems: 'center', justifyContent: 'center' },
-  monthText: { fontSize: 16, fontWeight: '700', color: Colors.gray[900], minWidth: 180, textAlign: 'center' },
-  infoWrapper: { position: 'relative', marginLeft: 8 },
-  infoButton: {
-    width: 34, height: 34, borderRadius: 10, backgroundColor: Colors.gray[100],
-    alignItems: 'center', justifyContent: 'center',
-  },
-  legendPopover: {
-    position: 'absolute', top: 42, right: 0,
-    backgroundColor: Colors.white, borderRadius: 16, padding: 14,
-    minWidth: 170, zIndex: 100,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.12, shadowRadius: 20, elevation: 16,
-    borderWidth: 1, borderColor: Colors.gray[100],
-    transformOrigin: 'top right',
-  },
-  popoverCaret: {
-    position: 'absolute', top: -7, right: 10,
-    width: 14, height: 14, backgroundColor: Colors.white,
-    borderTopWidth: 1, borderLeftWidth: 1, borderColor: Colors.gray[100],
-    transform: [{ rotate: '45deg' }],
-  },
-  legendPopoverTitle: {
-    fontSize: 11, fontWeight: '700', color: Colors.gray[400],
-    textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10,
-  },
-  legendPopoverItem: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 4 },
-  legendPopoverDot: { width: 10, height: 10, borderRadius: 5 },
-  legendPopoverText: { fontSize: 13, fontWeight: '600', color: Colors.gray[700] },
-  segmented: { flexDirection: 'row', backgroundColor: Colors.gray[100], borderRadius: 14, padding: 4 },
-  segment: { flex: 1, paddingVertical: 9, alignItems: 'center', borderRadius: 10 },
-  segmentText: { fontSize: 12, color: Colors.gray[600], fontWeight: '600' },
-  segmentActive: { flex: 1, paddingVertical: 9, alignItems: 'center', borderRadius: 10, backgroundColor: Colors.brand.primary },
-  segmentActiveText: { fontSize: 12, color: Colors.white, fontWeight: '700' },
-  calendarCard: { backgroundColor: Colors.white, borderRadius: 20, padding: 12, borderWidth: 1, borderColor: Colors.gray[100] },
-  weekHeader: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 2, marginBottom: 4 },
-  weekHeaderText: { flex: 1, textAlign: 'center', fontSize: 11, color: Colors.gray[500], fontWeight: '600' },
-  weekRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4, paddingHorizontal: 2, position: 'relative', minHeight: 44 },
-  dayCell: { flex: 1, height: 36, alignItems: 'center', justifyContent: 'center' },
-  dayPill: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
-  dayText: { fontSize: 12, color: Colors.gray[900], fontWeight: '500' },
-  todayPill: { backgroundColor: Colors.brand.primary },
-  todayText: { color: Colors.white, fontWeight: '700' },
-  bookingBar: {
-    position: 'absolute', top: 8, height: 20, borderRadius: 10,
-    justifyContent: 'center', paddingLeft: 8, zIndex: 1,
-  },
-  bookingLabel: { fontSize: 9, color: Colors.white, fontWeight: '700' },
-  reservationSection: { marginTop: 20 },
-  reservationHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
-  reservationTitle: { fontSize: 16, fontWeight: '800', color: Colors.gray[900] },
-  reservationBadge: {
-    backgroundColor: Colors.brand.primary, borderRadius: 20, minWidth: 22,
-    height: 22, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6,
-  },
-  reservationBadgeText: { fontSize: 11, fontWeight: '700', color: Colors.white },
-  filterScroll: { marginBottom: 16 },
-  filterRow: { flexDirection: 'row', gap: 8, paddingRight: 4 },
-  filterPill: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20,
-    borderWidth: 1.5,
-  },
-  filterDot: { width: 7, height: 7, borderRadius: 4 },
-  filterPillText: { fontSize: 12, fontWeight: '700' },
-  filterCount: {
-    minWidth: 18, height: 18, borderRadius: 9,
-    alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5,
-  },
-  filterCountText: { fontSize: 10, fontWeight: '800' },
-  emptyState: {
-    alignItems: 'center', justifyContent: 'center',
-    paddingVertical: 40, gap: 10,
-  },
-  emptyStateText: { fontSize: 14, color: Colors.gray[400], fontWeight: '600' },
-  reservationCard: {
-    backgroundColor: Colors.white, borderRadius: 18, marginBottom: 14,
-    borderWidth: 1, borderColor: Colors.gray[100], flexDirection: 'row', overflow: 'hidden',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 12, elevation: 3,
-  },
-  reservationAccent: { width: 5, borderTopLeftRadius: 18, borderBottomLeftRadius: 18 },
-  reservationCardInner: { flex: 1, padding: 14 },
-  reservationCardTop: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
-  guestAvatarWrap: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: Colors.brand.primarySoft, alignItems: 'center', justifyContent: 'center',
-  },
-  guestAvatarText: { fontSize: 13, fontWeight: '800', color: Colors.brand.primary },
-  guestName: { fontSize: 14, fontWeight: '700', color: Colors.gray[900] },
-  bookingId: { fontSize: 11, color: Colors.gray[400], fontWeight: '600', marginTop: 1 },
-  statusBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20,
-  },
-  statusDot: { width: 7, height: 7, borderRadius: 4 },
-  statusText: { fontSize: 11, fontWeight: '700' },
-  reservationDivider: { height: 1, backgroundColor: Colors.gray[50], marginBottom: 12 },
-  dateRangeRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  dateBlock: { flex: 1 },
-  dateBlockLabel: { fontSize: 9, fontWeight: '700', color: Colors.gray[400], textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 3 },
-  dateBlockValue: { fontSize: 13, fontWeight: '700', color: Colors.gray[800] },
-  dateArrowWrap: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8 },
-  dateArrowLine: { width: 20, height: 1.5, marginRight: 2 },
-  reservationMeta: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
-  metaChip: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    backgroundColor: Colors.gray[50], borderRadius: 20,
-    paddingHorizontal: 10, paddingVertical: 5,
-  },
-  metaChipText: { fontSize: 11, fontWeight: '600', color: Colors.gray[600] },
-  metaChipAmount: { backgroundColor: Colors.brand.primarySoft, marginLeft: 'auto' as any },
-  metaChipAmountText: { fontSize: 12, fontWeight: '800', color: Colors.brand.primary },
-});

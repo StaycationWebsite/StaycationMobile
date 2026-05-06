@@ -3,7 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors } from '../constants/Styles';
+// Colors replaced with theme in screens
 
 // Screens
 import AdminDashboardScreen from '../app/screens/Admin/AdminDashboardScreen';
@@ -23,6 +23,12 @@ import AuditLogsScreen from '../app/screens/Admin/Settings/AuditLogsScreen';
 import SettingsScreen from '../app/screens/Admin/Settings/SettingsScreen';
 import BlockedDatesScreen from '../app/screens/Admin/Bookings/BlockedDatesScreen';
 import MaintenanceManagementScreen from '../app/screens/Admin/Operations/MaintenanceManagementScreen';
+import CleaningManagementScreen from '../app/screens/Admin/Operations/CleaningManagementScreen';
+import RevenueManagementScreen from '../app/screens/Admin/Operations/RevenueManagementScreen';
+import PaymentMethodsScreen from '../app/screens/Admin/Operations/PaymentMethodsScreen';
+import GuestAssistanceScreen from '../app/screens/Admin/Guest/GuestAssistanceScreen';
+import AdminBookingCalendarScreen from '../app/screens/Admin/Bookings/AdminBookingCalender';
+import AdminReservationsScreen from '../app/screens/Admin/Bookings/AdminReservationsScreen';
 
 // Tab Navigators
 import BookingsTabNavigator from './BookingsTabNavigator';
@@ -50,6 +56,13 @@ export type AdminStackParamList = {
   Settings: undefined;
   BlockedDates: undefined;
   Maintenance: undefined;
+  CleaningManagement: undefined;
+  RevenueManagement: undefined;
+  PaymentMethods: undefined;
+  GuestAssistance: undefined;
+  AnalyticsReports: undefined;
+  BookingCalendar: undefined;
+  Reservations: undefined;
 };
 
 const Tab = createBottomTabNavigator<AdminTabParamList>();
@@ -61,12 +74,13 @@ function AdminTabs() {
   return (
     <Tab.Navigator
       screenOptions={{
-        tabBarActiveTintColor: Colors.brand.primary,
-        tabBarInactiveTintColor: Colors.gray[500],
+        tabBarActiveTintColor: '#3B82F6',
+        tabBarInactiveTintColor: '#6B7280',
         tabBarStyle: {
-          backgroundColor: Colors.white,
+          backgroundColor: '#FFFFFF',
           borderTopWidth: 1,
-          borderTopColor: Colors.gray[100],
+          borderTopColor: '#F1F5F9',
+
           elevation: 10,
           shadowColor: '#000',
           shadowOffset: { width: 0, height: -2 },
@@ -152,6 +166,13 @@ export default function AdminNavigator() {
       <Stack.Screen name="Settings" component={SettingsScreen} />
       <Stack.Screen name="BlockedDates" component={BlockedDatesScreen} />
       <Stack.Screen name="Maintenance" component={MaintenanceManagementScreen} />
+      <Stack.Screen name="CleaningManagement" component={CleaningManagementScreen} />
+      <Stack.Screen name="RevenueManagement" component={RevenueManagementScreen} />
+      <Stack.Screen name="PaymentMethods" component={PaymentMethodsScreen} />
+      <Stack.Screen name="GuestAssistance" component={GuestAssistanceScreen} />
+      <Stack.Screen name="AnalyticsReports" component={ReportsManagementScreen} />
+      <Stack.Screen name="BookingCalendar" component={AdminBookingCalendarScreen} />
+      <Stack.Screen name="Reservations" component={AdminReservationsScreen} />
     </Stack.Navigator>
   );
 }

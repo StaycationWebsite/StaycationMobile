@@ -1,12 +1,19 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useMemo } from "react";
 import {
-  View, Text, StyleSheet, TouchableOpacity,
-  Modal, FlatList, Image, Dimensions, StatusBar,
-} from 'react-native';
-import { Feather } from '@expo/vector-icons';
-import { Colors } from '../../constants/Styles';
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Modal,
+  FlatList,
+  Image,
+  Dimensions,
+  StatusBar,
+} from "react-native";
+import { Feather } from "@expo/vector-icons";
+import { useTheme } from '@/lib/hooks/useTheme';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 interface ImageCarouselModalProps {
   visible: boolean;
@@ -16,15 +23,101 @@ interface ImageCarouselModalProps {
 }
 
 export default function ImageCarouselModal({
-  visible, images, initialIndex = 0, onClose,
+  visible,
+  images,
+  initialIndex = 0,
+  onClose,
 }: ImageCarouselModalProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const flatListRef = useRef<FlatList>(null);
+  const { theme } = useTheme();
 
   const handleScroll = (e: any) => {
     const idx = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH);
     setCurrentIndex(idx);
   };
+
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        container: {
+          flex: 1,
+          backgroundColor: "rgba(0,0,0,0.95)",
+          justifyContent: "center",
+        },
+        closeBtn: {
+          position: "absolute",
+          top: 52,
+          right: 20,
+          zIndex: 10,
+          width: 42,
+          height: 42,
+          borderRadius: 21,
+          backgroundColor: "rgba(255,255,255,0.15)",
+          justifyContent: "center",
+          alignItems: "center",
+        },
+        counter: {
+          position: "absolute",
+          top: 60,
+          left: 0,
+          right: 0,
+          zIndex: 10,
+          alignItems: "center",
+        },
+        counterText: {
+          color: theme.colors.surface,
+          fontSize: 14,
+          fontWeight: "600",
+        },
+        imageWrapper: {
+          width: SCREEN_WIDTH,
+          height: SCREEN_HEIGHT,
+          justifyContent: "center",
+        },
+        image: {
+          width: SCREEN_WIDTH,
+          height: SCREEN_HEIGHT * 0.75,
+        },
+        dots: {
+          position: "absolute",
+          bottom: 48,
+          left: 0,
+          right: 0,
+          flexDirection: "row",
+          justifyContent: "center",
+          gap: 6,
+        },
+        dot: {
+          width: 6,
+          height: 6,
+          borderRadius: 3,
+          backgroundColor: "rgba(255,255,255,0.4)",
+        },
+        dotActive: {
+          backgroundColor: theme.colors.surface,
+          width: 18,
+        },
+        navBtn: {
+          position: "absolute",
+          top: "50%",
+          zIndex: 10,
+          width: 44,
+          height: 44,
+          borderRadius: 22,
+          backgroundColor: "rgba(255,255,255,0.15)",
+          justifyContent: "center",
+          alignItems: "center",
+        },
+        navLeft: {
+          left: 16,
+        },
+        navRight: {
+          right: 16,
+        },
+      }),
+    [theme.colors]
+  );
 
   if (!images.length) return null;
 
@@ -34,12 +127,14 @@ export default function ImageCarouselModal({
       <View style={styles.container}>
         {/* Close */}
         <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-          <Feather name="x" size={22} color={Colors.white} />
+          <Feather name="x" size={22} color={theme.colors.surface} />
         </TouchableOpacity>
 
         {/* Counter */}
         <View style={styles.counter}>
-          <Text style={styles.counterText}>{currentIndex + 1} / {images.length}</Text>
+          <Text style={styles.counterText}>
+            {currentIndex + 1} / {images.length}
+          </Text>
         </View>
 
         {/* Images */}
@@ -51,7 +146,9 @@ export default function ImageCarouselModal({
           pagingEnabled
           showsHorizontalScrollIndicator={false}
           initialScrollIndex={initialIndex}
-          getItemLayout={(_, index) => ({ length: SCREEN_WIDTH, offset: SCREEN_WIDTH * index, index })}
+          getItemLayout={(_, index) =>
+            ({ length: SCREEN_WIDTH, offset: SCREEN_WIDTH * index, index })
+          }
           onMomentumScrollEnd={handleScroll}
           renderItem={({ item }) => (
             <View style={styles.imageWrapper}>
@@ -78,7 +175,7 @@ export default function ImageCarouselModal({
               setCurrentIndex(currentIndex - 1);
             }}
           >
-            <Feather name="chevron-left" size={24} color={Colors.white} />
+            <Feather name="chevron-left" size={24} color={theme.colors.surface} />
           </TouchableOpacity>
         )}
         {currentIndex < images.length - 1 && (
@@ -89,7 +186,7 @@ export default function ImageCarouselModal({
               setCurrentIndex(currentIndex + 1);
             }}
           >
-            <Feather name="chevron-right" size={24} color={Colors.white} />
+            <Feather name="chevron-right" size={24} color={theme.colors.surface} />
           </TouchableOpacity>
         )}
       </View>
@@ -97,30 +194,3 @@ export default function ImageCarouselModal({
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center' },
-  closeBtn: {
-    position: 'absolute', top: 52, right: 20, zIndex: 10,
-    width: 42, height: 42, borderRadius: 21, backgroundColor: 'rgba(255,255,255,0.15)',
-    justifyContent: 'center', alignItems: 'center',
-  },
-  counter: {
-    position: 'absolute', top: 60, left: 0, right: 0, zIndex: 10, alignItems: 'center',
-  },
-  counterText: { color: Colors.white, fontSize: 14, fontWeight: '600' },
-  imageWrapper: { width: SCREEN_WIDTH, height: SCREEN_HEIGHT, justifyContent: 'center' },
-  image: { width: SCREEN_WIDTH, height: SCREEN_HEIGHT * 0.75 },
-  dots: {
-    position: 'absolute', bottom: 48, left: 0, right: 0,
-    flexDirection: 'row', justifyContent: 'center', gap: 6,
-  },
-  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.4)' },
-  dotActive: { backgroundColor: Colors.white, width: 18 },
-  navBtn: {
-    position: 'absolute', top: '50%', zIndex: 10,
-    width: 44, height: 44, borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center',
-  },
-  navLeft: { left: 16 },
-  navRight: { right: 16 },
-});

@@ -1,6 +1,6 @@
 import { useSelector, useDispatch } from 'react-redux';
-import { RootState, AppDispatch } from '../app/redux/store';
-import { setCredentials, logout as logoutAction, setLoading, setError } from '../app/redux/slices/authSlice';
+import { RootState, AppDispatch } from '@/lib/redux/store';
+import { setCredentials, logout as logoutAction, setLoading, setError } from '@/lib/redux/slices/authSlice';
 import { useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
