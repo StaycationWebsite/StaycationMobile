@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { Feather, MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { useTheme } from '../../../hooks/useTheme';
+import { useTheme } from '@/lib/hooks/useTheme';
 
 type RoomDetailsRouteProp = RouteProp<{ RoomDetails: { haven: any } }, 'RoomDetails'>;
 

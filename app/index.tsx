@@ -4,14 +4,18 @@ import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
-import { store, persistor } from './redux/store';
-import { useAuth } from './hooks/useAuth';
-import { useTheme } from './hooks/useTheme';
+import { store, persistor } from '@/lib/redux/store';
+import { useAuth } from '@/lib/hooks/useAuth';
+import { useTheme } from '@/lib/hooks/useTheme';
 import AuthNavigator from '../navigation/AuthNavigator';
 import AdminNavigator from '../navigation/AdminNavigator';
 import CsrNavigator from '../navigation/CsrNavigator';
+import UserNavigator from '../navigation/UserNavigator';
 import WelcomeBackScreen from './components/WelcomeBackScreen';
+import * as WebBrowser from 'expo-web-browser';
 import '../utils/ignoreWarnings';
+
+WebBrowser.maybeCompleteAuthSession();
 
 const PRIMARY_COLOR = '#2563EB';
 const WHITE = '#FFFFFF';
@@ -33,7 +37,7 @@ function AppContent() {
       return;
     }
 
-    if (!previousAuthState.current && isAuthenticated) {
+    if (!previousAuthState.current && isAuthenticated && user?.role !== 'guest') {
       setShowWelcomeBack(true);
       const timer = setTimeout(() => {
         setShowWelcomeBack(false);
@@ -48,7 +52,7 @@ function AppContent() {
     }
 
     previousAuthState.current = isAuthenticated;
-  }, [isAuthenticated, isLoading]);
+  }, [isAuthenticated, isLoading, user?.role]);
 
   if (isLoading) {
     return (
@@ -78,6 +82,8 @@ function AppContent() {
         <WelcomeBackScreen adminName={user?.name} />
       ) : isAuthenticated && (user?.role === 'admin' || user?.role === 'manager') ? (
         <AdminNavigator />
+      ) : isAuthenticated && user?.role === 'guest' ? (
+        <UserNavigator />
       ) : isAuthenticated ? (
         <CsrNavigator />
       ) : (

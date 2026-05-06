@@ -14,7 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { useTheme } from '../../../hooks/useTheme';
+import { useTheme } from '@/lib/hooks/useTheme';
 import { API_CONFIG } from '@constants/config';
 
 interface BlockedDate {

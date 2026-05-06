@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { useTheme } from '../../../hooks/useTheme';
+import { useTheme } from '@/lib/hooks/useTheme';
 
 type BookingStatus = 'pending' | 'approved' | 'confirmed' | 'checked-in' | 'completed' | 'rejected' | 'cancelled';
 type FilterStatus = 'all' | BookingStatus;

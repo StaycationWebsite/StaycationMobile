@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, ReactElement } from 'react';
 import { Text, View, StyleSheet, TouchableOpacity, Image, ScrollView, ActivityIndicator, FlatList, ViewStyle, TextStyle, ImageStyle } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { useTheme } from '../../../hooks/useTheme';
+import { useTheme } from '@/lib/hooks/useTheme';
 
 interface HavenImage {
   id: number;

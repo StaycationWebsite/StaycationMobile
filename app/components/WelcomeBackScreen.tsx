@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useMemo } from "react";
 import { Animated, Easing, Image, StyleSheet, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
-import { useTheme } from "../hooks/useTheme";
+import { useTheme } from '@/lib/hooks/useTheme';
 
 interface WelcomeBackScreenProps {
   adminName?: string | null;

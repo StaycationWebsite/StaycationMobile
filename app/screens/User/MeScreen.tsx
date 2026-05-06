@@ -12,15 +12,17 @@ import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useAuth } from '../../hooks/useAuth';
-import { useTheme } from '../../hooks/useTheme';
-import { AppDispatch, RootState } from '../../redux/store';
-import { setThemeMode } from '../../redux/slices/themeSlice';
+import { useAuth } from '@/lib/hooks/useAuth';
+import { useTheme } from '@/lib/hooks/useTheme';
+import { AppDispatch, RootState } from '@/lib/redux/store';
+import { setThemeMode } from '@/lib/redux/slices/themeSlice';
 import type { AdminStackParamList } from '../../../navigation/AdminNavigator';
+import type { UserStackParamList } from '../../../navigation/UserNavigator';
 
 export default function MeScreen() {
   const { user, logout } = useAuth();
-  const navigation = useNavigation<NativeStackNavigationProp<AdminStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<UserStackParamList & AdminStackParamList>>();
   const dispatch = useDispatch<AppDispatch>();
   const { theme } = useTheme();
   const selectedThemeMode = useSelector((state: RootState) => state.theme.mode);
@@ -69,7 +71,14 @@ export default function MeScreen() {
     </TouchableOpacity>
   );
 
-  const roleLabel = user?.role === 'admin' ? 'Admin' : user?.role === 'manager' ? 'Manager' : 'CSR';
+  const roleLabel =
+    user?.role === 'admin'
+      ? 'Admin'
+      : user?.role === 'manager'
+        ? 'Manager'
+        : user?.role === 'guest'
+          ? 'Guest'
+          : 'CSR';
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -78,7 +87,11 @@ export default function MeScreen() {
         <View style={styles.headerTopRow}>
           <TouchableOpacity
             style={styles.backHomeButton}
-            onPress={() => navigation.navigate('AdminTabs')}
+            onPress={() =>
+              user?.role === 'guest'
+                ? navigation.navigate('BrowseHavens')
+                : navigation.navigate('AdminTabs')
+            }
             activeOpacity={0.8}
           >
             <Feather name="chevron-left" size={18} color={theme.colors.text} />
@@ -112,14 +125,16 @@ export default function MeScreen() {
         <StatItem icon="star-outline" label="Avg Rating" value="4.8" />
       </View>
 
-      {/* Management Menu */}
-      <View style={styles.menuContainer}>
-        <Text style={styles.menuSectionTitle}>Management</Text>
-        <MenuItem icon="home" label="Manage Havens" onPress={() => {}} />
-        <MenuItem icon="calendar" label="Booking Overview" onPress={() => {}} />
-        <MenuItem icon="users" label="User Accounts" onPress={() => {}} />
-        <MenuItem icon="settings" label="System Settings" onPress={() => {}} isLast />
-      </View>
+      {/* Management Menu — staff only */}
+      {user?.role !== 'guest' && (
+        <View style={styles.menuContainer}>
+          <Text style={styles.menuSectionTitle}>Management</Text>
+          <MenuItem icon="home" label="Manage Havens" onPress={() => {}} />
+          <MenuItem icon="calendar" label="Booking Overview" onPress={() => {}} />
+          <MenuItem icon="users" label="User Accounts" onPress={() => {}} />
+          <MenuItem icon="settings" label="System Settings" onPress={() => {}} isLast />
+        </View>
+      )}
 
       {/* Appearance */}
       <View style={styles.menuContainer}>

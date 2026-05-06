@@ -9,7 +9,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialCommunityIcons, Feather } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import { useTheme } from "../../hooks/useTheme";
+import { useTheme } from '@/lib/hooks/useTheme';
 
 const MENU_SECTIONS = [
   {

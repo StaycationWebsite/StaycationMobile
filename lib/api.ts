@@ -1,5 +1,5 @@
-import { ApiResponse, AuthProvider, LoginCredentials, AuthResponse } from '../types/auth';
-import { API_CONFIG } from '../../constants/config';
+import { ApiResponse, AuthProvider, LoginCredentials, AuthResponse } from './types/auth';
+import { API_CONFIG } from '../constants/config';
 
 export class ApiService {
   private static async parseJsonSafely(response: Response): Promise<any | null> {
@@ -39,6 +39,98 @@ export class ApiService {
       return typeof token === 'string' && token.trim().length > 0 ? token : null;
     } catch {
       return null;
+    }
+  }
+
+  /**
+   * Public JSON register — POST /api/auth/register
+   * Body: { email, password, name }
+   */
+  static async registerEmailPassword(params: {
+    email: string;
+    password: string;
+    name: string;
+  }): Promise<AuthResponse> {
+    try {
+      const response = await fetch(API_CONFIG.AUTH_REGISTER_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({
+          email: params.email.trim(),
+          password: params.password,
+          name: params.name.trim(),
+        }),
+      });
+      const data = await this.parseJsonSafely(response);
+      if (!response.ok) {
+        return {
+          success: false,
+          error: (data && (data.error || data.message)) || `Registration failed (${response.status})`,
+        };
+      }
+      return data as AuthResponse;
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Registration failed',
+      };
+    }
+  }
+
+  /**
+   * Public JSON login — POST /api/auth/login (adjust AUTH_LOGIN_URL if your route differs).
+   */
+  static async loginEmailPassword(credentials: LoginCredentials): Promise<AuthResponse> {
+    try {
+      const response = await fetch(API_CONFIG.AUTH_LOGIN_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({
+          email: credentials.email.trim(),
+          password: credentials.password,
+        }),
+      });
+      const data = await this.parseJsonSafely(response);
+      if (!response.ok) {
+        return {
+          success: false,
+          error: (data && (data.error || data.message)) || `Login failed (${response.status})`,
+        };
+      }
+      return data as AuthResponse;
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Login failed',
+      };
+    }
+  }
+
+  /** POST /api/auth/delete-account — requires Bearer token per API docs. */
+  static async deleteAccount(bearerToken: string): Promise<ApiResponse<void>> {
+    try {
+      const response = await fetch(API_CONFIG.AUTH_DELETE_ACCOUNT_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          Authorization: `Bearer ${bearerToken}`,
+        },
+        body: JSON.stringify({}),
+      });
+      const data = await this.parseJsonSafely(response);
+      if (!response.ok) {
+        return {
+          success: false,
+          error: (data && (data.error || data.message)) || `Delete account failed (${response.status})`,
+        };
+      }
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Delete account failed',
+      };
     }
   }
 
@@ -147,6 +239,32 @@ export class ApiService {
     }
   }
 
+  /**
+   * Website API: POST body `{ token: Google ID token }` to `/api/google-login`.
+   */
+  static async loginWithGoogleIdToken(idToken: string): Promise<AuthResponse> {
+    try {
+      const response = await fetch(`${API_CONFIG.GOOGLE_LOGIN_URL}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ token: idToken }),
+      });
+      const data = await this.parseJsonSafely(response);
+      if (!response.ok) {
+        return {
+          success: false,
+          error: (data && (data.error || data.message)) || `Google login failed (${response.status})`,
+        };
+      }
+      return data as AuthResponse;
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Google login failed',
+      };
+    }
+  }
+
   static async handleOAuthCallback(
     code: string,
     provider: string,
@@ -199,5 +317,3 @@ export class ApiService {
     }
   }
 }
-
-export default ApiService;

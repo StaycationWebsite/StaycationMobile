@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { View, ActivityIndicator, StyleSheet } from "react-native";
-import { useTheme } from "../../hooks/useTheme";
+import { useTheme } from '@/lib/hooks/useTheme';
 
 interface LoadingSpinnerProps {
   fullScreen?: boolean;

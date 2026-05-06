@@ -14,8 +14,8 @@ import {
 } from "react-native";
 
 import { Feather } from "@expo/vector-icons";
-import { useAuth } from "../hooks/useAuth";
-import { useTheme } from "../hooks/useTheme";
+import { useAuth } from '@/lib/hooks/useAuth';
+import { useTheme } from '@/lib/hooks/useTheme';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");

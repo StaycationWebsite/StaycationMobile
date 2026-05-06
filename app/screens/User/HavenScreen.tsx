@@ -6,7 +6,8 @@ import { useNavigation } from '@react-navigation/native';
 import SearchModal from '../../components/SearchModal';
 import ImageCarouselModal from '../../components/ImageCarouselModal';
 import { API_CONFIG } from '../../../constants/config';
-import { useRoomDiscounts } from '../../hooks/useRoomDiscounts';
+import { useRoomDiscounts } from '@/lib/hooks/useRoomDiscounts';
+import { useAuth } from '@/lib/hooks/useAuth';
 
 interface HavenImage {
   id: number;
@@ -133,6 +134,8 @@ const RoomCard = ({
 
 // ── Main Screen ────────────────────────────────────────────────────
 export default function HavenScreen() {
+  const navigation = useNavigation<any>();
+  const { user } = useAuth();
   const [modalVisible, setModalVisible] = useState(false);
   const [havens, setHavens] = useState<Haven[]>([]);
   const [loading, setLoading] = useState(true);
@@ -205,10 +208,21 @@ export default function HavenScreen() {
           <Image source={require('../../../assets/haven_logo.png')} style={styles.logo} />
           <Text style={styles.appName}>Staycation Haven</Text>
         </View>
-        <TouchableOpacity style={styles.findRoomsButton} onPress={() => setModalVisible(true)}>
-          <Feather name="search" size={16} color={Colors.white} />
-          <Text style={styles.findRoomsButtonText}>Find Rooms</Text>
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          {user?.role === 'guest' && (
+            <TouchableOpacity
+              style={styles.accountBtn}
+              onPress={() => navigation.navigate('GuestMe')}
+              accessibilityLabel="Account"
+            >
+              <Feather name="user" size={20} color={Colors.brand.primary} />
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity style={styles.findRoomsButton} onPress={() => setModalVisible(true)}>
+            <Feather name="search" size={16} color={Colors.white} />
+            <Text style={styles.findRoomsButtonText}>Find Rooms</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Filter & Sort */}
@@ -295,6 +309,17 @@ const styles = StyleSheet.create({
   logoSection: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   logo: { width: 36, height: 36, borderRadius: 8 },
   appName: { fontSize: 18, fontWeight: '700', color: Colors.brand.primary },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  accountBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: Colors.brand.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.white,
+  },
   findRoomsButton: {
     flexDirection: 'row',
     alignItems: 'center',

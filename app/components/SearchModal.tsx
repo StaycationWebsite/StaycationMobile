@@ -9,7 +9,7 @@ import {
   TouchableWithoutFeedback,
 } from "react-native";
 import { Feather, Ionicons } from "@expo/vector-icons";
-import { useTheme } from "../hooks/useTheme";
+import { useTheme } from '@/lib/hooks/useTheme';
 
 interface SearchModalProps {
   visible: boolean;
