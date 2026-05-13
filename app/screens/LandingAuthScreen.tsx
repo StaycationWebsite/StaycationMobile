@@ -13,7 +13,7 @@ import {
   useWindowDimensions,
   Linking,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { Colors } from '../../constants/Styles';
 import { getGoogleClientConfig, getFacebookAppId } from '../../constants/oauth';
@@ -29,13 +29,14 @@ type AuthTab = 'login' | 'register';
 
 const FOOTER_TAGLINE =
   'Your perfect city escape awaits. Experience comfort, luxury, and exceptional service at our premium havens.';
+const FOOTER_TAGLINE_SHORT = 'Premium city escapes in Metro Manila.';
 const FOOTER_ADDRESS = 'Staycation Haven PH, Quezon City, Metro Manila Philippines.';
 const FOOTER_PHONE = '+63 912 345 6789';
 const FOOTER_EMAIL = 'info@staycationhaven.ph';
 
-function DividerLabel({ label }: { label: string }) {
+function DividerLabel({ label, marginVertical = 14 }: { label: string; marginVertical?: number }) {
   return (
-    <View style={dividerStyles.row}>
+    <View style={[dividerStyles.row, { marginVertical }]}>
       <View style={dividerStyles.line} />
       <Text style={dividerStyles.label}>{label}</Text>
       <View style={dividerStyles.line} />
@@ -47,7 +48,6 @@ const dividerStyles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 14,
     gap: 12,
   },
   line: {
@@ -66,7 +66,7 @@ export default function LandingAuthScreen() {
   const { login, register, continueAsGuest, isLoading, error, clearError } = useAuth();
   const [phase, setPhase] = useState<Phase>('welcome');
   const [authTab, setAuthTab] = useState<AuthTab>('login');
-  const { height: winH } = useWindowDimensions();
+  const { height: winH, width: winW } = useWindowDimensions();
   const insets = useSafeAreaInsets();
 
   const [email, setEmail] = useState('');
@@ -91,50 +91,45 @@ export default function LandingAuthScreen() {
   const onPressPhone = () => openExternal(`tel:${FOOTER_PHONE.replace(/\s+/g, '')}`, 'phone');
   const onPressEmail = () => openExternal(`mailto:${FOOTER_EMAIL}`, 'email');
   const isCompact = winH < 740;
-  const headerLogoSize = isCompact ? 28 : 32;
-  const cardLogoSize = isCompact ? 26 : 30;
-  const cardPadding = isCompact ? 16 : 20;
-  const cardSideMargin = isCompact ? 18 : 22;
-  const headerPanelHeight = isCompact ? 58 : 64;
-  const bodyFont = isCompact ? 13 : 14;
-  const smallFont = isCompact ? 11 : 12;
+  const isTight = winH < 720;
+  const isMicro = winH < 660;
+  const isNano = winH < 620;
+  const footerStacked = isMicro || winW < 380;
+  const dividerGap = isMicro ? 6 : isTight ? 9 : 14;
+  const isTablet = winW >= 768;
+  const headerLogoSize = isMicro ? 26 : isCompact ? 28 : 32;
+  const cardLogoSize = isMicro ? 22 : isCompact ? 26 : 30;
+  const cardPadding = isMicro ? 12 : isCompact ? 16 : 20;
+  const bodyFont = isMicro ? 12 : isCompact ? 13 : 14;
+  const smallFont = isMicro ? 10 : isCompact ? 11 : 12;
   const styles = useMemo(
     () =>
       StyleSheet.create({
-        safe: { flex: 1, backgroundColor: Colors.white },
-        page: { flex: 1, position: 'relative' },
-        // Background panel behind the form area. It intentionally overlaps:
-        // - upward behind the header panel
-        // - downward behind the top of the footer area
-        formBackdrop: {
-          position: 'absolute',
-          left: 0,
-          right: 0,
-          // Cover full background behind header + form.
-          top: 0,
-          bottom: 0,
-          backgroundColor: Colors.white,
-          borderRadius: 0,
-          borderWidth: 1,
-          borderColor: Colors.gray[200],
-          ...Platform.select({
-            ios: {
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 6 },
-              shadowOpacity: 0.08,
-              shadowRadius: 18,
-            },
-            android: { elevation: 3 },
-          }),
+        safe: { flex: 1, width: '100%', backgroundColor: Colors.white },
+        page: { flex: 1, width: '100%', flexDirection: 'column', backgroundColor: Colors.white },
+        kav: { flex: 1, minHeight: 0 },
+        middleFill: {
+          flex: 1,
+          minHeight: 0,
+          width: '100%',
+          paddingHorizontal: isTablet ? 28 : isMicro ? 14 : 20,
+          paddingVertical: isMicro ? 12 : 22,
+          justifyContent: 'center',
+          alignItems: 'center',
         },
-        headerPanel: {
+        headerBar: {
           backgroundColor: Colors.white,
           width: '100%',
-          height: headerPanelHeight,
+          paddingTop: insets.top,
+          paddingBottom: isMicro ? 6 : 6,
+          paddingLeft: Math.max(18, insets.left),
+          paddingRight: Math.max(18, insets.right),
           justifyContent: 'center',
-          paddingHorizontal: 18,
           borderBottomWidth: 1,
           borderBottomColor: Colors.gray[200],
+          flexShrink: 0,
+          flexGrow: 0,
+          alignSelf: 'stretch',
           ...Platform.select({
             ios: {
               shadowColor: '#000',
@@ -145,23 +140,35 @@ export default function LandingAuthScreen() {
             android: { elevation: 2 },
           }),
         },
-        // This is now just a layout container.
-        // The actual “background panel behind the form” is `formBackdrop`.
         middlePanel: {
-          flex: 1,
-          minHeight: 0,
-          marginTop: 10,
-          marginHorizontal: cardSideMargin,
-          paddingVertical: isCompact ? 8 : 10,
+          marginTop: 0,
+          marginHorizontal: 0,
+          paddingVertical: 0,
+          alignItems: 'center',
+          alignSelf: 'center',
+          width: '100%',
+          maxWidth: isTablet ? 520 : undefined,
+          flexShrink: 1,
         },
         footerContainer: {
           backgroundColor: Colors.white,
-          position: 'relative',
+          width: '100%',
+          flexShrink: 0,
+          flexGrow: 0,
+          marginTop: 0,
           borderTopWidth: 1,
           borderTopColor: Colors.gray[200],
-          paddingHorizontal: 18,
-          paddingTop: isCompact ? 2 : 4,
-          paddingBottom: Math.max(insets.bottom + 14, 18),
+          paddingLeft: Math.max(isMicro ? 14 : 18, insets.left),
+          paddingRight: Math.max(isMicro ? 14 : 18, insets.right),
+          paddingTop: isMicro ? 6 : 8,
+          paddingBottom: 0,
+        },
+        footerBottomInset: {
+          width: '100%',
+          height: insets.bottom,
+          flexShrink: 0,
+          flexGrow: 0,
+          backgroundColor: Colors.white,
         },
         footerTopShadow: {
           position: 'absolute',
@@ -180,18 +187,13 @@ export default function LandingAuthScreen() {
             android: {},
           }),
         },
-        header: {
-          alignItems: 'flex-start',
-          paddingTop: 0,
-          paddingBottom: 0,
-        },
         logoRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
         logo: { width: headerLogoSize, height: headerLogoSize },
-        brandName: { fontSize: 20, fontWeight: '700', color: gold },
+        brandName: { fontSize: isMicro ? 17 : 20, fontWeight: '700', color: gold },
         card: {
-          flex: 1,
-          minHeight: 0,
           width: '100%',
+          maxWidth: isTablet ? 520 : undefined,
+          alignSelf: 'center',
           flexDirection: 'column',
           backgroundColor: Colors.white,
           borderRadius: 16,
@@ -208,23 +210,16 @@ export default function LandingAuthScreen() {
             android: { elevation: 3 },
           }),
         },
-        cardInnerScroll: {
-          flex: 1,
-          minHeight: 0,
-        },
-        cardInnerScrollContent: {
-          paddingBottom: 16,
-        },
         cardStickyFooter: {
           flexShrink: 0,
-          paddingTop: 8,
+          paddingTop: isMicro ? 4 : 8,
         },
         termsSeparator: {
           alignSelf: 'stretch',
           height: Platform.OS === 'android' ? 1 : StyleSheet.hairlineWidth,
           backgroundColor: Colors.gray[200],
-          marginTop: 12,
-          marginBottom: 12,
+          marginTop: isMicro ? 6 : isTight ? 8 : 12,
+          marginBottom: isMicro ? 6 : isTight ? 8 : 12,
           ...Platform.select({
             ios: {
               shadowColor: '#000',
@@ -240,22 +235,26 @@ export default function LandingAuthScreen() {
           alignItems: 'center',
           justifyContent: 'center',
           gap: 4,
-          marginBottom: isCompact ? 12 : 14,
+          marginBottom: isMicro ? 6 : isTight ? 8 : isCompact ? 12 : 14,
         },
         cardLogo: { width: cardLogoSize, height: cardLogoSize },
-        cardBrandName: { fontSize: isCompact ? 15 : 16, fontWeight: '700', color: gold },
+        cardBrandName: {
+          fontSize: isMicro ? 14 : isCompact ? 15 : 16,
+          fontWeight: '700',
+          color: gold,
+        },
         title: {
-          fontSize: isCompact ? 20 : 21,
+          fontSize: isMicro ? 17 : isCompact ? 20 : 21,
           fontWeight: '700',
           color: Colors.gray[900],
-          marginBottom: 6,
+          marginBottom: isMicro ? 4 : 6,
           textAlign: 'center',
         },
         subtitle: {
-          fontSize: isCompact ? 12 : 13,
+          fontSize: isMicro ? 11 : isCompact ? 12 : 13,
           color: Colors.gray[600],
-          marginBottom: 8,
-          lineHeight: 18,
+          marginBottom: isMicro ? 4 : 8,
+          lineHeight: isMicro ? 15 : 18,
           textAlign: 'center',
         },
         socialBtn: {
@@ -265,9 +264,9 @@ export default function LandingAuthScreen() {
           borderWidth: 1,
           borderColor: Colors.gray[200],
           borderRadius: 12,
-          paddingVertical: isCompact ? 12 : 14,
+          paddingVertical: isMicro ? 8 : isTight ? 10 : isCompact ? 12 : 14,
           paddingHorizontal: 14,
-          marginBottom: 12,
+          marginBottom: isMicro ? 6 : isTight ? 8 : 12,
           backgroundColor: Colors.white,
         },
         socialIconSlot: {
@@ -285,24 +284,29 @@ export default function LandingAuthScreen() {
         guestBtn: {
           backgroundColor: gold,
           borderRadius: 12,
-          paddingVertical: isCompact ? 13 : 16,
+          paddingVertical: isMicro ? 10 : isCompact ? 13 : 16,
           paddingHorizontal: 20,
           alignItems: 'center',
           justifyContent: 'center',
           flexDirection: 'row',
           gap: 10,
-          marginTop: 4,
-          marginBottom: 8,
+          marginTop: isMicro ? 2 : 4,
+          marginBottom: isMicro ? 4 : 8,
         },
-        guestBtnText: { color: Colors.white, fontSize: 16, fontWeight: '700' },
-        guestHint: { fontSize: smallFont, color: Colors.gray[500], textAlign: 'center', marginBottom: 8 },
-        terms: {
-          fontSize: isCompact ? 10 : 11,
+        guestBtnText: { color: Colors.white, fontSize: isMicro ? 14 : 16, fontWeight: '700' },
+        guestHint: {
+          fontSize: smallFont,
           color: Colors.gray[500],
           textAlign: 'center',
-          lineHeight: 16,
+          marginBottom: isMicro ? 4 : 8,
+        },
+        terms: {
+          fontSize: isMicro ? 9 : isCompact ? 10 : 11,
+          color: Colors.gray[500],
+          textAlign: 'center',
+          lineHeight: isMicro ? 13 : 16,
           marginTop: 0,
-          paddingHorizontal: 8,
+          paddingHorizontal: isMicro ? 4 : 8,
         },
         termsLink: { color: gold, fontWeight: '600' },
         tabRow: {
@@ -310,21 +314,26 @@ export default function LandingAuthScreen() {
           backgroundColor: Colors.gray[100],
           borderRadius: 12,
           padding: 3,
-          marginBottom: 16,
+          marginBottom: isMicro ? 10 : isTight ? 12 : 16,
         },
-        tab: { flex: 1, paddingVertical: isCompact ? 9 : 10, alignItems: 'center', borderRadius: 10 },
+        tab: {
+          flex: 1,
+          paddingVertical: isMicro ? 7 : isCompact ? 9 : 10,
+          alignItems: 'center',
+          borderRadius: 10,
+        },
         tabActive: { backgroundColor: gold },
-        tabText: { fontSize: isCompact ? 13 : 14, fontWeight: '600', color: gold },
+        tabText: { fontSize: isMicro ? 12 : isCompact ? 13 : 14, fontWeight: '600', color: gold },
         tabTextActive: { color: Colors.white },
         input: {
           borderWidth: 1,
           borderColor: Colors.gray[300],
           borderRadius: 12,
           paddingHorizontal: 14,
-          paddingVertical: Platform.OS === 'ios' ? 12 : 10,
-          fontSize: isCompact ? 13 : 14,
+          paddingVertical: isMicro ? (Platform.OS === 'ios' ? 10 : 8) : Platform.OS === 'ios' ? 12 : 10,
+          fontSize: isMicro ? 12 : isCompact ? 13 : 14,
           color: Colors.gray[900],
-          marginBottom: 12,
+          marginBottom: isMicro ? 8 : 12,
         },
         inputShell: {
           flexDirection: 'row',
@@ -332,15 +341,15 @@ export default function LandingAuthScreen() {
           borderWidth: 1,
           borderColor: Colors.gray[300],
           borderRadius: 12,
-          marginBottom: 12,
+          marginBottom: isMicro ? 8 : 12,
           paddingRight: 4,
           backgroundColor: Colors.white,
         },
         inputInShell: {
           flex: 1,
           paddingHorizontal: 14,
-          paddingVertical: Platform.OS === 'ios' ? 12 : 10,
-          fontSize: isCompact ? 13 : 14,
+          paddingVertical: isMicro ? (Platform.OS === 'ios' ? 10 : 8) : Platform.OS === 'ios' ? 12 : 10,
+          fontSize: isMicro ? 12 : isCompact ? 13 : 14,
           color: Colors.gray[900],
         },
         inputEyeBtn: {
@@ -352,50 +361,75 @@ export default function LandingAuthScreen() {
         primaryBtn: {
           backgroundColor: gold,
           borderRadius: 12,
-          paddingVertical: isCompact ? 13 : 14,
+          paddingVertical: isMicro ? 11 : isCompact ? 13 : 14,
           alignItems: 'center',
           flexDirection: 'row',
           justifyContent: 'center',
           gap: 8,
-          marginTop: 8,
+          marginTop: isMicro ? 4 : 8,
         },
-        primaryBtnText: { color: Colors.white, fontSize: isCompact ? 14 : 15, fontWeight: '700' },
+        primaryBtnText: { color: Colors.white, fontSize: isMicro ? 13 : isCompact ? 14 : 15, fontWeight: '700' },
         backToOptions: {
           marginTop: 0,
-          marginBottom: 14,
+          marginBottom: isMicro ? 10 : 14,
           flexDirection: 'row',
           alignItems: 'center',
           alignSelf: 'flex-start',
           paddingVertical: 2,
           gap: 4,
         },
-        backToOptionsText: { fontSize: isCompact ? 12 : 13, color: Colors.gray[600] },
+        backToOptionsText: { fontSize: isMicro ? 11 : isCompact ? 12 : 13, color: Colors.gray[600] },
         errorBox: {
           backgroundColor: Colors.red[100],
-          padding: 12,
+          padding: isMicro ? 8 : 12,
           borderRadius: 10,
-          marginBottom: 12,
+          marginBottom: isMicro ? 8 : 12,
         },
         errorText: { color: Colors.red[500], fontSize: 12 },
-        footer: { marginTop: isCompact ? 10 : 12 },
-        footerBrandRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 2, marginBottom: 10 },
-        footerBrandLogo: { width: 16, height: 16, marginRight: -1 },
-        footerBrand: { fontSize: 16, fontWeight: '700', color: gold, textAlign: 'center' },
+        footer: { marginTop: 0 },
+        footerBrandRow: {
+          flexDirection: 'row',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: 2,
+          marginBottom: isMicro ? 6 : 8,
+        },
+        footerBrandLogo: { width: isMicro ? 14 : 16, height: isMicro ? 14 : 16, marginRight: -1 },
+        footerBrand: {
+          fontSize: isMicro ? 14 : 16,
+          fontWeight: '700',
+          color: gold,
+          textAlign: 'center',
+        },
         footerTagline: {
-          fontSize: 12,
+          fontSize: isMicro ? 10 : 12,
           color: Colors.gray[600],
           textAlign: 'center',
-          lineHeight: 18,
-          marginBottom: isCompact ? 12 : 16,
+          lineHeight: isMicro ? 14 : 18,
+          marginBottom: isMicro ? 8 : 10,
           paddingHorizontal: 4,
         },
         footerColumns: {
+          flexDirection: footerStacked ? 'column' : 'row',
+          alignItems: 'flex-start',
+          gap: isMicro ? 8 : 12,
+        },
+        footerColLeft: {
+          flex: footerStacked ? 0 : 1,
           flexDirection: 'row',
           alignItems: 'flex-start',
-          gap: 16,
+          gap: 8,
+          paddingRight: footerStacked ? 0 : 6,
+          width: footerStacked ? '100%' : undefined,
         },
-        footerColLeft: { flex: 1, flexDirection: 'row', alignItems: 'flex-start', gap: 8, paddingRight: 6 },
-        footerColRight: { flex: 1, gap: 12, paddingLeft: 14, alignItems: 'flex-start', alignSelf: 'center' },
+        footerColRight: {
+          flex: footerStacked ? 0 : 1,
+          gap: isMicro ? 8 : 12,
+          paddingLeft: footerStacked ? 0 : 14,
+          alignItems: 'flex-start',
+          alignSelf: footerStacked ? 'stretch' : 'center',
+          width: footerStacked ? '100%' : undefined,
+        },
         footerContactIconBox: { width: 18, alignItems: 'center' },
         footerContactText: {
           flex: 1,
@@ -421,13 +455,19 @@ export default function LandingAuthScreen() {
       bodyFont,
       cardLogoSize,
       cardPadding,
-      cardSideMargin,
+      footerStacked,
       gold,
       headerLogoSize,
-      headerPanelHeight,
       insets.bottom,
+      insets.left,
+      insets.right,
+      insets.top,
       isCompact,
+      isMicro,
+      isTablet,
+      isTight,
       smallFont,
+      winW,
     ]
   );
 
@@ -494,12 +534,10 @@ export default function LandingAuthScreen() {
   );
 
   const headerBlock = (
-    <View style={styles.headerPanel}>
-      <View style={styles.header}>
-        <View style={styles.logoRow}>
-          <Image source={require('../../assets/haven_logo.png')} style={styles.logo} resizeMode="contain" />
-          <Text style={styles.brandName}>taycation Haven</Text>
-        </View>
+    <View style={styles.headerBar}>
+      <View style={styles.logoRow}>
+        <Image source={require('../../assets/haven_logo.png')} style={styles.logo} resizeMode="contain" />
+        <Text style={styles.brandName}>taycation Haven</Text>
       </View>
     </View>
   );
@@ -512,7 +550,11 @@ export default function LandingAuthScreen() {
         <Image source={require('../../assets/haven_logo.png')} style={styles.footerBrandLogo} resizeMode="contain" />
         <Text style={styles.footerBrand}>taycation Haven</Text>
       </View>
-      <Text style={styles.footerTagline}>{FOOTER_TAGLINE}</Text>
+      {!isNano ? (
+        <Text style={styles.footerTagline} numberOfLines={isMicro ? 2 : isTight ? 3 : 5}>
+          {isMicro ? FOOTER_TAGLINE_SHORT : FOOTER_TAGLINE}
+        </Text>
+      ) : null}
       <View style={styles.footerColumns}>
         <View style={styles.footerColLeft}>
           <Feather name="map-pin" size={16} color={gold} style={{ marginTop: 2 }} />
@@ -527,6 +569,8 @@ export default function LandingAuthScreen() {
               style={[styles.footerPhoneEmail, styles.footerLink]}
               accessibilityRole="link"
               onPress={onPressPhone}
+              numberOfLines={1}
+              ellipsizeMode="tail"
             >
               {FOOTER_PHONE}
             </Text>
@@ -539,6 +583,8 @@ export default function LandingAuthScreen() {
               style={[styles.footerPhoneEmail, styles.footerLink]}
               accessibilityRole="link"
               onPress={onPressEmail}
+              numberOfLines={1}
+              ellipsizeMode="middle"
             >
               {FOOTER_EMAIL}
             </Text>
@@ -546,6 +592,7 @@ export default function LandingAuthScreen() {
         </View>
       </View>
       </View>
+      <View style={styles.footerBottomInset} />
     </View>
   );
 
@@ -562,7 +609,7 @@ export default function LandingAuthScreen() {
       <Text style={styles.title}>Welcome</Text>
       <Text style={styles.subtitle}>Sign In to continue your Booking.</Text>
 
-      <DividerLabel label="Or continue with" />
+      <DividerLabel label="Or continue with" marginVertical={dividerGap} />
 
       {googleOAuthConfigured ? (
         <WelcomeGoogleButton styles={welcomeSocialStyles} />
@@ -594,13 +641,15 @@ export default function LandingAuthScreen() {
         <View style={styles.socialBtnRightSpacer} />
       </TouchableOpacity>
 
-      <DividerLabel label="Or continue as Guest" />
+      <DividerLabel label="Or continue as Guest" marginVertical={dividerGap} />
 
       <TouchableOpacity style={styles.guestBtn} onPress={continueAsGuest} activeOpacity={0.9}>
         <Text style={styles.guestBtnText}>Continue as Guest</Text>
         <Feather name="arrow-right" size={18} color={Colors.white} />
       </TouchableOpacity>
-      <Text style={styles.guestHint}>Guest users can book rooms with smart defaults.</Text>
+      <Text style={styles.guestHint} numberOfLines={isMicro ? 1 : 2}>
+        Guest users can book rooms with smart defaults.
+      </Text>
     </>
   );
 
@@ -744,35 +793,35 @@ export default function LandingAuthScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <View style={styles.safe}>
       <View style={styles.page}>
-        <View style={styles.formBackdrop} pointerEvents="none" />
         {headerBlock}
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <View style={{ flex: 1, minHeight: 0 }}>
+        <KeyboardAvoidingView
+          style={styles.kav}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          enabled={Platform.OS === 'ios'}
+          keyboardVerticalOffset={0}
+        >
+          <View style={styles.middleFill}>
             <View style={styles.middlePanel}>
               <View style={styles.card}>
                 {phase === 'welcome' ? (
                   <>
-                    <View style={styles.cardInnerScroll}>
-                      <View style={styles.cardInnerScrollContent}>{welcomeScrollContent}</View>
-                    </View>
+                    {welcomeScrollContent}
                     <View style={styles.cardStickyFooter}>{termsBlock}</View>
                   </>
                 ) : (
                   <>
-                    <View style={styles.cardInnerScroll}>
-                      <View style={styles.cardInnerScrollContent}>{authScrollContent}</View>
-                    </View>
+                    {authScrollContent}
                     {authCardStickyFooter}
                   </>
                 )}
               </View>
             </View>
-            {footerBlock}
           </View>
         </KeyboardAvoidingView>
+        {footerBlock}
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
