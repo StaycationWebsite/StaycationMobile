@@ -14,6 +14,8 @@ import {
 } from "react-native";
 
 import { Feather } from "@expo/vector-icons";
+import HavenLogoMark from '../components/HavenLogoMark';
+import { BRAND_NAME } from '../../constants/brand';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useTheme } from '@/lib/hooks/useTheme';
 
@@ -208,12 +210,8 @@ export default function LoginScreen() {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.logoRow}>
-            <Image
-              source={require("../../assets/haven_logo.png")}
-              style={styles.logo}
-              resizeMode="contain"
-            />
-            <Text style={styles.appName}>Staycation Haven</Text>
+            <HavenLogoMark size={36} />
+            <Text style={styles.appName}>{BRAND_NAME}</Text>
           </View>
           <View style={styles.adminBadgeContainer}>
             <Text style={styles.adminBadge}>MANAGEMENT PORTAL</Text>

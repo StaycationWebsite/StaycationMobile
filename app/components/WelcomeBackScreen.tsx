@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useMemo } from "react";
-import { Animated, Easing, Image, StyleSheet, Text, View } from "react-native";
+import { Animated, Easing, StyleSheet, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useTheme } from '@/lib/hooks/useTheme';
+import HavenLogoMark from './HavenLogoMark';
 
 interface WelcomeBackScreenProps {
   adminName?: string | null;
@@ -168,7 +169,7 @@ export default function WelcomeBackScreen({ adminName }: WelcomeBackScreenProps)
         ]}
       >
         <View style={styles.logoWrap}>
-          <Image source={require("../../assets/haven_logo.png")} style={styles.logo} resizeMode="contain" />
+          <HavenLogoMark size={56} />
           <View style={styles.checkBadge}>
             <Feather name="check" size={11} color={theme.colors.surface} />
           </View>

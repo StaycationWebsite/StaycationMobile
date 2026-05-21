@@ -1,4 +1,4 @@
-import React, { useRef, useState, useMemo } from "react";
+import React, { useRef, useState, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,11 +9,14 @@ import {
   Image,
   Dimensions,
   StatusBar,
-} from "react-native";
-import { Feather } from "@expo/vector-icons";
-import { useTheme } from '@/lib/hooks/useTheme';
+  ListRenderItemInfo,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { GuestColors } from '../../constants/Styles';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const THUMB = 56;
+const THUMB_GAP = 8;
 
 interface ImageCarouselModalProps {
   visible: boolean;
@@ -28,13 +31,26 @@ export default function ImageCarouselModal({
   initialIndex = 0,
   onClose,
 }: ImageCarouselModalProps) {
+  const insets = useSafeAreaInsets();
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const flatListRef = useRef<FlatList>(null);
-  const { theme } = useTheme();
+  const thumbRef = useRef<FlatList>(null);
 
-  const handleScroll = (e: any) => {
+  useEffect(() => {
+    if (visible && images.length) {
+      const idx = Math.min(initialIndex, images.length - 1);
+      setCurrentIndex(idx);
+      requestAnimationFrame(() => {
+        flatListRef.current?.scrollToIndex({ index: idx, animated: false });
+        thumbRef.current?.scrollToIndex({ index: idx, animated: false, viewPosition: 0.5 });
+      });
+    }
+  }, [visible, initialIndex, images.length]);
+
+  const handleMomentumScrollEnd = (e: { nativeEvent: { contentOffset: { x: number } } }) => {
     const idx = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH);
     setCurrentIndex(idx);
+    thumbRef.current?.scrollToIndex({ index: idx, animated: true, viewPosition: 0.5 });
   };
 
   const styles = useMemo(
@@ -42,155 +58,147 @@ export default function ImageCarouselModal({
       StyleSheet.create({
         container: {
           flex: 1,
-          backgroundColor: "rgba(0,0,0,0.95)",
-          justifyContent: "center",
+          backgroundColor: GuestColors.charcoalDeep,
         },
-        closeBtn: {
-          position: "absolute",
-          top: 52,
-          right: 20,
-          zIndex: 10,
-          width: 42,
-          height: 42,
-          borderRadius: 21,
-          backgroundColor: "rgba(255,255,255,0.15)",
-          justifyContent: "center",
-          alignItems: "center",
+        header: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          paddingHorizontal: 16,
+          paddingBottom: 12,
         },
-        counter: {
-          position: "absolute",
-          top: 60,
-          left: 0,
-          right: 0,
-          zIndex: 10,
-          alignItems: "center",
+        closeText: {
+          color: '#FFFFFF',
+          fontSize: 16,
+          fontWeight: '600',
         },
         counterText: {
-          color: theme.colors.surface,
-          fontSize: 14,
-          fontWeight: "600",
+          color: '#FFFFFF',
+          fontSize: 15,
+          fontWeight: '600',
+        },
+        headerSpacer: { width: 56 },
+        imageArea: {
+          flex: 1,
+          justifyContent: 'center',
         },
         imageWrapper: {
           width: SCREEN_WIDTH,
-          height: SCREEN_HEIGHT,
-          justifyContent: "center",
+          justifyContent: 'center',
+          alignItems: 'center',
         },
         image: {
           width: SCREEN_WIDTH,
-          height: SCREEN_HEIGHT * 0.75,
+          height: SCREEN_HEIGHT * 0.62,
         },
-        dots: {
-          position: "absolute",
-          bottom: 48,
-          left: 0,
-          right: 0,
-          flexDirection: "row",
-          justifyContent: "center",
-          gap: 6,
+        thumbStrip: {
+          paddingVertical: 16,
+          paddingHorizontal: 12,
+          borderTopWidth: 1,
+          borderTopColor: 'rgba(255,255,255,0.08)',
         },
-        dot: {
-          width: 6,
-          height: 6,
-          borderRadius: 3,
-          backgroundColor: "rgba(255,255,255,0.4)",
+        thumb: {
+          width: THUMB,
+          height: THUMB,
+          borderRadius: 8,
+          marginHorizontal: THUMB_GAP / 2,
+          overflow: 'hidden',
+          borderWidth: 2,
+          borderColor: 'transparent',
         },
-        dotActive: {
-          backgroundColor: theme.colors.surface,
-          width: 18,
+        thumbActive: {
+          borderColor: GuestColors.gold,
         },
-        navBtn: {
-          position: "absolute",
-          top: "50%",
-          zIndex: 10,
-          width: 44,
-          height: 44,
-          borderRadius: 22,
-          backgroundColor: "rgba(255,255,255,0.15)",
-          justifyContent: "center",
-          alignItems: "center",
-        },
-        navLeft: {
-          left: 16,
-        },
-        navRight: {
-          right: 16,
+        thumbImage: {
+          width: '100%',
+          height: '100%',
         },
       }),
-    [theme.colors]
+    []
+  );
+
+  const renderThumb = ({ item, index }: ListRenderItemInfo<string>) => (
+    <TouchableOpacity
+      onPress={() => {
+        setCurrentIndex(index);
+        flatListRef.current?.scrollToIndex({ index, animated: true });
+      }}
+      style={[styles.thumb, index === currentIndex && styles.thumbActive]}
+    >
+      <Image source={{ uri: item }} style={styles.thumbImage} resizeMode="cover" />
+    </TouchableOpacity>
   );
 
   if (!images.length) return null;
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <StatusBar hidden />
-      <View style={styles.container}>
-        {/* Close */}
-        <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-          <Feather name="x" size={22} color={theme.colors.surface} />
-        </TouchableOpacity>
-
-        {/* Counter */}
-        <View style={styles.counter}>
+      <StatusBar barStyle="light-content" />
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={onClose} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+            <Text style={styles.closeText}>Close</Text>
+          </TouchableOpacity>
           <Text style={styles.counterText}>
             {currentIndex + 1} / {images.length}
           </Text>
+          <View style={styles.headerSpacer} />
         </View>
 
-        {/* Images */}
-        <FlatList
-          ref={flatListRef}
-          data={images}
-          keyExtractor={(_, i) => String(i)}
-          horizontal
-          pagingEnabled
-          showsHorizontalScrollIndicator={false}
-          initialScrollIndex={initialIndex}
-          getItemLayout={(_, index) =>
-            ({ length: SCREEN_WIDTH, offset: SCREEN_WIDTH * index, index })
-          }
-          onMomentumScrollEnd={handleScroll}
-          renderItem={({ item }) => (
-            <View style={styles.imageWrapper}>
-              <Image source={{ uri: item }} style={styles.image} resizeMode="contain" />
-            </View>
-          )}
-        />
+        <View style={styles.imageArea}>
+          <FlatList
+            ref={flatListRef}
+            data={images}
+            keyExtractor={(_, i) => String(i)}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            initialScrollIndex={Math.min(initialIndex, images.length - 1)}
+            getItemLayout={(_, index) => ({
+              length: SCREEN_WIDTH,
+              offset: SCREEN_WIDTH * index,
+              index,
+            })}
+            onScrollToIndexFailed={({ index }) => {
+              requestAnimationFrame(() => {
+                flatListRef.current?.scrollToIndex({ index, animated: false });
+              });
+            }}
+            onMomentumScrollEnd={handleMomentumScrollEnd}
+            renderItem={({ item }) => (
+              <View style={styles.imageWrapper}>
+                <Image source={{ uri: item }} style={styles.image} resizeMode="contain" />
+              </View>
+            )}
+          />
+        </View>
 
-        {/* Dots */}
-        {images.length > 1 && (
-          <View style={styles.dots}>
-            {images.map((_, i) => (
-              <View key={i} style={[styles.dot, i === currentIndex && styles.dotActive]} />
-            ))}
+        {images.length > 1 ? (
+          <View style={[styles.thumbStrip, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+            <FlatList
+              ref={thumbRef}
+              data={images}
+              keyExtractor={(_, i) => `t-${i}`}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 8 }}
+              renderItem={renderThumb}
+              onScrollToIndexFailed={({ index }) => {
+                requestAnimationFrame(() => {
+                  thumbRef.current?.scrollToIndex({ index, animated: false, viewPosition: 0.5 });
+                });
+              }}
+              getItemLayout={(_, index) => ({
+                length: THUMB + THUMB_GAP,
+                offset: (THUMB + THUMB_GAP) * index,
+                index,
+              })}
+            />
           </View>
-        )}
-
-        {/* Nav arrows */}
-        {currentIndex > 0 && (
-          <TouchableOpacity
-            style={[styles.navBtn, styles.navLeft]}
-            onPress={() => {
-              flatListRef.current?.scrollToIndex({ index: currentIndex - 1, animated: true });
-              setCurrentIndex(currentIndex - 1);
-            }}
-          >
-            <Feather name="chevron-left" size={24} color={theme.colors.surface} />
-          </TouchableOpacity>
-        )}
-        {currentIndex < images.length - 1 && (
-          <TouchableOpacity
-            style={[styles.navBtn, styles.navRight]}
-            onPress={() => {
-              flatListRef.current?.scrollToIndex({ index: currentIndex + 1, animated: true });
-              setCurrentIndex(currentIndex + 1);
-            }}
-          >
-            <Feather name="chevron-right" size={24} color={theme.colors.surface} />
-          </TouchableOpacity>
+        ) : (
+          <View style={{ height: Math.max(insets.bottom, 16) }} />
         )}
       </View>
     </Modal>
   );
 }
-

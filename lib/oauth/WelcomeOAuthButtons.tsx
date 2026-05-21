@@ -4,9 +4,11 @@ import Constants from 'expo-constants';
 import * as Facebook from 'expo-auth-session/providers/facebook';
 import { ResponseType } from 'expo-auth-session';
 import { Colors } from '../../constants/Styles';
+import { Images } from '../../assets';
 import { getFacebookRedirectUri } from '../../constants/oauth';
 import { useAuth } from '@/lib/hooks/useAuth';
 import type { WelcomeSocialStyles } from '@/lib/welcomeOAuthStyles';
+import { WelcomeSocialButtonContent } from './WelcomeSocialButtonContent';
 
 const OAUTH_ENV_HELP =
   'Google: set EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID (required) and EXPO_PUBLIC_GOOGLE_IOS_URL_SCHEME for iOS builds. Optional: EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID. Use a development build (`npx expo run:android` / `run:ios`); Google Sign-In does not run in Expo Go. Facebook: EXPO_PUBLIC_FACEBOOK_APP_ID. Restart Expo after editing .env.';
@@ -26,11 +28,11 @@ function WelcomeGoogleButtonExpoGo({ styles: s }: GoogleProps) {
   }, []);
   return (
     <TouchableOpacity style={s.socialBtn} onPress={onPress} activeOpacity={0.85}>
-      <View style={s.socialIconSlot}>
-        <Image source={require('../../assets/gmail.png')} style={s.socialLogo} resizeMode="contain" />
-      </View>
-      <Text style={s.socialBtnText}>Continue with Google</Text>
-      <View style={s.socialBtnRightSpacer} />
+      <WelcomeSocialButtonContent
+        styles={s}
+        icon={<Image source={Images.gmail} style={s.socialLogo} resizeMode="contain" />}
+        label="Continue with Google"
+      />
     </TouchableOpacity>
   );
 }
@@ -102,13 +104,11 @@ export function WelcomeFacebookButton({ styles: s, appId }: FacebookProps) {
       {busy ? (
         <ActivityIndicator color={Colors.gray[700]} />
       ) : (
-        <>
-          <View style={s.socialIconSlot}>
-            <Image source={require('../../assets/facebook.png')} style={s.socialLogoFacebook} resizeMode="contain" />
-          </View>
-          <Text style={s.socialBtnText}>Continue with Facebook</Text>
-          <View style={s.socialBtnRightSpacer} />
-        </>
+        <WelcomeSocialButtonContent
+          styles={s}
+          icon={<Image source={Images.facebook} style={s.socialLogoFacebook} resizeMode="contain" />}
+          label="Continue with Facebook"
+        />
       )}
     </TouchableOpacity>
   );

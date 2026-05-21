@@ -10,8 +10,7 @@ import {
 } from 'react-native';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useTheme } from '@/lib/hooks/useTheme';
 import { AppDispatch, RootState } from '@/lib/redux/store';
@@ -21,8 +20,7 @@ import type { UserStackParamList } from '../../../navigation/UserNavigator';
 
 export default function MeScreen() {
   const { user, logout } = useAuth();
-  const navigation =
-    useNavigation<NativeStackNavigationProp<UserStackParamList & AdminStackParamList>>();
+  const navigation = useNavigation<NavigationProp<UserStackParamList & AdminStackParamList>>();
   const dispatch = useDispatch<AppDispatch>();
   const { theme } = useTheme();
   const selectedThemeMode = useSelector((state: RootState) => state.theme.mode);
@@ -89,7 +87,7 @@ export default function MeScreen() {
             style={styles.backHomeButton}
             onPress={() =>
               user?.role === 'guest'
-                ? navigation.navigate('BrowseHavens')
+                ? navigation.navigate('Haven', { screen: 'BrowseHavens' })
                 : navigation.navigate('AdminTabs')
             }
             activeOpacity={0.8}

@@ -2,9 +2,11 @@ import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, Image, ActivityIndicator, Alert, Platform } from 'react-native';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import { Colors } from '../../constants/Styles';
+import { Images } from '../../assets';
 import { getGoogleClientConfig } from '../../constants/oauth';
 import { useAuth } from '../hooks/useAuth';
 import type { WelcomeSocialStyles } from '../welcomeOAuthStyles';
+import { WelcomeSocialButtonContent } from '../oauth/WelcomeSocialButtonContent';
 
 type GoogleProps = { styles: WelcomeSocialStyles };
 
@@ -74,13 +76,11 @@ export function WelcomeGoogleButtonNative({ styles: s }: GoogleProps) {
       {busy ? (
         <ActivityIndicator color={Colors.gray[700]} />
       ) : (
-        <>
-          <View style={s.socialIconSlot}>
-            <Image source={require('../../assets/gmail.png')} style={s.socialLogo} resizeMode="contain" />
-          </View>
-          <Text style={s.socialBtnText}>Continue with Google</Text>
-          <View style={s.socialBtnRightSpacer} />
-        </>
+        <WelcomeSocialButtonContent
+          styles={s}
+          icon={<Image source={Images.gmail} style={s.socialLogo} resizeMode="contain" />}
+          label="Continue with Google"
+        />
       )}
     </TouchableOpacity>
   );

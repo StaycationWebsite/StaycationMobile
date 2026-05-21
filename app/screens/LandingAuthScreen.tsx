@@ -16,6 +16,9 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { Colors } from '../../constants/Styles';
+import HavenLogoMark from '../components/HavenLogoMark';
+import { BRAND_NAME } from '../../constants/brand';
+import { Images } from '../../assets';
 import { getGoogleClientConfig, getFacebookAppId } from '../../constants/oauth';
 import { useAuth } from '@/lib/hooks/useAuth';
 import {
@@ -23,6 +26,7 @@ import {
   WelcomeFacebookButton,
   oauthConfigAlert,
 } from '@/lib/oauth/WelcomeOAuthButtons';
+import { WelcomeSocialButtonContent } from '@/lib/oauth/WelcomeSocialButtonContent';
 
 type Phase = 'welcome' | 'auth';
 type AuthTab = 'login' | 'register';
@@ -258,7 +262,6 @@ export default function LandingAuthScreen() {
           textAlign: 'center',
         },
         socialBtn: {
-          flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'center',
           borderWidth: 1,
@@ -268,19 +271,36 @@ export default function LandingAuthScreen() {
           paddingHorizontal: 14,
           marginBottom: isMicro ? 6 : isTight ? 8 : 12,
           backgroundColor: Colors.white,
+          ...Platform.select({
+            ios: {
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 1 },
+              shadowOpacity: 0.06,
+              shadowRadius: 3,
+            },
+            android: { elevation: 2 },
+          }),
+        },
+        socialBtnInner: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 10,
         },
         socialIconSlot: {
-          width: 24,
-          height: 24,
+          width: 22,
+          height: 22,
           alignItems: 'center',
           justifyContent: 'center',
-          marginRight: 8,
+          flexShrink: 0,
         },
-        socialLogo: { width: 20, height: 20 },
+        socialLogo: { width: 22, height: 22 },
         socialLogoFacebook: { width: 22, height: 22 },
         havenLogoSmall: { width: 22, height: 22 },
-        socialBtnText: { fontSize: bodyFont, fontWeight: '600', color: Colors.gray[800] },
-        socialBtnRightSpacer: { width: 0, height: 0 },
+        socialBtnText: {
+          fontSize: bodyFont,
+          fontWeight: '600',
+          color: Colors.gray[800],
+        },
         guestBtn: {
           backgroundColor: gold,
           borderRadius: 12,
@@ -476,11 +496,11 @@ export default function LandingAuthScreen() {
   const welcomeSocialStyles = useMemo(
     () => ({
       socialBtn: styles.socialBtn,
+      socialBtnInner: styles.socialBtnInner,
       socialIconSlot: styles.socialIconSlot,
       socialLogo: styles.socialLogo,
       socialLogoFacebook: styles.socialLogoFacebook,
       socialBtnText: styles.socialBtnText,
-      socialBtnRightSpacer: styles.socialBtnRightSpacer,
     }),
     [styles]
   );
@@ -536,8 +556,8 @@ export default function LandingAuthScreen() {
   const headerBlock = (
     <View style={styles.headerBar}>
       <View style={styles.logoRow}>
-        <Image source={require('../../assets/haven_logo.png')} style={styles.logo} resizeMode="contain" />
-        <Text style={styles.brandName}>taycation Haven</Text>
+        <HavenLogoMark size={headerLogoSize} />
+        <Text style={styles.brandName}>{BRAND_NAME}</Text>
       </View>
     </View>
   );
@@ -547,8 +567,8 @@ export default function LandingAuthScreen() {
       <View pointerEvents="none" style={styles.footerTopShadow} />
       <View style={styles.footer}>
       <View style={styles.footerBrandRow}>
-        <Image source={require('../../assets/haven_logo.png')} style={styles.footerBrandLogo} resizeMode="contain" />
-        <Text style={styles.footerBrand}>taycation Haven</Text>
+        <HavenLogoMark size={isMicro ? 14 : 16} />
+        <Text style={styles.footerBrand}>{BRAND_NAME}</Text>
       </View>
       {!isNano ? (
         <Text style={styles.footerTagline} numberOfLines={isMicro ? 2 : isTight ? 3 : 5}>
@@ -598,8 +618,8 @@ export default function LandingAuthScreen() {
 
   const cardBrand = (
     <View style={styles.cardBrandRow}>
-      <Image source={require('../../assets/haven_logo.png')} style={styles.cardLogo} resizeMode="contain" />
-      <Text style={styles.cardBrandName}>taycation Haven</Text>
+      <HavenLogoMark size={cardLogoSize} />
+      <Text style={styles.cardBrandName}>{BRAND_NAME}</Text>
     </View>
   );
 
@@ -615,30 +635,30 @@ export default function LandingAuthScreen() {
         <WelcomeGoogleButton styles={welcomeSocialStyles} />
       ) : (
         <TouchableOpacity style={styles.socialBtn} onPress={oauthConfigAlert} activeOpacity={0.85}>
-          <View style={styles.socialIconSlot}>
-            <Image source={require('../../assets/gmail.png')} style={styles.socialLogo} resizeMode="contain" />
-          </View>
-          <Text style={styles.socialBtnText}>Continue with Google</Text>
-          <View style={styles.socialBtnRightSpacer} />
+          <WelcomeSocialButtonContent
+            styles={welcomeSocialStyles}
+            icon={<Image source={Images.gmail} style={styles.socialLogo} resizeMode="contain" />}
+            label="Continue with Google"
+          />
         </TouchableOpacity>
       )}
       {facebookAppId ? (
         <WelcomeFacebookButton appId={facebookAppId} styles={welcomeSocialStyles} />
       ) : (
         <TouchableOpacity style={styles.socialBtn} onPress={oauthConfigAlert} activeOpacity={0.85}>
-          <View style={styles.socialIconSlot}>
-            <Image source={require('../../assets/facebook.png')} style={styles.socialLogoFacebook} resizeMode="contain" />
-          </View>
-          <Text style={styles.socialBtnText}>Continue with Facebook</Text>
-          <View style={styles.socialBtnRightSpacer} />
+          <WelcomeSocialButtonContent
+            styles={welcomeSocialStyles}
+            icon={<Image source={Images.facebook} style={styles.socialLogoFacebook} resizeMode="contain" />}
+            label="Continue with Facebook"
+          />
         </TouchableOpacity>
       )}
       <TouchableOpacity style={styles.socialBtn} onPress={openLoginRegister} activeOpacity={0.85}>
-        <View style={styles.socialIconSlot}>
-          <Image source={require('../../assets/haven_logo.png')} style={styles.havenLogoSmall} resizeMode="contain" />
-        </View>
-        <Text style={styles.socialBtnText}>Continue with Haven</Text>
-        <View style={styles.socialBtnRightSpacer} />
+        <WelcomeSocialButtonContent
+          styles={welcomeSocialStyles}
+          icon={<HavenLogoMark size={22} />}
+          label="Continue with Haven"
+        />
       </TouchableOpacity>
 
       <DividerLabel label="Or continue as Guest" marginVertical={dividerGap} />

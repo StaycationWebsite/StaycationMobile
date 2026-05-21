@@ -1,5 +1,16 @@
 import { StyleSheet } from 'react-native';
 
+/** Guest-facing UI (brown-gold from home mockup ~#B88E2F). */
+export const GuestColors = {
+  gold: '#B88E2F',
+  goldMuted: 'rgba(184, 142, 47, 0.16)',
+  goldSoft: 'rgba(184, 142, 47, 0.38)',
+  /** Rating star (mockup: bright yellow). */
+  starYellow: '#FFD700',
+  charcoal: '#1A1A1A',
+  charcoalDeep: '#141414',
+};
+
 export const Colors = {
   brand: {
     primary: '#B8860B',       // Dark gold

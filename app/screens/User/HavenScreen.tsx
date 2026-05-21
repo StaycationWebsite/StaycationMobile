@@ -1,13 +1,25 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Text, View, StyleSheet, TouchableOpacity, Image, ScrollView, ActivityIndicator } from 'react-native';
-import { Colors } from '../../../constants/Styles';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import {
+  Text,
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  FlatList,
+  ActivityIndicator,
+  useWindowDimensions,
+  Pressable,
+  Platform,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { G, Path } from 'react-native-svg';
+import { Colors, GuestColors } from '../../../constants/Styles';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import SearchModal from '../../components/SearchModal';
 import ImageCarouselModal from '../../components/ImageCarouselModal';
 import { API_CONFIG } from '../../../constants/config';
-import { useRoomDiscounts } from '@/lib/hooks/useRoomDiscounts';
-import { useAuth } from '@/lib/hooks/useAuth';
 
 interface HavenImage {
   id: number;
@@ -30,112 +42,147 @@ interface Haven {
   images?: HavenImage[];
 }
 
-// ── Room Card ──────────────────────────────────────────────────────
+/** Reference mockup waves — full width, crest/trough aligned to headline. */
+const WAVE_REF_W = 400;
+const WAVE_REF_H = 108;
+const WAVE_STROKE_PX = 1.2;
+/** Wider gap between the four ribbons (mockup: clearly separated lines). */
+const WAVE_LINE_GAP_PX = 8;
+const WAVE_BAND_H = 56;
+const WAVE_LINE_OPACITY = [0.4, 0.33, 0.26, 0.18] as const;
+const WAVE_SVG_HEIGHT = WAVE_BAND_H + WAVE_LINE_GAP_PX * (WAVE_LINE_OPACITY.length - 1);
+
+function buildWavePath(screenW: number, bandH: number): string {
+  const x = (v: number) => (v / WAVE_REF_W) * screenW;
+  const y = (v: number) => (v / WAVE_REF_H) * bandH;
+  return [
+    `M 0 ${y(50)}`,
+    `C ${x(58)} ${y(50)} ${x(90)} ${y(14)} ${x(126)} ${y(11)}`,
+    `C ${x(162)} ${y(8)} ${x(178)} ${y(68)} ${x(200)} ${y(76)}`,
+    `C ${x(224)} ${y(84)} ${x(296)} ${y(40)} ${screenW} ${y(31)}`,
+  ].join(' ');
+}
+
+function GoldWaveBackdrop({ width }: { width: number }) {
+  const pathD = buildWavePath(width, WAVE_BAND_H);
+  return (
+    <View style={goldWaveStyles.wrap} pointerEvents="none">
+      <Svg width={width} height={WAVE_SVG_HEIGHT} viewBox={`0 0 ${width} ${WAVE_SVG_HEIGHT}`}>
+        {WAVE_LINE_OPACITY.map((opacity, index) => (
+          <G key={index} transform={`translate(0, ${index * WAVE_LINE_GAP_PX})`}>
+            <Path
+              d={pathD}
+              stroke={GuestColors.gold}
+              strokeWidth={WAVE_STROKE_PX}
+              fill="none"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              opacity={opacity}
+            />
+          </G>
+        ))}
+      </Svg>
+    </View>
+  );
+}
+
+const goldWaveStyles = StyleSheet.create({
+  wrap: {
+    position: 'absolute',
+    left: 0,
+    width: '100%',
+    top: '50%',
+    marginTop: -WAVE_SVG_HEIGHT / 2 + 2,
+    height: WAVE_SVG_HEIGHT,
+    overflow: 'visible',
+  },
+});
+
 const RoomCard = ({
   item,
   onImagePress,
+  cardWidth,
+  cardMarginBottom,
 }: {
   item: Haven;
   onImagePress: (images: HavenImage[] | undefined) => void;
+  cardWidth: number;
+  cardMarginBottom?: number;
 }) => {
   const navigation = useNavigation<any>();
-  const { calculateBestDiscount } = useRoomDiscounts(item.uuid_id);
-  const basePrice = parseFloat(item.weekday_rate || '0');
   const firstImage = item.images?.[0]?.image_url ?? null;
-
-  const bestDiscount = useMemo(
-    () => calculateBestDiscount(basePrice),
-    [basePrice, calculateBestDiscount]
-  );
-
-  const displayPrice = bestDiscount ? Math.floor(bestDiscount.discountedPrice) : Math.floor(basePrice);
+  const ratingVal = item.rating ?? '4.5';
+  const reviewCount = 45;
+  const locationLine = `${item.tower}, ${item.floor} flr`;
 
   return (
     <TouchableOpacity
-      style={styles.roomCard}
-      activeOpacity={0.9}
+      style={[
+        styles.roomCard,
+        {
+          width: cardWidth,
+          alignSelf: 'flex-start',
+          ...(cardMarginBottom != null ? { marginBottom: cardMarginBottom } : null),
+        },
+      ]}
+      activeOpacity={0.92}
       onPress={() => navigation.navigate('RoomDetails', { haven: item })}
     >
-      {/* Image */}
       <View style={styles.imageContainer}>
-        <TouchableOpacity
-          activeOpacity={0.9}
-          onPress={() => onImagePress(item.images)}
-          style={{ flex: 1 }}
-        >
+        <Pressable onPress={() => onImagePress(item.images)} style={styles.imagePress}>
           {firstImage ? (
             <Image source={{ uri: firstImage }} style={styles.roomImage} />
           ) : (
             <View style={styles.roomImagePlaceholder}>
-              <Feather name="image" size={32} color={Colors.gray[300]} />
+              <Feather name="image" size={22} color={GuestColors.goldSoft} />
             </View>
           )}
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.favoriteButton}>
-          <Ionicons name="heart-outline" size={20} color={Colors.white} />
-        </TouchableOpacity>
-
-        {/* Discount badge */}
-        <View style={styles.overlappingBadge}>
-          <View style={styles.discountBadge}>
-            <Text style={styles.discountBadgeText}>
-              {bestDiscount
-                ? bestDiscount.discount_type === 'percentage'
-                  ? `-${bestDiscount.discount_value}% OFF`
-                  : `-₱${Math.floor(bestDiscount.discount_value)} OFF`
-                : 'BEST DEAL'}
-            </Text>
-          </View>
-          <View style={styles.sampleTag}>
-            <Feather name="tag" size={11} color={Colors.brand.primary} />
-            <Text style={styles.sampleTagText}>TODAY'S RATE</Text>
-          </View>
-        </View>
+        </Pressable>
       </View>
 
-      {/* Content */}
       <View style={styles.cardContent}>
-        {/* Price */}
-        <View style={styles.priceRow}>
-          <Text style={styles.pricePerNight}>₱{displayPrice.toLocaleString('en-US')}</Text>
-          {bestDiscount && (
-            <Text style={styles.originalPrice}>
-              ₱{Math.floor(basePrice).toLocaleString('en-US')}
-            </Text>
-          )}
-          {bestDiscount && (
-            <View style={styles.saveBadge}>
-              <Text style={styles.saveBadgeText}>Save ₱{Math.floor(bestDiscount.savings).toLocaleString()}</Text>
-            </View>
-          )}
-        </View>
-
-        <Text style={styles.havenName} numberOfLines={1}>
+        <Text style={styles.havenName} numberOfLines={2}>
           {item.haven_name}
         </Text>
-
-        <View style={styles.locationRating}>
-          <View style={styles.locationRow}>
-            <Feather name="map-pin" size={12} color={Colors.gray[500]} />
-            <Text style={styles.locationText} numberOfLines={1}>
-              {item.tower}, {item.floor}, QC
-            </Text>
-          </View>
-          <View style={styles.ratingRow}>
-            <Ionicons name="star" size={13} color={Colors.brand.primary} />
-            <Text style={styles.ratingText}>{item.rating ?? '4.5'}</Text>
-          </View>
+        <View style={styles.ratingBlock}>
+          <Ionicons name="star" size={12} color={GuestColors.starYellow} />
+          <Text style={styles.ratingText}>
+            {ratingVal}
+            <Text style={styles.reviewParen}> ({reviewCount} Reviews)</Text>
+          </Text>
+        </View>
+        <View style={styles.locationRow}>
+          <Feather name="map-pin" size={11} color={GuestColors.charcoal} />
+          <Text style={styles.locationText} numberOfLines={1}>
+            {locationLine}
+          </Text>
         </View>
       </View>
     </TouchableOpacity>
   );
 };
 
-// ── Main Screen ────────────────────────────────────────────────────
+/** Vertical gap between the first and second horizontal card strips. */
+const TWO_LIST_GAP = 10;
+/** Space below back/filter row before the first card strip. */
+const LIST_TOP_SPACING = 16;
+/** Space above the bottom tab bar so cards do not sit flush on the footer. */
+const LIST_BOTTOM_SPACING = 28;
+/** Horizontal inset from screen edge (padding). */
+const SCREEN_H_PAD = 14;
+
 export default function HavenScreen() {
-  const navigation = useNavigation<any>();
-  const { user } = useAuth();
+  const insets = useSafeAreaInsets();
+  const { width: screenW } = useWindowDimensions();
+  const listRefTop = useRef<FlatList<Haven>>(null);
+  const listRefBottom = useRef<FlatList<Haven>>(null);
+
+  /** Exactly 2 cards visible across the row (no third-card peek) — cards fill the viewport width. */
+  const colGap = 10;
+  const viewportRowWidth = Math.max(0, screenW - SCREEN_H_PAD * 2);
+  const cardWidth = Math.max(120, Math.floor((viewportRowWidth - colGap) / 2));
+  const cardSnapInterval = cardWidth + colGap;
+
   const [modalVisible, setModalVisible] = useState(false);
   const [havens, setHavens] = useState<Haven[]>([]);
   const [loading, setLoading] = useState(true);
@@ -145,7 +192,9 @@ export default function HavenScreen() {
   const [selectedSort, setSelectedSort] = useState('Recommended');
   const sortOptions = ['Recommended', 'Price: Low to High', 'Price: High to Low', 'Rating', 'Capacity'];
 
-  useEffect(() => { fetchHavens(); }, []);
+  useEffect(() => {
+    fetchHavens();
+  }, []);
 
   const fetchHavens = async () => {
     try {
@@ -162,7 +211,7 @@ export default function HavenScreen() {
     }
   };
 
-  const handleImagePress = (images: HavenImage[] | undefined) => {
+  const handleImagePress = useCallback((images: HavenImage[] | undefined) => {
     if (images?.length) {
       const urls = [...images]
         .sort((a, b) => a.display_order - b.display_order)
@@ -170,7 +219,7 @@ export default function HavenScreen() {
       setSelectedImages(urls);
       setCarouselVisible(true);
     }
-  };
+  }, []);
 
   const sortedHavens = useMemo(() => {
     const copy = [...havens];
@@ -188,8 +237,26 @@ export default function HavenScreen() {
     }
   }, [havens, selectedSort]);
 
+  /** Split havens into two rows — each row is its own horizontal carousel. */
+  const { havensTop, havensBottom } = useMemo(() => {
+    const mid = Math.ceil(sortedHavens.length / 2);
+    return {
+      havensTop: sortedHavens.slice(0, mid),
+      havensBottom: sortedHavens.slice(mid),
+    };
+  }, [sortedHavens]);
+
+  const onChevronPress = () => {
+    if (sortOpen) {
+      setSortOpen(false);
+      return;
+    }
+    listRefTop.current?.scrollToOffset({ offset: 0, animated: true });
+    listRefBottom.current?.scrollToOffset({ offset: 0, animated: true });
+  };
+
   return (
-    <View style={styles.mainContainer}>
+    <View style={[styles.mainContainer, { paddingTop: insets.top + 2 }]}>
       <SearchModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
@@ -202,269 +269,331 @@ export default function HavenScreen() {
         onClose={() => setCarouselVisible(false)}
       />
 
-      {/* Header */}
-      <View style={styles.topSection}>
-        <View style={styles.logoSection}>
-          <Image source={require('../../../assets/haven_logo.png')} style={styles.logo} />
-          <Text style={styles.appName}>Staycation Haven</Text>
-        </View>
-        <View style={styles.headerActions}>
-          {user?.role === 'guest' && (
-            <TouchableOpacity
-              style={styles.accountBtn}
-              onPress={() => navigation.navigate('GuestMe')}
-              accessibilityLabel="Account"
-            >
-              <Feather name="user" size={20} color={Colors.brand.primary} />
-            </TouchableOpacity>
-          )}
-          <TouchableOpacity style={styles.findRoomsButton} onPress={() => setModalVisible(true)}>
-            <Feather name="search" size={16} color={Colors.white} />
-            <Text style={styles.findRoomsButtonText}>Find Rooms</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Filter & Sort */}
-      <View style={styles.filterContainer}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filterContent}
-          style={styles.filterScroll}
+      {/* Layer 1 — fixed header (no vertical scroll) */}
+      <View style={styles.topLayer}>
+        <TouchableOpacity
+          style={styles.findRoomBar}
+          activeOpacity={0.9}
+          onPress={() => setModalVisible(true)}
         >
-          {['Price', 'Capacity', 'Rating', 'Tower'].map((f) => (
-            <TouchableOpacity key={f} style={styles.filterChip}>
-              <Text style={styles.filterLabel}>{f}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+          <Feather name="search" size={20} color="#FFFFFF" />
+          <Text style={styles.findRoomBarText}>Find Room</Text>
+          <Feather name="chevron-down" size={22} color="#FFFFFF" />
+        </TouchableOpacity>
 
-        <View style={styles.sortWrapper}>
-          <Text style={styles.sortLabelText}>Sort:</Text>
-          <TouchableOpacity style={styles.sortBox} onPress={() => setSortOpen(!sortOpen)}>
-            <Text style={styles.sortBoxText} numberOfLines={1}>{selectedSort}</Text>
-            <Feather name="chevron-down" size={13} color={Colors.gray[700]} />
-          </TouchableOpacity>
+        <View style={[styles.heroSection, { marginHorizontal: -16 }]}>
+          <GoldWaveBackdrop width={screenW} />
+          <Text style={styles.heroLine1}>Find Your Perfect</Text>
+          <Text style={styles.heroLine2}>Staycation</Text>
         </View>
 
-        {sortOpen && (
-          <View style={styles.dropdownOverlay}>
-            {sortOptions.map((opt) => (
-              <TouchableOpacity
-                key={opt}
-                style={[styles.dropdownOption, opt === selectedSort && styles.dropdownOptionActive]}
-                onPress={() => { setSelectedSort(opt); setSortOpen(false); }}
-              >
-                <Text style={[styles.dropdownOptionText, opt === selectedSort && styles.dropdownOptionTextActive]}>
-                  {opt}
-                </Text>
-              </TouchableOpacity>
-            ))}
+        <View style={styles.actionRow}>
+          <TouchableOpacity style={styles.chevronHit} onPress={onChevronPress} hitSlop={10}>
+            <Feather name="chevron-left" size={19} color={GuestColors.gold} />
+          </TouchableOpacity>
+          <View style={styles.sortAnchor}>
+            <TouchableOpacity style={styles.sortIconBox} onPress={() => setSortOpen(!sortOpen)}>
+              <Feather name="sliders" size={15} color={GuestColors.gold} />
+            </TouchableOpacity>
+            {sortOpen ? (
+              <View style={styles.dropdownOverlay}>
+                {sortOptions.map((opt) => (
+                  <TouchableOpacity
+                    key={opt}
+                    style={[styles.dropdownOption, opt === selectedSort && styles.dropdownOptionActive]}
+                    onPress={() => {
+                      setSelectedSort(opt);
+                      setSortOpen(false);
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.dropdownOptionText,
+                        opt === selectedSort && styles.dropdownOptionTextActive,
+                      ]}
+                    >
+                      {opt}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            ) : null}
           </View>
-        )}
+        </View>
       </View>
 
-      {/* List */}
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
+      {/* Layer 2 — two separate horizontal scrolling strips (not a 2×2 grid) */}
+      <View style={styles.bottomLayer}>
+        <LinearGradient
+          pointerEvents="none"
+          colors={[
+            '#FFFFFF',
+            'rgba(255, 255, 255, 0.6)',
+            'rgba(184, 142, 47, 0.18)',
+            'rgba(184, 142, 47, 0.45)',
+            GuestColors.gold,
+          ]}
+          locations={[0, 0.18, 0.45, 0.72, 1]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={styles.listAreaGradient}
+        />
         {loading ? (
           <View style={styles.centeredMessage}>
-            <ActivityIndicator size="large" color={Colors.brand.primary} />
+            <ActivityIndicator size="small" color={GuestColors.gold} />
             <Text style={styles.loadingText}>Loading rooms...</Text>
           </View>
         ) : sortedHavens.length === 0 ? (
           <View style={styles.centeredMessage}>
-            <Feather name="home" size={48} color={Colors.gray[300]} />
+            <Feather name="home" size={36} color={GuestColors.goldSoft} />
             <Text style={styles.emptyText}>No rooms available</Text>
           </View>
         ) : (
-          <View style={styles.roomsGrid}>
-            {sortedHavens.map((haven) => (
-              <RoomCard key={haven.uuid_id} item={haven} onImagePress={handleImagePress} />
-            ))}
-          </View>
+          <>
+            <View style={styles.dualListColumn}>
+              <View style={styles.listStripSlot}>
+                <FlatList
+                  ref={listRefTop}
+                  horizontal
+                  data={havensTop}
+                  keyExtractor={(h) => h.uuid_id}
+                  showsHorizontalScrollIndicator={false}
+                  style={styles.listStripFlatList}
+                  contentContainerStyle={styles.hStripContent}
+                  snapToInterval={cardSnapInterval}
+                  snapToAlignment="start"
+                  decelerationRate="fast"
+                  ItemSeparatorComponent={() => <View style={{ width: colGap }} />}
+                  renderItem={({ item }) => (
+                    <RoomCard
+                      item={item}
+                      onImagePress={handleImagePress}
+                      cardWidth={cardWidth}
+                    />
+                  )}
+                />
+              </View>
+              <View style={styles.listStripGap} />
+              <View style={styles.listStripSlot}>
+                <View style={styles.bottomStripInner}>
+                  <FlatList
+                    ref={listRefBottom}
+                    horizontal
+                    data={havensBottom}
+                    keyExtractor={(h) => h.uuid_id}
+                    showsHorizontalScrollIndicator={false}
+                    style={styles.listStripFlatList}
+                    contentContainerStyle={styles.hStripContent}
+                    snapToInterval={cardSnapInterval}
+                    snapToAlignment="start"
+                    decelerationRate="fast"
+                    ItemSeparatorComponent={() => <View style={{ width: colGap }} />}
+                    renderItem={({ item }) => (
+                      <RoomCard
+                        item={item}
+                        onImagePress={handleImagePress}
+                        cardWidth={cardWidth}
+                      />
+                    )}
+                  />
+                </View>
+              </View>
+            </View>
+          </>
         )}
-      </ScrollView>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  mainContainer: { flex: 1, backgroundColor: Colors.white },
-  topSection: {
+  mainContainer: { flex: 1, backgroundColor: '#FFFFFF' },
+  topLayer: {
+    paddingHorizontal: 16,
+    paddingBottom: 2,
+    zIndex: 20,
+    overflow: 'visible',
+  },
+  bottomLayer: {
+    flex: 1,
+    minHeight: 0,
+    position: 'relative',
+    justifyContent: 'flex-start',
+    backgroundColor: GuestColors.gold,
+    overflow: 'hidden',
+  },
+  listAreaGradient: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 0,
+  },
+  findRoomBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'stretch',
+    gap: 10,
+    marginBottom: 10,
+    minHeight: 52,
+    backgroundColor: GuestColors.gold,
+    borderRadius: 999,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.16,
+        shadowRadius: 10,
+      },
+      android: { elevation: 12 },
+    }),
+  },
+  findRoomBarText: { color: '#FFFFFF', fontSize: 17, fontWeight: '700', letterSpacing: 0.2 },
+  heroSection: {
+    marginBottom: 4,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    minHeight: 112,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    overflow: 'visible',
+  },
+  heroLine1: {
+    fontSize: 21,
+    fontWeight: '700',
+    color: GuestColors.charcoal,
+    textAlign: 'center',
+    letterSpacing: -0.3,
+    zIndex: 1,
+  },
+  heroLine2: {
+    marginTop: 3,
+    fontSize: 21,
+    fontWeight: '700',
+    color: GuestColors.gold,
+    textAlign: 'center',
+    letterSpacing: -0.3,
+    zIndex: 1,
+  },
+  actionRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 56,
-    paddingBottom: 16,
-    backgroundColor: Colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.gray[100],
+    marginBottom: 0,
   },
-  logoSection: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  logo: { width: 36, height: 36, borderRadius: 8 },
-  appName: { fontSize: 18, fontWeight: '700', color: Colors.brand.primary },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  accountBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: Colors.brand.primary,
+  chevronHit: {
+    paddingVertical: 2,
+    paddingLeft: 2,
+    paddingRight: 10,
+  },
+  sortAnchor: { position: 'relative', zIndex: 30 },
+  sortIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: GuestColors.gold,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.white,
+    backgroundColor: '#FFFFFF',
   },
-  findRoomsButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.brand.primary,
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 9,
-    gap: 6,
-  },
-  findRoomsButtonText: { color: Colors.white, fontSize: 13, fontWeight: '700' },
-  filterContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    backgroundColor: Colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.gray[100],
-    zIndex: 100,
-  },
-  filterScroll: { flex: 1, marginRight: 8 },
-  filterContent: { paddingRight: 8 },
-  filterChip: {
-    borderRadius: 50,
-    borderWidth: 1,
-    borderColor: Colors.gray[200],
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    marginRight: 8,
-  },
-  filterLabel: { color: Colors.blue[600], fontSize: 12, fontWeight: '600' },
-  sortWrapper: { flexDirection: 'row', alignItems: 'center' },
-  sortLabelText: { marginRight: 6, color: Colors.gray[500], fontSize: 12 },
-  sortBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.brand.primaryLight,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    minWidth: 90,
-    gap: 4,
-  },
-  sortBoxText: { fontSize: 11, color: Colors.gray[900], flex: 1 },
   dropdownOverlay: {
     position: 'absolute',
-    top: 48,
-    right: 16,
-    backgroundColor: Colors.white,
+    top: 42,
+    right: 0,
+    backgroundColor: '#FFFFFF',
     borderRadius: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.12,
     shadowRadius: 10,
-    elevation: 8,
-    width: 180,
+    elevation: 12,
+    width: 188,
     borderWidth: 1,
     borderColor: Colors.gray[100],
-    zIndex: 1000,
   },
-  dropdownOption: { paddingVertical: 12, paddingHorizontal: 16 },
-  dropdownOptionActive: { backgroundColor: Colors.blue[100] },
-  dropdownOptionText: { fontSize: 13, color: Colors.gray[900] },
-  dropdownOptionTextActive: { color: Colors.blue[600], fontWeight: '600' },
-  scrollView: { flex: 1, backgroundColor: Colors.gray[50] },
-  scrollContent: { padding: 16, paddingBottom: 32 },
-  centeredMessage: { alignItems: 'center', paddingTop: 60, gap: 12 },
-  loadingText: { fontSize: 14, color: Colors.gray[500] },
-  emptyText: { fontSize: 15, color: Colors.gray[500], fontWeight: '500' },
-  roomsGrid: { gap: 16 },
+  dropdownOption: { paddingVertical: 10, paddingHorizontal: 14 },
+  dropdownOptionActive: { backgroundColor: GuestColors.goldMuted },
+  dropdownOptionText: { fontSize: 12, color: GuestColors.charcoal },
+  dropdownOptionTextActive: { color: GuestColors.gold, fontWeight: '700' },
+  centeredMessage: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    zIndex: 1,
+  },
+  loadingText: { fontSize: 13, color: '#6B6B6B' },
+  emptyText: { fontSize: 14, color: '#6B6B6B', fontWeight: '500' },
+  dualListColumn: {
+    flex: 1,
+    flexDirection: 'column',
+    alignSelf: 'stretch',
+    minHeight: 0,
+    zIndex: 1,
+    paddingTop: LIST_TOP_SPACING,
+    paddingBottom: LIST_BOTTOM_SPACING,
+    backgroundColor: 'transparent',
+  },
+  /** Equal flex so top and bottom card rows share height 50/50. */
+  listStripSlot: {
+    flex: 1,
+    minHeight: 0,
+    alignSelf: 'stretch',
+  },
+  listStripFlatList: {
+    flex: 1,
+    alignSelf: 'stretch',
+    minHeight: 0,
+    width: '100%',
+  },
+  bottomStripInner: {
+    flex: 1,
+    minHeight: 0,
+    alignSelf: 'stretch',
+    width: '100%',
+  },
+  listStripGap: {
+    height: TWO_LIST_GAP,
+    flexShrink: 0,
+  },
+  hStripContent: {
+    paddingLeft: SCREEN_H_PAD,
+    paddingRight: SCREEN_H_PAD,
+    paddingVertical: 2,
+    alignItems: 'center',
+    flexGrow: 1,
+  },
   roomCard: {
-    backgroundColor: Colors.white,
-    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#D8D8D8',
   },
-  imageContainer: { position: 'relative', width: '100%', height: 180 },
+  /** Slightly wider aspect → shorter image → less total card height. */
+  imageContainer: { position: 'relative', width: '100%', aspectRatio: 1.28 },
+  imagePress: { flex: 1 },
   roomImage: { width: '100%', height: '100%', resizeMode: 'cover' },
   roomImagePlaceholder: {
     width: '100%',
     height: '100%',
-    backgroundColor: Colors.gray[100],
+    backgroundColor: GuestColors.goldMuted,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  favoriteButton: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: 'rgba(0,0,0,0.25)',
-    justifyContent: 'center',
-    alignItems: 'center',
+  cardContent: { paddingHorizontal: 8, paddingVertical: 4 },
+  havenName: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: GuestColors.charcoal,
+    marginBottom: 2,
+    minHeight: 22,
   },
-  overlappingBadge: {
-    position: 'absolute',
-    bottom: -14,
-    left: 16,
-    right: 16,
-    height: 36,
-    backgroundColor: Colors.white,
-    borderRadius: 18,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  discountBadge: {
-    backgroundColor: Colors.brand.primary,
-    borderRadius: 14,
-    paddingHorizontal: 10,
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  discountBadgeText: { fontSize: 10, fontWeight: '700', color: Colors.white },
-  sampleTag: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-  },
-  sampleTagText: { fontSize: 10, fontWeight: '700', color: Colors.brand.primary },
-  cardContent: { padding: 16, paddingTop: 22 },
-  priceRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
-  pricePerNight: { fontSize: 18, fontWeight: '700', color: Colors.brand.primary },
-  originalPrice: { fontSize: 13, color: Colors.gray[400], textDecorationLine: 'line-through' },
-  saveBadge: { backgroundColor: Colors.green[100], paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
-  saveBadgeText: { fontSize: 10, fontWeight: '600', color: Colors.green[500] },
-  havenName: { fontSize: 15, fontWeight: '700', color: Colors.gray[900], marginBottom: 8 },
-  locationRating: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  locationRow: { flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1 },
-  locationText: { fontSize: 12, color: Colors.gray[500] },
-  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  ratingText: { fontSize: 13, fontWeight: '700', color: Colors.gray[900] },
+  ratingBlock: { flexDirection: 'row', alignItems: 'center', gap: 3, marginBottom: 2, flexWrap: 'wrap' },
+  ratingText: { fontSize: 11, fontWeight: '600', color: GuestColors.charcoal },
+  reviewParen: { fontWeight: '500', color: '#6B6B6B' },
+  locationRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  locationText: { fontSize: 11, fontWeight: '500', color: GuestColors.charcoal, flex: 1 },
 });
